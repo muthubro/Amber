@@ -2,6 +2,8 @@
 
 #include "Core.h"
 #include "Window.h"
+#include "Layer.h"
+#include "LayerStack.h"
 #include "Events/Event.h"
 #include "Events/ApplicationEvent.h"
 
@@ -14,12 +16,16 @@ public:
 	virtual ~Application();
 
 	void Run();
-	void OnEvent(Event&);
+	void OnEvent(Event& event);
 
-	bool OnWindowClose(WindowCloseEvent&);
+	void PushLayer(Layer* layer);
+	void PushOverlay(Layer* layer);
 
 private:
+	bool OnWindowClose(WindowCloseEvent& event);
+
 	std::unique_ptr<Window> m_Window;
+	LayerStack m_LayerStack;
 	bool m_Running = true;
 };
 
