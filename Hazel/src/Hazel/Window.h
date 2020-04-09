@@ -33,6 +33,9 @@ public:
 	virtual void SetVSync(bool enabled) = 0;
 	virtual bool IsVSync() const = 0;
 
+	virtual void SetClipboardText(const char* text) = 0;
+	virtual const char* GetClipboardText() = 0;
+
 	static Window* Create(const WindowProps& props = WindowProps());
 };
 
