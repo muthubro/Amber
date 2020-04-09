@@ -133,14 +133,6 @@ void WindowsWindow::Shutdown() {
 	glfwTerminate();
 }
 
-void WindowsWindow::SetClipboardText(const char* text) {
-	glfwSetClipboardString(m_Window, text);
-}
-
-const char* WindowsWindow::GetClipboardText() {
-	return glfwGetClipboardString(m_Window);
-}
-
 void WindowsWindow::OnUpdate() {
 	glfwPollEvents();
 	glfwSwapBuffers(m_Window);

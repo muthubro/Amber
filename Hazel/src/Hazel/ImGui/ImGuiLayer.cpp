@@ -14,13 +14,11 @@
 namespace Hazel {
 
 static void ImGuiSetClipboardText(void* user_data, const char* text) {
-    Application& app = Application::Get();
-    app.GetWindow().SetClipboardText(text);
+    glfwSetClipboardString(static_cast<GLFWwindow*>(user_data), text);
 }
 
 static const char* ImGuiGetClipboardText(void* user_data) {
-    Application& app = Application::Get();
-    return app.GetWindow().GetClipboardText();
+    return glfwGetClipboardString(static_cast<GLFWwindow*>(user_data));
 }
 
 ImGuiLayer::ImGuiLayer()
@@ -63,6 +61,7 @@ void ImGuiLayer::OnAttach() {
 
     io.SetClipboardTextFn = ImGuiSetClipboardText;
     io.GetClipboardTextFn = ImGuiGetClipboardText;
+    io.ClipboardUserData = Application::Get().GetWindow().GetNativeWindow();
 
     ImGui_ImplOpenGL3_Init("#version 410 core");
 }

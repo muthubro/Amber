@@ -1,5 +1,7 @@
 #include "hzpch.h"
+
 #include "Application.h"
+#include "Input.h"
 
 #include <glad/glad.h>
 
@@ -32,8 +34,6 @@ void Application::Run() {
 void Application::OnEvent(Event& event) {
 	EventDispatcher dispatcher(event);
 	dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
-
-	//HZ_CORE_TRACE("{0}", event);
 
 	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) {
 		(*--it)->OnEvent(event);

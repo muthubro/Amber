@@ -20,8 +20,7 @@ public:
 	void SetVSync(bool enabled) override;
 	bool IsVSync() const override;
 
-	void SetClipboardText(const char* text) override;
-	const char* GetClipboardText() override;
+	inline void* GetNativeWindow() const override { return m_Window; }
 
 private:
 	virtual void Init(const WindowProps& props);
