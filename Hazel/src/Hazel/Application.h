@@ -4,8 +4,13 @@
 #include "Window.h"
 #include "Layer.h"
 #include "LayerStack.h"
+
 #include "Events/Event.h"
 #include "Events/ApplicationEvent.h"
+#include "Events/KeyEvent.h"
+#include "Events/MouseEvent.h"
+
+#include "ImGui/ImGuiLayer.h"
 
 namespace Hazel {
 
@@ -30,6 +35,8 @@ private:
 
 	std::unique_ptr<Window> m_Window;
 	LayerStack m_LayerStack;
+	ImGuiLayer* m_ImGuiLayer;
+
 	bool m_Running = true;
 
 	static Application* s_Instance;
