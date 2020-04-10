@@ -60,7 +60,7 @@ void ImGuiLayer::Begin() {
 void ImGuiLayer::End() {
     Application& app = Application::Get();
     ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
+    io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
     ImGui::Render();
