@@ -5,9 +5,18 @@ public:
 	ExampleLayer()
 		: Layer("Example") {}
 
-	void OnUpdate() override {}
+	void OnUpdate() override {
+		if (Hazel::Input::IsKeyPressed(HZ_KEY_TAB)) {
+			HZ_INFO("Tab is down");
+		}
+	}
 
-	void OnEvent(Hazel::Event& event) override {}
+	void OnEvent(Hazel::Event& event) override {
+		if (event.GetEventType() == Hazel::EventType::KeyPressed) {
+			Hazel::KeyPressedEvent& e = (Hazel::KeyPressedEvent&)event;
+			HZ_TRACE("{0} key pressed", (char)e.GetKeyCode());
+		}
+	}
 };
 
 class Sandbox : public Hazel::Application {

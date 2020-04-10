@@ -2,16 +2,18 @@
 
 #include "hzpch.h"
 
+#include "Core.h"
+
 namespace Hazel {
 
-class Input {
+class HAZEL_API Input {
 public:
 	static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressedImpl(keycode); }
 	
 	static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressedImpl(button); }
 	static std::pair<float, float> GetMousePos() { return s_Instance->GetMousePosImpl(); }
 	static float GetMouseX() { return s_Instance->GetMouseXImpl(); };
-	static float GetMouseY() { return s_Instance->GetMouseY(); }
+	static float GetMouseY() { return s_Instance->GetMouseYImpl(); }
 
 protected:
 	virtual	bool IsKeyPressedImpl(int keycode) const = 0;
