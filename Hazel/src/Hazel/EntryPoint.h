@@ -3,10 +3,8 @@
 #ifdef HZ_PLATFORM_WINDOWS
 
 int main() {
-	Hazel::Log::Init();
-	HZ_CORE_WARN("Hazel Engine!");
-	char name[] = "Muathasim";
-	HZ_INFO("Hello {}!!!", name);
+	HZ_LOG_INIT();
+	HZ_CORE_INFO("Logging initialized.");
 
 	auto app = Hazel::CreateApplication();
 	app->Run();

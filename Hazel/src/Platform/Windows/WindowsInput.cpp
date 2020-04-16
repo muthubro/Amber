@@ -3,11 +3,12 @@
 #include "WindowsInput.h"
 
 #include "Hazel/Application.h"
+
 #include <GLFW/glfw3.h>
 
 namespace Hazel {
 
-Input* Input::s_Instance = new WindowsInput();
+std::unique_ptr<Input> Input::s_Instance = std::make_unique<WindowsInput>();
 
 bool WindowsInput::IsKeyPressedImpl(int keycode) const {
 	auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());

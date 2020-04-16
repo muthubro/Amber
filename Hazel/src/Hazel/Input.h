@@ -8,6 +8,8 @@ namespace Hazel {
 
 class HAZEL_API Input {
 public:
+	virtual ~Input() {}
+
 	static bool IsKeyPressed(int keycode) { return s_Instance->IsKeyPressedImpl(keycode); }
 	
 	static bool IsMouseButtonPressed(int button) { return s_Instance->IsMouseButtonPressedImpl(button); }
@@ -24,7 +26,7 @@ protected:
 	virtual	float GetMouseYImpl() const = 0;
 
 private:
-	static Input* s_Instance;
+	static std::unique_ptr<Input> s_Instance;
 };
 
 }

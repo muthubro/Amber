@@ -1,6 +1,9 @@
 #pragma once
 
+#ifdef HZ_DEBUG
+
 #include "Core.h"
+
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
 
@@ -19,7 +22,7 @@ private:
 	static std::shared_ptr<spdlog::logger> s_ClientLogger;
 };
 
-}
+#define HZ_LOG_INIT() ::Hazel::Log::Init()
 
 // Core logging
 #define HZ_CORE_ERROR(...)     ::Hazel::Log::GetCoreLogger()->error(__VA_ARGS__)
@@ -32,3 +35,21 @@ private:
 #define HZ_WARN(...)           ::Hazel::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define HZ_INFO(...)           ::Hazel::Log::GetClientLogger()->info(__VA_ARGS__)
 #define HZ_TRACE(...)          ::Hazel::Log::GetClientLogger()->trace(__VA_ARGS__)
+
+}
+
+#else
+
+#define HZ_LOG_INIT()
+
+#define HZ_CORE_ERROR(...)
+#define HZ_CORE_WARN(...) 
+#define HZ_CORE_INFO(...) 
+#define HZ_CORE_TRACE(...)
+
+#define HZ_ERROR(...)     
+#define HZ_WARN(...)      
+#define HZ_INFO(...)      
+#define HZ_TRACE(...)   
+
+#endif // HZ_DEBUG

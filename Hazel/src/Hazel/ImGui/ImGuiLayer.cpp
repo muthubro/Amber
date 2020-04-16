@@ -2,15 +2,13 @@
 
 #include "ImGuiLayer.h"
 
+#include "Hazel/Application.h"
+
 #include <imgui.h>
 #include <examples/imgui_impl_opengl3.h>
 #include <examples/imgui_impl_glfw.h>
 
 #include <GLFW/glfw3.h>
-
-#include "Hazel/Application.h"
-
-//#include <glad/glad.h>
 
 // TODO: Set mouse cursors and clipboard handlers
 
@@ -20,7 +18,6 @@ ImGuiLayer::ImGuiLayer()
 	: Layer("ImGui") {}
 
 ImGuiLayer::~ImGuiLayer() {}
-
 
 void ImGuiLayer::OnAttach() {
     IMGUI_CHECKVERSION();

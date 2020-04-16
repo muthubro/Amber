@@ -43,7 +43,6 @@ project "Hazel"
 	}
 	includedirs {
 		"%{prj.name}/src",
-		"%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
@@ -73,6 +72,8 @@ project "Hazel"
 		runtime "Debug"
 		symbols "on"
 
+		includedirs "%{prj.name}/vendor/spdlog/include"
+
 	filter "configurations:Release"
 		defines "HZ_RELEASE"
 		runtime "Release"
@@ -98,7 +99,6 @@ project "Sandbox"
 		"%{prj.name}/src/*.cpp"
 	}
 	includedirs {
-		"Hazel/vendor/spdlog/include",
 		"Hazel/src",
 		"Hazel/vendor",
 		"%{IncludeDir.glm}"
@@ -118,6 +118,8 @@ project "Sandbox"
 		defines "HZ_DEBUG"
 		runtime "Debug"
 		symbols "on"
+
+		includedirs "Hazel/vendor/spdlog/include" 
 
 	filter "configurations:Release"
 		defines "HZ_RELEASE"

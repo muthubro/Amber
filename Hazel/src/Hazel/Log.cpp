@@ -1,5 +1,7 @@
 #include "hzpch.h"
 
+#ifdef HZ_DEBUG
+
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace Hazel {
@@ -18,3 +20,6 @@ void Log::Init() {
 }
 
 }
+
+#endif // HZ_DEBUG
+
