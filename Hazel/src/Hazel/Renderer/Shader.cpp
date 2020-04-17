@@ -1,5 +1,4 @@
 #include "hzpch.h"
-
 #include "Shader.h"
 
 #include <glad/glad.h>

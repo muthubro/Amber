@@ -13,7 +13,7 @@ public:
 	void Unbind() const;
 
 private:
-	unsigned int m_RendererID;
+	uint32_t m_RendererID;
 };
 
 }
