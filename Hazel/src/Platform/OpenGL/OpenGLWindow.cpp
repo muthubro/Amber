@@ -1,31 +1,29 @@
 #include "hzpch.h"
+#include "OpenGLWindow.h"
 
-#include "WindowsWindow.h"
-
-#include "Hazel/Events/Event.h"
 #include "Hazel/Events/ApplicationEvent.h"
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
 
-#include "Platform/OpenGL/OpenGLContext.h"
+#include <glad/glad.h>
 
 namespace Hazel {
 
 static bool s_GLFWInitialized = false;
 
 Window* Window::Create(const WindowProps& props) {
-	return new WindowsWindow(props);
+	return new OpenGLWindow(props);
 }
 
-WindowsWindow::WindowsWindow(const WindowProps& props) {
+OpenGLWindow::OpenGLWindow(const WindowProps& props) {
 	Init(props);
 }
 
-WindowsWindow::~WindowsWindow() {
+OpenGLWindow::~OpenGLWindow() {
 	Shutdown();
 }
 
-void WindowsWindow::Init(const WindowProps& props) {
+void OpenGLWindow::Init(const WindowProps& props) {
 	m_Data.Title = props.Title;
 	m_Data.Width = props.Width;
 	m_Data.Height = props.Height;
@@ -43,8 +41,15 @@ void WindowsWindow::Init(const WindowProps& props) {
 	}
 
 	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
-	m_Context = new OpenGLContext(m_Window);
-	m_Context->Init();
+
+	glfwMakeContextCurrent(m_Window);
+	int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+	HZ_CORE_ASSERT(success, "Could not initialize Glad!");
+
+	HZ_CORE_INFO("OpenGL Info:");
+	HZ_CORE_INFO("	Vendor: {0}", glGetString(GL_VENDOR));
+	HZ_CORE_INFO("	Renderer: {0}", glGetString(GL_RENDERER));
+	HZ_CORE_INFO("	Version: {0}", glGetString(GL_VERSION));
 
 	glfwSetWindowUserPointer(m_Window, &m_Data);
 	SetVSync(true);
@@ -126,18 +131,17 @@ void WindowsWindow::Init(const WindowProps& props) {
 	});
 }
 
-void WindowsWindow::Shutdown() {
+void OpenGLWindow::Shutdown() {
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
-	delete m_Context;
 }
 
-void WindowsWindow::OnUpdate() {
+void OpenGLWindow::OnUpdate() {
 	glfwPollEvents();
-	m_Context->SwapBuffers();
+	glfwSwapBuffers(m_Window);
 }
 
-void WindowsWindow::SetVSync(bool enabled) {
+void OpenGLWindow::SetVSync(bool enabled) {
 	if (enabled) {
 		glfwSwapInterval(1);
 	}
@@ -148,7 +152,7 @@ void WindowsWindow::SetVSync(bool enabled) {
 	m_Data.VSync = enabled;
 }
 
-bool WindowsWindow::IsVSync() const{
+bool OpenGLWindow::IsVSync() const{
 	return m_Data.VSync;
 }
 

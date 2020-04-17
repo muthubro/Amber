@@ -2,16 +2,14 @@
 
 #include "Hazel/Window.h"
 
-#include "Hazel/Renderer/GraphicsContext.h"
-
 #include <GLFW/glfw3.h>
 
 namespace Hazel {
 
-class HAZEL_API WindowsWindow : public Window {
+class HAZEL_API OpenGLWindow : public Window {
 public:
-	WindowsWindow(const WindowProps& props);
-	~WindowsWindow();
+	OpenGLWindow(const WindowProps& props);
+	~OpenGLWindow();
 
 	void OnUpdate() override;
 
@@ -38,7 +36,6 @@ private:
 
 	WindowData m_Data;
 	GLFWwindow* m_Window;
-	GraphicsContext* m_Context;
 };
 
 }

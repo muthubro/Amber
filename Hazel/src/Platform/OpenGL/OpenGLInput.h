@@ -4,7 +4,7 @@
 
 namespace Hazel {
 
-class WindowsInput : public Input {
+class OpenGLInput : public Input {
 protected:
 	inline bool IsKeyPressedImpl(int keycode) const override;
 
