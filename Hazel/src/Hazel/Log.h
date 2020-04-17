@@ -25,12 +25,14 @@ private:
 #define HZ_LOG_INIT() ::Hazel::Log::Init()
 
 // Core logging
+#define HZ_CORE_FATAL(...)     ::Hazel::Log::GetCoreLogger()->critical(__VA_ARGS__)
 #define HZ_CORE_ERROR(...)     ::Hazel::Log::GetCoreLogger()->error(__VA_ARGS__)
 #define HZ_CORE_WARN(...)      ::Hazel::Log::GetCoreLogger()->warn(__VA_ARGS__)
 #define HZ_CORE_INFO(...)      ::Hazel::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define HZ_CORE_TRACE(...)     ::Hazel::Log::GetCoreLogger()->trace(__VA_ARGS__)
 
 // Client logging
+#define HZ_FATAL(...)          ::Hazel::Log::GetClientLogger()->critical(__VA_ARGS__)
 #define HZ_ERROR(...)          ::Hazel::Log::GetClientLogger()->error(__VA_ARGS__)
 #define HZ_WARN(...)           ::Hazel::Log::GetClientLogger()->warn(__VA_ARGS__)
 #define HZ_INFO(...)           ::Hazel::Log::GetClientLogger()->info(__VA_ARGS__)
@@ -42,11 +44,13 @@ private:
 
 #define HZ_LOG_INIT()
 
+#define HZ_CORE_FATAL(...)
 #define HZ_CORE_ERROR(...)
 #define HZ_CORE_WARN(...) 
 #define HZ_CORE_INFO(...) 
 #define HZ_CORE_TRACE(...)
 
+#define HZ_FATAL(...)
 #define HZ_ERROR(...)     
 #define HZ_WARN(...)      
 #define HZ_INFO(...)      

@@ -8,6 +8,8 @@
 
 #include "ImGui/ImGuiLayer.h"
 
+#include "Renderer/Shader.h"
+
 namespace Hazel {
 
 class HAZEL_API Application
@@ -32,10 +34,10 @@ private:
 	std::unique_ptr<Window> m_Window;
 	LayerStack m_LayerStack;
 	ImGuiLayer* m_ImGuiLayer;
+	bool m_Running = true;
 
 	unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
-
-	bool m_Running = true;
+	std::unique_ptr<Shader> m_Shader;
 
 	static Application* s_Instance;
 };

@@ -20,13 +20,40 @@ Application::Application() {
 	m_ImGuiLayer = new ImGuiLayer();
 	PushOverlay(m_ImGuiLayer);
 
+	std::string vertexSource = R"(
+		#version 410 core
+
+		layout(location = 0) in vec3 a_Position;
+
+		layout(location = 0) out vec3 v_Position;
+
+		void main() {
+			v_Position = a_Position;
+			gl_Position = vec4(a_Position, 1.0);
+		}
+	)";
+
+	std::string fragmentSource = R"(
+		#version 410 core
+
+		layout(location = 0) in vec3 v_Position;
+
+		layout(location = 0) out vec4 color;
+
+		void main() {
+			color = vec4(v_Position + 0.5, 1.0);
+		}
+	)";
+
+	m_Shader.reset(new Shader(vertexSource, fragmentSource));
+
 	glGenVertexArrays(1, &m_VertexArray);
 	glBindVertexArray(m_VertexArray);
 
 	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+		-0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f
 	};
 
 	glGenBuffers(1, &m_VertexBuffer);
@@ -50,6 +77,7 @@ void Application::Run() {
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		m_Shader->Bind();
 		glBindVertexArray(m_VertexArray);
 		glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
 
