@@ -10,6 +10,27 @@ namespace Hazel {
 
 Application* Application::s_Instance = nullptr;
 
+static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
+{
+	switch (type)
+	{
+		case ShaderDataType::Float:		return GL_FLOAT;
+		case ShaderDataType::Float2:	return GL_FLOAT;
+		case ShaderDataType::Float3:	return GL_FLOAT;
+		case ShaderDataType::Float4:	return GL_FLOAT;
+		case ShaderDataType::Mat3:		return GL_FLOAT;
+		case ShaderDataType::Mat4:		return GL_FLOAT;
+		case ShaderDataType::Int:		return GL_INT;
+		case ShaderDataType::Int2:		return GL_INT;
+		case ShaderDataType::Int3:		return GL_INT;
+		case ShaderDataType::Int4:		return GL_INT;
+		case ShaderDataType::Bool:		return GL_BOOL;
+	}
+
+	HZ_CORE_ASSERT(false, "Invalid shader data type!");
+	return 0;
+}
+
 Application::Application() {
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
@@ -24,11 +45,12 @@ Application::Application() {
 		#version 410 core
 
 		layout(location = 0) in vec3 a_Position;
+		layout(location = 1) in vec4 a_Color;
 
-		layout(location = 0) out vec3 v_Position;
+		layout(location = 0) out vec4 v_Color;
 
 		void main() {
-			v_Position = a_Position;
+			v_Color = a_Color;
 			gl_Position = vec4(a_Position, 1.0);
 		}
 	)";
@@ -36,12 +58,12 @@ Application::Application() {
 	std::string fragmentSource = R"(
 		#version 410 core
 
-		layout(location = 0) in vec3 v_Position;
+		layout(location = 0) in vec4 v_Color;
 
 		layout(location = 0) out vec4 color;
 
 		void main() {
-			color = vec4(v_Position * 0.5 + 0.5, 1.0);
+			color = v_Color;
 		}
 	)";
 
@@ -51,14 +73,30 @@ Application::Application() {
 	glBindVertexArray(m_VertexArray);
 
 	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+		-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
+		 0.5f, -0.5f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
+		 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 	};
 	m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	BufferLayout layout = {
+		{ ShaderDataType::Float3, "a_Position" },
+		{ ShaderDataType::Float4, "a_Color" }
+	};
+	m_VertexBuffer->SetLayout(layout);
+
+	unsigned int idx = 0;
+	for (auto& element : layout.GetElements()) {
+		glEnableVertexAttribArray(idx);
+		glVertexAttribPointer(
+			idx,
+			element.GetComponentCount(),
+			ShaderDataTypeToOpenGLBaseType(element.Type),
+			element.Normalized ? GL_TRUE : GL_FALSE,
+			layout.GetStride(),
+			(const void*)element.Offset);
+		idx++;
+	}
 
 	uint32_t indices[] = { 0, 1, 2 };
 	m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
