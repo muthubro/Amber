@@ -2,9 +2,11 @@
 
 #include "Hazel/Renderer/Buffer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class OpenGLVertexBuffer : public VertexBuffer {
+class OpenGLVertexBuffer : public VertexBuffer 
+{
 public:
 	OpenGLVertexBuffer(float* vertices, uint32_t size, bool dynamic);
 	~OpenGLVertexBuffer();
@@ -20,7 +22,8 @@ private:
 	BufferLayout m_Layout;
 };
 
-class OpenGLIndexBuffer : public IndexBuffer {
+class OpenGLIndexBuffer : public IndexBuffer 
+{
 public:
 	OpenGLIndexBuffer(uint32_t* indices, uint32_t count, bool dynamic);
 	~OpenGLIndexBuffer();

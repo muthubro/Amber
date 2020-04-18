@@ -2,9 +2,11 @@
 
 #include "Hazel/Input.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class OpenGLInput : public Input {
+class OpenGLInput : public Input 
+{
 protected:
 	inline bool IsKeyPressedImpl(int keycode) const override;
 

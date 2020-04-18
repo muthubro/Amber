@@ -1,12 +1,14 @@
 #pragma once
 
-#include "hzpch.h"
+#include <memory>
 
 #include "Core.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class HAZEL_API Input {
+class HAZEL_API Input 
+{
 public:
 	virtual ~Input() {}
 

@@ -2,9 +2,11 @@
 
 #include "Hazel/Renderer/VertexArray.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class OpenGLVertexArray : public VertexArray {
+class OpenGLVertexArray : public VertexArray 
+{
 public:
 	OpenGLVertexArray();
 	~OpenGLVertexArray();

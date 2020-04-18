@@ -1,24 +1,26 @@
 #include "hzpch.h"
 #include "ImGuiLayer.h"
 
-#include "Hazel/Application.h"
-
 #include <imgui.h>
 #include <examples/imgui_impl_opengl3.h>
 #include <examples/imgui_impl_glfw.h>
 
 #include <GLFW/glfw3.h>
 
+#include "Hazel/Application.h"
+
 // TODO: Set mouse cursors and clipboard handlers
 
-namespace Hazel {
+namespace Hazel 
+{
 
 ImGuiLayer::ImGuiLayer()
 	: Layer("ImGui") {}
 
 ImGuiLayer::~ImGuiLayer() {}
 
-void ImGuiLayer::OnAttach() {
+void ImGuiLayer::OnAttach() 
+{
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -41,19 +43,22 @@ void ImGuiLayer::OnAttach() {
     ImGui_ImplOpenGL3_Init("#version 410");
 }
 
-void ImGuiLayer::OnDetach() {
+void ImGuiLayer::OnDetach() 
+{
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
-void ImGuiLayer::Begin() {
+void ImGuiLayer::Begin() 
+{
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void ImGuiLayer::End() {
+void ImGuiLayer::End() 
+{
     Application& app = Application::Get();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
@@ -62,7 +67,8 @@ void ImGuiLayer::End() {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) 
+    {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
@@ -70,7 +76,8 @@ void ImGuiLayer::End() {
     }
 }
 
-void ImGuiLayer::OnImGuiRender() {
+void ImGuiLayer::OnImGuiRender() 
+{
     static bool show = true;
     ImGui::ShowDemoWindow(&show);
 

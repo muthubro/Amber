@@ -5,9 +5,62 @@
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-void BufferLayout::CalculateOffsetsAndStride() {
+static uint32_t ShaderDataTypeSize(ShaderDataType type)
+{
+	switch (type)
+	{
+		case ShaderDataType::Float:		return sizeof(float);
+		case ShaderDataType::Float2:	return sizeof(float) * 2;
+		case ShaderDataType::Float3:	return sizeof(float) * 3;
+		case ShaderDataType::Float4:	return sizeof(float) * 4;
+		case ShaderDataType::Mat3:		return sizeof(float) * 3 * 3;
+		case ShaderDataType::Mat4:		return sizeof(float) * 4 * 4;
+		case ShaderDataType::Int:		return sizeof(int);
+		case ShaderDataType::Int2:		return sizeof(int) * 2;
+		case ShaderDataType::Int3:		return sizeof(int) * 3;
+		case ShaderDataType::Int4:		return sizeof(int) * 4;
+		case ShaderDataType::Bool:		return sizeof(bool);
+	}
+
+	HZ_CORE_ASSERT(false, "Invalid shader data type!");
+	return 0;
+}
+
+BufferElement::BufferElement(ShaderDataType type, const std::string& name, bool normalized)
+	: Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized) {}
+
+uint8_t BufferElement::GetComponentCount() const
+{
+	switch (Type)
+	{
+		case ShaderDataType::Float:		return 1;
+		case ShaderDataType::Float2:	return 2;
+		case ShaderDataType::Float3:	return 3;
+		case ShaderDataType::Float4:	return 4;
+		case ShaderDataType::Mat3:		return 3 * 3;
+		case ShaderDataType::Mat4:		return 4 * 4;
+		case ShaderDataType::Int:		return 1;
+		case ShaderDataType::Int2:		return 2;
+		case ShaderDataType::Int3:		return 3;
+		case ShaderDataType::Int4:		return 4;
+		case ShaderDataType::Bool:		return 1;
+	}
+
+	HZ_CORE_ASSERT(false, "Invalid shader data type!");
+	return 0;
+}
+
+BufferLayout::BufferLayout(const std::initializer_list<BufferElement>& elements)
+	: m_Elements(elements)
+{
+	CalculateOffsetsAndStride();
+}
+
+void BufferLayout::CalculateOffsetsAndStride() 
+{
 	uint32_t offset = 0;
 	m_Stride = 0;
 
@@ -19,13 +72,15 @@ void BufferLayout::CalculateOffsetsAndStride() {
 	}
 }
 
-VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic) {
-	switch (Renderer::GetAPI()) {
-		case RendererAPI::None:
+VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic) 
+{
+	switch (Renderer::GetAPI()) 
+	{
+		case RendererAPI::API::None:
 			HZ_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
 			return nullptr;
 
-		case RendererAPI::OpenGL:
+		case RendererAPI::API::OpenGL:
 			return new OpenGLVertexBuffer(vertices, size, dynamic);
 
 		default:
@@ -34,18 +89,20 @@ VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic)
 	}
 }
 
-IndexBuffer* IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dynamic) {
-	switch (Renderer::GetAPI()) {
-	case RendererAPI::None:
-		HZ_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-		return nullptr;
+IndexBuffer* IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dynamic) 
+{
+	switch (Renderer::GetAPI()) 
+	{
+		case RendererAPI::API::None:
+			HZ_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
+			return nullptr;
 
-	case RendererAPI::OpenGL:
-		return new OpenGLIndexBuffer(indices, count, dynamic);
+		case RendererAPI::API::OpenGL:
+			return new OpenGLIndexBuffer(indices, count, dynamic);
 
-	default:
-		HZ_CORE_ASSERT(false, "Unknown Renderer API");
-		return nullptr;
+		default:
+			HZ_CORE_ASSERT(false, "Unknown Renderer API");
+			return nullptr;
 	}
 }
 

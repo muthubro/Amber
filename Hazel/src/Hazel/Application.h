@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Core.h"
+#include "Layer.h"
 #include "LayerStack.h"
 #include "Window.h"
 
+#include "Events/Event.h"
 #include "Events/ApplicationEvent.h"
 
 #include "ImGui/ImGuiLayer.h"
@@ -12,7 +14,8 @@
 #include "Renderer/Shader.h"
 #include "Renderer/VertexArray.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
 class HAZEL_API Application
 {

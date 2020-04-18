@@ -1,13 +1,15 @@
 #pragma once
 
-#include "hzpch.h"
+#include <string>
 
 #include "Core.h"
 #include "Events/Event.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class HAZEL_API Layer {
+class HAZEL_API Layer 
+{
 public:
 	Layer(const std::string& name = "Layer")
 		: m_DebugName(name) {}

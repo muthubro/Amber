@@ -1,35 +1,39 @@
 #include "Hazel.h"
 
-class ExampleLayer : public Hazel::Layer {
+class ExampleLayer : public Hazel::Layer 
+{
 public:
 	ExampleLayer()
 		: Layer("Example") {}
 
-	void OnUpdate() override {
-		if (Hazel::Input::IsKeyPressed(HZ_KEY_TAB)) {
+	void OnUpdate() override 
+	{
+		if (Hazel::Input::IsKeyPressed(HZ_KEY_TAB))
 			HZ_INFO("Tab is down");
-		}
 	}
 
-	void OnEvent(Hazel::Event& event) override {
-		if (event.GetEventType() == Hazel::EventType::KeyPressed) {
+	void OnEvent(Hazel::Event& event) override 
+	{
+		if (event.GetEventType() == Hazel::EventType::KeyPressed) 
+		{
 			Hazel::KeyPressedEvent& e = (Hazel::KeyPressedEvent&)event;
 			HZ_TRACE("{0} key pressed", (char)e.GetKeyCode());
 		}
 	}
 };
 
-class Sandbox : public Hazel::Application {
+class Sandbox : public Hazel::Application 
+{
 public:
-	Sandbox() {
+	Sandbox() 
+	{
 		PushLayer(new ExampleLayer());
 	}
 
-	~Sandbox() {
-
-	}
+	~Sandbox() {}
 };
 
-Hazel::Application* Hazel::CreateApplication() {
+Hazel::Application* Hazel::CreateApplication() 
+{
 	return new Sandbox();
 }

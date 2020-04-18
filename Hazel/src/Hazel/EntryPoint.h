@@ -2,7 +2,8 @@
 
 #ifdef HZ_PLATFORM_WINDOWS
 
-int main() {
+int main() 
+{
 	HZ_LOG_INIT();
 	HZ_CORE_INFO("Logging initialized.");
 

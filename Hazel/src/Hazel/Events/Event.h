@@ -1,10 +1,14 @@
 #pragma once
 
+#include <functional>
+
 #include "Hazel/Core.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-enum class EventType {
+enum class EventType 
+{
 	None = 0,
 	WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
 	AppTick, AppUpdate, AppRender,
@@ -12,7 +16,8 @@ enum class EventType {
 	MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 };
 
-enum EventCategory {
+enum EventCategory 
+{
 	None = 0,
 	EventCategoryApplication =   BIT(0),
 	EventCategoryInput =         BIT(1),
@@ -21,7 +26,8 @@ enum EventCategory {
 	EventCategoryMouseButton =   BIT(4)
 };
 
-class HAZEL_API Event {
+class HAZEL_API Event 
+{
 public:
 	bool Handled = false;
 
@@ -30,7 +36,8 @@ public:
 	virtual int GetCategoryFlags() const = 0;
 	virtual std::string ToString() const { return GetName(); }
 
-	inline bool IsInCategory(EventCategory category) const {
+	inline bool IsInCategory(EventCategory category) const 
+	{
 		return GetCategoryFlags() & category;
 	}
 };
@@ -41,7 +48,8 @@ public:
 
 #define EVENT_CLASS_CATEGORY(category) virtual int GetCategoryFlags() const override { return category; }
 
-class HAZEL_API EventDispatcher {
+class HAZEL_API EventDispatcher 
+{
 	template<typename T>
 	using EventFn = std::function<bool(T&)>;
 
@@ -49,8 +57,10 @@ public:
 	EventDispatcher(Event& event) : m_Event(event) {}
 
 	template<typename T>
-	bool Dispatch(EventFn<T> func) {
-		if (m_Event.GetEventType() == T::GetStaticType()) {
+	bool Dispatch(EventFn<T> func) 
+	{
+		if (m_Event.GetEventType() == T::GetStaticType()) 
+		{
 			m_Event.Handled = func(*(T*)&m_Event);
 			return true;
 		}
@@ -62,7 +72,8 @@ private:
 };
 
 
-inline std::ostream& operator<<(std::ostream& os, const Event& e) {
+inline std::ostream& operator<<(std::ostream& os, const Event& e) 
+{
 	return os << e.ToString();
 }
 

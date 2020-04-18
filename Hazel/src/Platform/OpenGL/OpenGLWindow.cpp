@@ -1,36 +1,42 @@
 #include "hzpch.h"
 #include "OpenGLWindow.h"
 
+#include <glad/glad.h>
+
 #include "Hazel/Events/ApplicationEvent.h"
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
 
-#include <glad/glad.h>
-
-namespace Hazel {
+namespace Hazel 
+{
 
 static bool s_GLFWInitialized = false;
 
-Window* Window::Create(const WindowProps& props) {
+Window* Window::Create(const WindowProps& props) 
+{
 	return new OpenGLWindow(props);
 }
 
-OpenGLWindow::OpenGLWindow(const WindowProps& props) {
+OpenGLWindow::OpenGLWindow(const WindowProps& props) 
+{
 	Init(props);
 }
 
-OpenGLWindow::~OpenGLWindow() {
+OpenGLWindow::~OpenGLWindow() 
+{
 	Shutdown();
 }
 
-void OpenGLWindow::Init(const WindowProps& props) {
+void OpenGLWindow::Init(const WindowProps& props) 
+{
 	m_Data.Title = props.Title;
 	m_Data.Width = props.Width;
 	m_Data.Height = props.Height;
 
 	HZ_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
-	if (!s_GLFWInitialized) {
+	if (!s_GLFWInitialized) 
+	{
 		int success = glfwInit();
 		HZ_CORE_ASSERT(success, "Could not initialize GLFW!");
 		glfwSetErrorCallback([](int error, const char* description) {
@@ -73,24 +79,28 @@ void OpenGLWindow::Init(const WindowProps& props) {
 	glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 		
-		switch (action) {
-		case GLFW_PRESS: {
-			KeyPressedEvent event(key, 0);
-			data.EventCallback(event);
-			break;
-		}
+		switch (action) 
+		{
+			case GLFW_PRESS: 
+			{
+				KeyPressedEvent event(key, 0);
+				data.EventCallback(event);
+				break;
+			}
 		
-		case GLFW_REPEAT: {
-			KeyPressedEvent event(key, 1);
-			data.EventCallback(event);
-			break;
-		}
+			case GLFW_REPEAT: 
+			{
+				KeyPressedEvent event(key, 1);
+				data.EventCallback(event);
+				break;
+			}
 
-		case GLFW_RELEASE: {
-			KeyReleasedEvent event(key);
-			data.EventCallback(event);
-			break;
-		}
+			case GLFW_RELEASE: 
+			{
+				KeyReleasedEvent event(key);
+				data.EventCallback(event);
+				break;
+			}
 		}
 	});
 
@@ -103,18 +113,21 @@ void OpenGLWindow::Init(const WindowProps& props) {
 	glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-		switch (action) {
-		case GLFW_PRESS: {
-			MouseButtonPressedEvent event(button);
-			data.EventCallback(event);
-			break;
-		}
+		switch (action) 
+		{
+			case GLFW_PRESS: 
+			{
+				MouseButtonPressedEvent event(button);
+				data.EventCallback(event);
+				break;
+			}
 
-		case GLFW_RELEASE: {
-			MouseButtonReleasedEvent event(button);
-			data.EventCallback(event);
-			break;
-		}
+			case GLFW_RELEASE: 
+			{
+				MouseButtonReleasedEvent event(button);
+				data.EventCallback(event);
+				break;
+			}
 		}
 	});
 
@@ -131,28 +144,30 @@ void OpenGLWindow::Init(const WindowProps& props) {
 	});
 }
 
-void OpenGLWindow::Shutdown() {
+void OpenGLWindow::Shutdown() 
+{
 	glfwDestroyWindow(m_Window);
 	glfwTerminate();
 }
 
-void OpenGLWindow::OnUpdate() {
+void OpenGLWindow::OnUpdate() 
+{
 	glfwPollEvents();
 	glfwSwapBuffers(m_Window);
 }
 
-void OpenGLWindow::SetVSync(bool enabled) {
-	if (enabled) {
+void OpenGLWindow::SetVSync(bool enabled) 
+{
+	if (enabled)
 		glfwSwapInterval(1);
-	}
-	else {
+	else
 		glfwSwapInterval(0);
-	}
 
 	m_Data.VSync = enabled;
 }
 
-bool OpenGLWindow::IsVSync() const{
+bool OpenGLWindow::IsVSync() const
+{
 	return m_Data.VSync;
 }
 

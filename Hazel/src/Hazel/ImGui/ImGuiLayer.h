@@ -3,9 +3,11 @@
 #include "Hazel/Core.h"
 #include "Hazel/Layer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class HAZEL_API ImGuiLayer : public Layer {
+class HAZEL_API ImGuiLayer : public Layer 
+{
 public:
 	ImGuiLayer();
 	~ImGuiLayer();

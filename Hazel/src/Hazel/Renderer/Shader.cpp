@@ -3,9 +3,11 @@
 
 #include <glad/glad.h>
 
-namespace Hazel {
+namespace Hazel 
+{
 
-static unsigned int CompileShader(unsigned int type, const std::string& source) {
+static unsigned int CompileShader(unsigned int type, const std::string& source) 
+{
 	const char* src = source.c_str();
 	unsigned int shader = glCreateShader(type);
 	glShaderSource(shader, 1, &src, nullptr);
@@ -13,7 +15,8 @@ static unsigned int CompileShader(unsigned int type, const std::string& source) 
 	glCompileShader(shader);
 	int status;
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-	if (status == GL_FALSE) {
+	if (status == GL_FALSE) 
+	{
 		int length;
 		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
 
@@ -29,7 +32,8 @@ static unsigned int CompileShader(unsigned int type, const std::string& source) 
 	return shader;
 }
 
-Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource) {
+Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource) 
+{
 	unsigned int vertexShader = CompileShader(GL_VERTEX_SHADER, vertexSource);
 	unsigned int fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentSource);
 
@@ -40,7 +44,8 @@ Shader::Shader(const std::string& vertexSource, const std::string& fragmentSourc
 	glLinkProgram(m_RendererID);
 	int status;
 	glGetProgramiv(m_RendererID, GL_LINK_STATUS, &status);
-	if (status == GL_FALSE) {
+	if (status == GL_FALSE) 
+	{
 		int length;
 		glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &length);
 
@@ -59,15 +64,18 @@ Shader::Shader(const std::string& vertexSource, const std::string& fragmentSourc
 	glDetachShader(m_RendererID, fragmentShader);
 }
 
-Shader::~Shader() {
+Shader::~Shader() 
+{
 	glDeleteProgram(m_RendererID);
 }
 
-void Shader::Bind() const {
+void Shader::Bind() const 
+{
 	glUseProgram(m_RendererID);
 }
 
-void Shader::Unbind() const {
+void Shader::Unbind() const 
+{
 	glUseProgram(0);
 }
 

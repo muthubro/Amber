@@ -1,13 +1,15 @@
 #pragma once
 
-#include "hzpch.h"
+#include <string>
 
-#include "Hazel/Core.h"
-#include "Hazel/Events/Event.h"
+#include "Core.h"
+#include "Events/Event.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-struct WindowProps {
+struct WindowProps 
+{
 	std::string Title;
 	unsigned int Width;
 	unsigned int Height;
@@ -18,7 +20,8 @@ struct WindowProps {
 		: Title(title), Width(width), Height(height) {}
 };
 
-class HAZEL_API Window {
+class HAZEL_API Window 
+{
 public:
 	using EventCallbackFn = std::function<void(Event&)>;
 

@@ -1,11 +1,15 @@
 #pragma once
 
-#include "hzpch.h"
+#include <vector>
+#include <memory>
+
 #include "Buffer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class VertexArray {
+class VertexArray 
+{
 public:
 	virtual ~VertexArray() {}
 

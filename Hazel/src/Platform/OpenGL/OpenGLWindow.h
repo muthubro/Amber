@@ -4,9 +4,11 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class HAZEL_API OpenGLWindow : public Window {
+class HAZEL_API OpenGLWindow : public Window 
+{
 public:
 	OpenGLWindow(const WindowProps& props);
 	~OpenGLWindow();
@@ -26,7 +28,8 @@ private:
 	virtual void Init(const WindowProps& props);
 	virtual void Shutdown();
 
-	struct WindowData {
+	struct WindowData 
+	{
 		std::string Title;
 		unsigned int Width, Height;
 		bool VSync;

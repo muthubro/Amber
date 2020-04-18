@@ -1,13 +1,15 @@
 #pragma once
 
-#include "hzpch.h"
+#include <vector>
 
 #include "Core.h"
 #include "Layer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class HAZEL_API LayerStack {
+class HAZEL_API LayerStack 
+{
 public:
 	LayerStack();
 	~LayerStack();

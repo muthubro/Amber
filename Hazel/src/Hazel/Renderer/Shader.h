@@ -1,11 +1,14 @@
 #pragma once
 
-#include "hzpch.h"
+#include <string>
+
 #include "Hazel/Core.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
-class Shader {
+class Shader 
+{
 public:
 	Shader(const std::string& vertexSource, const std::string& fragmentSource);
 	~Shader();
