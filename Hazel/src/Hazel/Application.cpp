@@ -13,7 +13,8 @@ namespace Hazel
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application() 
+Application::Application()
+	: m_Camera(-1.6f, 1.6f, -0.9, 0.9f)
 {
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
@@ -24,7 +25,54 @@ Application::Application()
 	m_ImGuiLayer = new ImGuiLayer();
 	PushOverlay(m_ImGuiLayer);
 
-	std::string vertexSource = R"(
+	// Draw square
+	std::string squareVertexSource = R"(
+		#version 410 core
+
+		layout(location = 0) in vec3 a_Position;
+
+		uniform mat4 u_ViewProjection;
+
+		void main() {
+			gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+		}
+	)";
+
+	std::string squareFragmentSource = R"(
+		#version 410 core
+
+		layout(location = 0) out vec4 color;
+
+		void main() {
+			color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	)";
+
+	m_SquareShader.reset(new Shader(squareVertexSource, squareFragmentSource));
+
+	m_SquareVA.reset(VertexArray::Create());
+
+	float squareVertices[] = {
+		-0.75f, -0.75f, 0.0f,
+		 0.75f, -0.75f, 0.0f,
+		 0.75f,  0.75f, 0.0f,
+		-0.75f,  0.75f, 0.0f
+	};
+	std::shared_ptr<VertexBuffer> squareVB;
+	squareVB.reset(VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+	squareVB->SetLayout({
+		{ ShaderDataType::Float3, "a_Position" },
+	});
+	m_SquareVA->AddVertexBuffer(squareVB);
+
+	uint32_t squareIndices[] = { 0, 1, 2, 2, 3, 0 };
+	std::shared_ptr<IndexBuffer> squareIB;
+	squareIB.reset(IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+
+	m_SquareVA->SetIndexBuffer(squareIB);
+
+	// Draw triangle
+	std::string triangleVertexSource = R"(
 		#version 410 core
 
 		layout(location = 0) in vec3 a_Position;
@@ -32,13 +80,15 @@ Application::Application()
 
 		layout(location = 0) out vec4 v_Color;
 
+		uniform mat4 u_ViewProjection;
+
 		void main() {
 			v_Color = a_Color;
-			gl_Position = vec4(a_Position, 1.0);
+			gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
 		}
 	)";
 
-	std::string fragmentSource = R"(
+	std::string triangleFragmentSource = R"(
 		#version 410 core
 
 		layout(location = 0) in vec4 v_Color;
@@ -50,38 +100,9 @@ Application::Application()
 		}
 	)";
 
-	m_Shader.reset(new Shader(vertexSource, fragmentSource));
+	m_TriangleShader.reset(new Shader(triangleVertexSource, triangleFragmentSource));
 
-	// Draw square
-	std::shared_ptr<VertexArray> squareVA;
-	squareVA.reset(VertexArray::Create());
-
-	float squareVertices[] = {
-		-0.75f, -0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
-		 0.75f, -0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
-		 0.75f,  0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
-		-0.75f,  0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0
-	};
-	std::shared_ptr<VertexBuffer> squareVB;
-	squareVB.reset(VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
-
-	squareVB->SetLayout({
-		{ ShaderDataType::Float3, "a_Position" },
-		{ ShaderDataType::Float4, "a_Color" }
-	});
-
-	squareVA->AddVertexBuffer(squareVB);
-
-	uint32_t squareIndices[] = { 0, 1, 2, 2, 3, 0 };
-	std::shared_ptr<IndexBuffer> squareIB;
-	squareIB.reset(IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
-
-	squareVA->SetIndexBuffer(squareIB);
-	m_VertexArrays.push_back(squareVA);
-
-	// Draw triangle
-	std::shared_ptr<VertexArray> triangleVA;
-	triangleVA.reset(VertexArray::Create());
+	m_TriangleVA.reset(VertexArray::Create());
 
 	float triangleVertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
@@ -90,21 +111,17 @@ Application::Application()
 	};
 	std::shared_ptr<VertexBuffer> triangleVB;
 	triangleVB.reset(VertexBuffer::Create(triangleVertices, sizeof(triangleVertices)));
-
-	BufferLayout layout = {
+	triangleVB->SetLayout({
 		{ ShaderDataType::Float3, "a_Position" },
 		{ ShaderDataType::Float4, "a_Color" }
-	};
-	triangleVB->SetLayout(layout);
-
-	triangleVA->AddVertexBuffer(triangleVB);
+	});
+	m_TriangleVA->AddVertexBuffer(triangleVB);
 
 	uint32_t triangleIndices[] = { 0, 1, 2 };
 	std::shared_ptr<IndexBuffer> triangleIB;
 	triangleIB.reset(IndexBuffer::Create(triangleIndices, sizeof(triangleIndices) / sizeof(uint32_t)));
 
-	triangleVA->SetIndexBuffer(triangleIB);
-	m_VertexArrays.push_back(triangleVA);
+	m_TriangleVA->SetIndexBuffer(triangleIB);
 }
 
 Application::~Application() {}
@@ -116,11 +133,13 @@ void Application::Run()
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		RenderCommand::Clear();
 
-		Renderer::BeginScene();
+		m_Camera.SetPosition({ 0.5f, 0.5f, 0.0f });
+		m_Camera.SetRotation(45.0f);
 
-		m_Shader->Bind();
-		for (const auto& vao : m_VertexArrays)
-			Renderer::Submit(vao);
+		Renderer::BeginScene(m_Camera);
+
+		Renderer::Submit(m_SquareShader, m_SquareVA);
+		Renderer::Submit(m_TriangleShader, m_TriangleVA);
 
 		Renderer::EndScene();
 
