@@ -1,16 +1,20 @@
 #include "hzpch.h"
 #include "Application.h"
 
+#include <glad/glad.h>
+
 #include "Input.h"
 #include "Window.h"
 
-#include <glad/glad.h>
+#include "Renderer/Renderer.h"
 
-namespace Hazel {
+namespace Hazel 
+{
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application() {
+Application::Application() 
+{
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
 
@@ -64,7 +68,7 @@ Application::Application() {
 	squareVB->SetLayout({
 		{ ShaderDataType::Float3, "a_Position" },
 		{ ShaderDataType::Float4, "a_Color" }
-		});
+	});
 
 	squareVA->AddVertexBuffer(squareVB);
 
@@ -105,17 +109,20 @@ Application::Application() {
 
 Application::~Application() {}
 
-void Application::Run() {
-	while (m_Running) {
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+void Application::Run() 
+{
+	while (m_Running) 
+	{
+		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+		RenderCommand::Clear();
+
+		Renderer::BeginScene();
 
 		m_Shader->Bind();
+		for (const auto& vao : m_VertexArrays)
+			Renderer::Submit(vao);
 
-		for (const auto& vao : m_VertexArrays) {
-			vao->Bind();
-			glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
-		}
+		Renderer::EndScene();
 
 		for (Layer* layer : m_LayerStack)
 			layer->OnUpdate();
@@ -129,26 +136,31 @@ void Application::Run() {
 	}
 }
 
-void Application::OnEvent(Event& event) {
+void Application::OnEvent(Event& event) 
+{
 	EventDispatcher dispatcher(event);
 	dispatcher.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(Application::OnWindowClose));
 
-	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) {
+	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) 
+	{
 		(*--it)->OnEvent(event);
 		if (event.Handled)
 			break;
 	}
 }
 
-void Application::PushLayer(Layer* layer) {
+void Application::PushLayer(Layer* layer) 
+{
 	m_LayerStack.PushLayer(layer);
 }
 
-void Application::PushOverlay(Layer* overlay) {
+void Application::PushOverlay(Layer* overlay) 
+{
 	m_LayerStack.PushOverlay(overlay);
 }
 
-bool Application::OnWindowClose(WindowCloseEvent& event) {
+bool Application::OnWindowClose(WindowCloseEvent& event) 
+{
 	m_Running = false;
 	return true;
 }
