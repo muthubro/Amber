@@ -10,27 +10,6 @@ namespace Hazel {
 
 Application* Application::s_Instance = nullptr;
 
-static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
-{
-	switch (type)
-	{
-		case ShaderDataType::Float:		return GL_FLOAT;
-		case ShaderDataType::Float2:	return GL_FLOAT;
-		case ShaderDataType::Float3:	return GL_FLOAT;
-		case ShaderDataType::Float4:	return GL_FLOAT;
-		case ShaderDataType::Mat3:		return GL_FLOAT;
-		case ShaderDataType::Mat4:		return GL_FLOAT;
-		case ShaderDataType::Int:		return GL_INT;
-		case ShaderDataType::Int2:		return GL_INT;
-		case ShaderDataType::Int3:		return GL_INT;
-		case ShaderDataType::Int4:		return GL_INT;
-		case ShaderDataType::Bool:		return GL_BOOL;
-	}
-
-	HZ_CORE_ASSERT(false, "Invalid shader data type!");
-	return 0;
-}
-
 Application::Application() {
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
@@ -69,37 +48,59 @@ Application::Application() {
 
 	m_Shader.reset(new Shader(vertexSource, fragmentSource));
 
-	glGenVertexArrays(1, &m_VertexArray);
-	glBindVertexArray(m_VertexArray);
+	// Draw square
+	std::shared_ptr<VertexArray> squareVA;
+	squareVA.reset(VertexArray::Create());
 
-	float vertices[] = {
+	float squareVertices[] = {
+		-0.75f, -0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
+		 0.75f, -0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
+		 0.75f,  0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0,
+		-0.75f,  0.75f, 0.0f, 1.0, 1.0, 1.0, 1.0
+	};
+	std::shared_ptr<VertexBuffer> squareVB;
+	squareVB.reset(VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+
+	squareVB->SetLayout({
+		{ ShaderDataType::Float3, "a_Position" },
+		{ ShaderDataType::Float4, "a_Color" }
+		});
+
+	squareVA->AddVertexBuffer(squareVB);
+
+	uint32_t squareIndices[] = { 0, 1, 2, 2, 3, 0 };
+	std::shared_ptr<IndexBuffer> squareIB;
+	squareIB.reset(IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+
+	squareVA->SetIndexBuffer(squareIB);
+	m_VertexArrays.push_back(squareVA);
+
+	// Draw triangle
+	std::shared_ptr<VertexArray> triangleVA;
+	triangleVA.reset(VertexArray::Create());
+
+	float triangleVertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
 		 0.5f, -0.5f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
 		 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 	};
-	m_VertexBuffer.reset(VertexBuffer::Create(vertices, sizeof(vertices)));
+	std::shared_ptr<VertexBuffer> triangleVB;
+	triangleVB.reset(VertexBuffer::Create(triangleVertices, sizeof(triangleVertices)));
 
 	BufferLayout layout = {
 		{ ShaderDataType::Float3, "a_Position" },
 		{ ShaderDataType::Float4, "a_Color" }
 	};
-	m_VertexBuffer->SetLayout(layout);
+	triangleVB->SetLayout(layout);
 
-	unsigned int idx = 0;
-	for (auto& element : layout.GetElements()) {
-		glEnableVertexAttribArray(idx);
-		glVertexAttribPointer(
-			idx,
-			element.GetComponentCount(),
-			ShaderDataTypeToOpenGLBaseType(element.Type),
-			element.Normalized ? GL_TRUE : GL_FALSE,
-			layout.GetStride(),
-			(const void*)element.Offset);
-		idx++;
-	}
+	triangleVA->AddVertexBuffer(triangleVB);
 
-	uint32_t indices[] = { 0, 1, 2 };
-	m_IndexBuffer.reset(IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+	uint32_t triangleIndices[] = { 0, 1, 2 };
+	std::shared_ptr<IndexBuffer> triangleIB;
+	triangleIB.reset(IndexBuffer::Create(triangleIndices, sizeof(triangleIndices) / sizeof(uint32_t)));
+
+	triangleVA->SetIndexBuffer(triangleIB);
+	m_VertexArrays.push_back(triangleVA);
 }
 
 Application::~Application() {}
@@ -110,8 +111,11 @@ void Application::Run() {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		m_Shader->Bind();
-		glBindVertexArray(m_VertexArray);
-		glDrawElements(GL_TRIANGLES, m_IndexBuffer->GetCount(), GL_UNSIGNED_INT, nullptr);
+
+		for (const auto& vao : m_VertexArrays) {
+			vao->Bind();
+			glDrawElements(GL_TRIANGLES, vao->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+		}
 
 		for (Layer* layer : m_LayerStack)
 			layer->OnUpdate();

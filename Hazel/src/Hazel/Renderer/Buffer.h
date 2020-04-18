@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Hazel/Core.h"
+
 namespace Hazel {
 
 enum class ShaderDataType {
@@ -40,7 +42,7 @@ struct BufferElement
 	BufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
 		: Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized) {}
 
-	uint8_t GetComponentCount()
+	uint8_t GetComponentCount() const
 	{
 		switch (Type)
 		{
@@ -73,7 +75,7 @@ public:
 	}
 
 	inline uint32_t GetStride() const { return m_Stride; }
-	inline std::vector<BufferElement> GetElements() { return m_Elements; }
+	inline std::vector<BufferElement> GetElements() const { return m_Elements; }
 
 	inline std::vector<BufferElement>::iterator begin() { return m_Elements.begin(); }
 	inline std::vector<BufferElement>::iterator end() { return m_Elements.end(); }
