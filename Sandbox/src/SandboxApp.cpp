@@ -1,12 +1,14 @@
 #include "Hazel.h"
 
+#include <ImGui/imgui.h>
+
 class ExampleLayer : public Hazel::Layer 
 {
 public:
 	ExampleLayer()
 		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
-			m_CameraPosition(0.0f), m_CameraMoveSpeed(0.05f),
-			m_CameraRotation(0.0f), m_CameraRotationSpeed(2.0f)
+			m_CameraPosition(0.0f), m_CameraMoveSpeed(1.0f),
+			m_CameraRotation(0.0f), m_CameraRotationSpeed(20.0f)
 	{
 		// Draw square
 		std::string squareVertexSource = R"(
@@ -107,22 +109,22 @@ public:
 		m_TriangleVA->SetIndexBuffer(triangleIB);
 	}
 
-	void OnUpdate() override 
+	void OnUpdate(Hazel::Timestep ts) override 
 	{
 		if (Hazel::Input::IsKeyPressed(HZ_KEY_LEFT))
-			m_CameraPosition.x -= m_CameraMoveSpeed;
+			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
 		else if (Hazel::Input::IsKeyPressed(HZ_KEY_RIGHT))
-			m_CameraPosition.x += m_CameraMoveSpeed;
+			m_CameraPosition.x += m_CameraMoveSpeed * ts;
 
 		if (Hazel::Input::IsKeyPressed(HZ_KEY_UP))
-			m_CameraPosition.y += m_CameraMoveSpeed;
+			m_CameraPosition.y += m_CameraMoveSpeed * ts;
 		else if (Hazel::Input::IsKeyPressed(HZ_KEY_DOWN))
-			m_CameraPosition.y -= m_CameraMoveSpeed;
+			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
 
 		if (Hazel::Input::IsKeyPressed(HZ_KEY_A))
-			m_CameraRotation += m_CameraRotationSpeed;
+			m_CameraRotation += m_CameraRotationSpeed * ts;
 		else if (Hazel::Input::IsKeyPressed(HZ_KEY_D))
-			m_CameraRotation -= m_CameraRotationSpeed;
+			m_CameraRotation -= m_CameraRotationSpeed * ts;
 
 		Hazel::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		Hazel::RenderCommand::Clear();
@@ -139,6 +141,14 @@ public:
 	}
 
 	void OnEvent(Hazel::Event& event) override {}
+
+	void OnImGuiRender() override
+	{
+		ImGui::Begin("Example Layer Toolkit");
+		ImGui::SliderFloat("Translation speed", &m_CameraMoveSpeed, 0.1f, 5.0f);
+		ImGui::SliderFloat("Rotation speed", &m_CameraRotationSpeed, 10.0f, 90.0f);
+		ImGui::End();
+	}
 
 private:
 	std::shared_ptr<Hazel::Shader> m_SquareShader;

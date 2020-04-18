@@ -35,7 +35,8 @@ private:
 	std::unique_ptr<Window> m_Window;
 	LayerStack m_LayerStack;
 	ImGuiLayer* m_ImGuiLayer;
-	bool m_Running = true;
+	bool m_Running;
+	float m_LastFrameTime;
 
 	static Application* s_Instance;
 };

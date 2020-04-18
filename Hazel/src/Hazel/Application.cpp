@@ -1,6 +1,8 @@
 #include "hzpch.h"
 #include "Application.h"
 
+#include <GLFW/glfw3.h>
+
 #include "Input.h"
 #include "Window.h"
 
@@ -10,6 +12,7 @@ namespace Hazel
 Application* Application::s_Instance = nullptr;
 
 Application::Application()
+	: m_Running(true), m_LastFrameTime(0.0f)
 {
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
@@ -27,8 +30,12 @@ void Application::Run()
 {
 	while (m_Running) 
 	{
+		float time = (float)glfwGetTime();
+		Timestep ts = time - m_LastFrameTime;
+		m_LastFrameTime = time;
+
 		for (Layer* layer : m_LayerStack)
-			layer->OnUpdate();
+			layer->OnUpdate(ts);
 
 		m_ImGuiLayer->Begin();
 		for (Layer* layer : m_LayerStack)
