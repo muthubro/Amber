@@ -103,6 +103,7 @@ public:
 		m_TextureShader = Hazel::Shader::Create(textureVertexSource, textureFragmentSource);
 
 		m_Texture = Hazel::Texture2D::Create("assets/textures/Checkerboard.png");
+		m_ChernoLogoTexture = Hazel::Texture2D::Create("assets/textures/ChernoLogo.png");
 
 		m_TextureShader->Bind();
 		std::dynamic_pointer_cast<Hazel::OpenGLShader>(m_TextureShader)->UploadUniformInt("u_Texture", 0);
@@ -198,9 +199,6 @@ public:
 
 		Hazel::Renderer::BeginScene(m_Camera);
 
-		m_Texture->Bind();
-		Hazel::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(2.0f)));
-
 		for (int y = 0; y < m_SquareRows; y++)
 		{
 			for (int x = 0; x < m_SquareColumns; x++)
@@ -219,7 +217,14 @@ public:
 				Hazel::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
 			}
 		}
-		Hazel::Renderer::Submit(m_TriangleShader, m_TriangleVA);
+
+		m_Texture->Bind();
+		Hazel::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+
+		m_ChernoLogoTexture->Bind();
+		Hazel::Renderer::Submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+
+		//Hazel::Renderer::Submit(m_TriangleShader, m_TriangleVA);
 
 		Hazel::Renderer::EndScene();
 	}
@@ -251,7 +256,7 @@ private:
 	Hazel::Ref<Hazel::Shader> m_TextureShader;
 	Hazel::Ref<Hazel::Shader> m_TriangleShader;
 
-	Hazel::Ref<Hazel::Texture2D> m_Texture;
+	Hazel::Ref<Hazel::Texture2D> m_Texture, m_ChernoLogoTexture;
 
 	Hazel::Ref<Hazel::VertexArray> m_SquareVA;
 	Hazel::Ref<Hazel::VertexArray> m_TriangleVA;

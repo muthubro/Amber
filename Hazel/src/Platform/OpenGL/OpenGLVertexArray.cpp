@@ -28,6 +28,7 @@ static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
 }
 
 OpenGLVertexArray::OpenGLVertexArray()
+	: m_VertexBufferIndex(0)
 {
 	glCreateVertexArrays(1, &m_RendererID);
 }
@@ -45,18 +46,16 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 	vertexBuffer->Bind();
 
 	const BufferLayout& layout = vertexBuffer->GetLayout();
-	uint32_t idx = 0;
 	for (const auto& element : layout) 
 	{
-		glEnableVertexAttribArray(idx);
-		glVertexAttribPointer(
-			idx,
+		glEnableVertexAttribArray(m_VertexBufferIndex);
+		glVertexAttribPointer(m_VertexBufferIndex,
 			element.GetComponentCount(),
 			ShaderDataTypeToOpenGLBaseType(element.Type),
 			element.Normalized ? GL_TRUE : GL_FALSE,
 			layout.GetStride(),
-			(const void*)element.Offset);
-		idx++;
+			(const void*)(intptr_t)element.Offset);
+		m_VertexBufferIndex++;
 	}
 
 	m_VertexBuffers.push_back(vertexBuffer);

@@ -8,6 +8,11 @@ namespace Hazel
 
 Ref<Renderer::SceneData> Renderer::s_SceneData = std::make_shared<Renderer::SceneData>();
 
+void Renderer::Init()
+{
+	RenderCommand::Init();
+}
+
 void Renderer::BeginScene(const OrthographicCamera& camera)
 {
 	s_SceneData->VPMatrix = camera.GetVPMatrix();
