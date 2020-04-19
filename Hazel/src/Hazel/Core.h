@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #ifdef HZ_PLATFORM_WINDOWS
 	#ifdef HZ_DYNAMIC_LIBRARY
 		#ifdef HZ_BUILD_DLL
@@ -22,6 +24,15 @@
 #define HZ_CORE_ASSERT(x, ...)
 #endif // HZ_DEBUG
 
-#define BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
+#define HZ_BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
 
 #define BIT(x) (1 << x)
+
+namespace Hazel
+{
+	template<typename T>
+	using Scope = std::unique_ptr<T>;
+
+	template<typename T>
+	using Ref = std::shared_ptr<T>;
+}

@@ -54,7 +54,7 @@ public:
 			 0.5f,  0.5f, 0.0f,
 			-0.5f,  0.5f, 0.0f
 		};
-		std::shared_ptr<Hazel::VertexBuffer> squareVB;
+		Hazel::Ref<Hazel::VertexBuffer> squareVB;
 		squareVB.reset(Hazel::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
 		squareVB->SetLayout({
 			{ Hazel::ShaderDataType::Float3, "a_Position" },
@@ -62,7 +62,7 @@ public:
 		m_SquareVA->AddVertexBuffer(squareVB);
 
 		uint32_t squareIndices[] = { 0, 1, 2, 2, 3, 0 };
-		std::shared_ptr<Hazel::IndexBuffer> squareIB;
+		Hazel::Ref<Hazel::IndexBuffer> squareIB;
 		squareIB.reset(Hazel::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
 
 		m_SquareVA->SetIndexBuffer(squareIB);
@@ -106,7 +106,7 @@ public:
 			 0.2f, -0.2f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
 			 0.0f,  0.2f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 		};
-		std::shared_ptr<Hazel::VertexBuffer> triangleVB;
+		Hazel::Ref<Hazel::VertexBuffer> triangleVB;
 		triangleVB.reset(Hazel::VertexBuffer::Create(triangleVertices, sizeof(triangleVertices)));
 		triangleVB->SetLayout({
 			{ Hazel::ShaderDataType::Float3, "a_Position" },
@@ -115,7 +115,7 @@ public:
 		m_TriangleVA->AddVertexBuffer(triangleVB);
 
 		uint32_t triangleIndices[] = { 0, 1, 2 };
-		std::shared_ptr<Hazel::IndexBuffer> triangleIB;
+		Hazel::Ref<Hazel::IndexBuffer> triangleIB;
 		triangleIB.reset(Hazel::IndexBuffer::Create(triangleIndices, sizeof(triangleIndices) / sizeof(uint32_t)));
 
 		m_TriangleVA->SetIndexBuffer(triangleIB);
@@ -204,10 +204,10 @@ public:
 	}
 
 private:
-	std::shared_ptr<Hazel::Shader> m_SquareShader;
-	std::shared_ptr<Hazel::Shader> m_TriangleShader;
-	std::shared_ptr<Hazel::VertexArray> m_SquareVA;
-	std::shared_ptr<Hazel::VertexArray> m_TriangleVA;
+	Hazel::Ref<Hazel::Shader> m_SquareShader;
+	Hazel::Ref<Hazel::Shader> m_TriangleShader;
+	Hazel::Ref<Hazel::VertexArray> m_SquareVA;
+	Hazel::Ref<Hazel::VertexArray> m_TriangleVA;
 
 	Hazel::OrthographicCamera m_Camera;
 
