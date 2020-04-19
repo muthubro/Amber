@@ -12,16 +12,12 @@ namespace Hazel
 class Shader 
 {
 public:
-	Shader(const std::string& vertexSource, const std::string& fragmentSource);
-	~Shader();
+	virtual ~Shader() = default;
 
-	void Bind() const;
-	void Unbind() const;
-	
-	void UploadUniformMat4(const std::string& name, const glm::mat4& matrix) const;
+	virtual void Bind() const = 0;
+	virtual void Unbind() const = 0;
 
-private:
-	uint32_t m_RendererID;
+	static Shader* Create(const std::string& vertexSource, const std::string& fragmentSource);
 };
 
 }

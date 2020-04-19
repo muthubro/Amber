@@ -1,7 +1,10 @@
 #include "Hazel.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <ImGui/imgui.h>
+
+#include "Platform/OpenGL/OpenGLShader.h"
 
 class ExampleLayer : public Hazel::Layer 
 {
@@ -10,7 +13,9 @@ public:
 		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
 			m_CameraPosition(0.0f), m_CameraMoveSpeed(1.0f),
 			m_CameraRotation(0.0f), m_CameraRotationSpeed(20.0f),
-			m_SquareRows(1), m_SquareColumns(1),
+			m_SquareRows(11), m_SquareColumns(11),
+			m_SquareColor1(0.2f, 0.3f, 0.8f),
+			m_SquareColor2(0.8f, 0.3f, 0.2f),
 			m_SquarePosition(0.0f), m_SquareMoveSpeed(1.0f)
 	{
 		// Draw square
@@ -32,12 +37,14 @@ public:
 
 			layout(location = 0) out vec4 color;
 
+			uniform vec3 u_Color;
+
 			void main() {
-				color = vec4(0.0f, 0.47f, 0.75f, 1.0f);
+				color = vec4(u_Color, 1.0);
 			}
 		)";
 
-		m_SquareShader.reset(new Hazel::Shader(squareVertexSource, squareFragmentSource));
+		m_SquareShader.reset(Hazel::Shader::Create(squareVertexSource, squareFragmentSource));
 
 		m_SquareVA.reset(Hazel::VertexArray::Create());
 
@@ -90,14 +97,14 @@ public:
 			}
 		)";
 
-		m_TriangleShader.reset(new Hazel::Shader(triangleVertexSource, triangleFragmentSource));
+		m_TriangleShader.reset(Hazel::Shader::Create(triangleVertexSource, triangleFragmentSource));
 
 		m_TriangleVA.reset(Hazel::VertexArray::Create());
 
 		float triangleVertices[] = {
-			-0.5f, -0.5f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
-			 0.5f, -0.5f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
-			 0.0f,  0.5f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
+			-0.2f, -0.2f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
+			 0.2f, -0.2f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
+			 0.0f,  0.2f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 		};
 		std::shared_ptr<Hazel::VertexBuffer> triangleVB;
 		triangleVB.reset(Hazel::VertexBuffer::Create(triangleVertices, sizeof(triangleVertices)));
@@ -155,6 +162,12 @@ public:
 		{
 			for (int x = 0; x < m_SquareColumns; x++)
 			{
+				m_SquareShader->Bind();
+				if ((x + y) % 2 == 0)
+					std::dynamic_pointer_cast<Hazel::OpenGLShader>(m_SquareShader)->UploadUniformFloat3("u_Color", m_SquareColor1);
+				else
+					std::dynamic_pointer_cast<Hazel::OpenGLShader>(m_SquareShader)->UploadUniformFloat3("u_Color", m_SquareColor2);
+
 				glm::vec3 position(
 					m_SquarePosition.x + (x - m_SquareColumns/2) * 0.11f, 
 					m_SquarePosition.y + (y - m_SquareRows/2) * 0.11f, 
@@ -183,6 +196,8 @@ public:
 		ImGui::Text("Square grid settings:");
 		ImGui::SliderInt("Square rows", &m_SquareRows, 1, 20);
 		ImGui::SliderInt("Square columns", &m_SquareColumns, 1, 20);
+		ImGui::ColorEdit3("Square color 1", glm::value_ptr(m_SquareColor1));
+		ImGui::ColorEdit3("Square color 2", glm::value_ptr(m_SquareColor2));
 		ImGui::SliderFloat("Square translation speed", &m_SquareMoveSpeed, 0.1f, 10.0f);
 
 		ImGui::End();
@@ -198,11 +213,11 @@ private:
 
 	glm::vec3 m_CameraPosition;
 	float m_CameraMoveSpeed;
-
 	float m_CameraRotation;
 	float m_CameraRotationSpeed;
 
 	int m_SquareRows, m_SquareColumns;
+	glm::vec3 m_SquareColor1, m_SquareColor2;
 
 	glm::vec3 m_SquarePosition;
 	float m_SquareMoveSpeed;
