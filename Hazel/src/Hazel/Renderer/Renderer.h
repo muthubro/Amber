@@ -28,7 +28,7 @@ private:
 		glm::mat4 VPMatrix;
 	};
 
-	static SceneData* s_SceneData;
+	static Ref<SceneData> s_SceneData;
 };
 
 }

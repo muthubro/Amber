@@ -1,17 +1,14 @@
 #include "hzpch.h"
-#include "VertexArray.h"
-
-#include "hzpch.h"
-#include "Shader.h"
+#include "Texture.h"
 
 #include "Renderer.h"
 
-#include "Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/OpenGLTexture.h"
 
 namespace Hazel
 {
 
-Ref<Shader> Shader::Create(const std::string& vertexSource, const std::string& fragmentSource)
+Ref<Texture2D> Texture2D::Create(const std::string& path)
 {
 	switch (Renderer::GetAPI())
 	{
@@ -20,7 +17,7 @@ Ref<Shader> Shader::Create(const std::string& vertexSource, const std::string& f
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLShader>(vertexSource, fragmentSource);
+			return std::make_shared<OpenGLTexture2D>(path);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

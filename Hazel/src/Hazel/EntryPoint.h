@@ -5,7 +5,7 @@
 int main() 
 {
 	HZ_LOG_INIT();
-	HZ_CORE_INFO("Logging initialized.");
+	HZ_CORE_WARN("Logging initialized.");
 
 	auto app = Hazel::CreateApplication();
 	app->Run();

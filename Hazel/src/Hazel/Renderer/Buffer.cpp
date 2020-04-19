@@ -72,7 +72,7 @@ void BufferLayout::CalculateOffsetsAndStride()
 	}
 }
 
-VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic) 
+Ref<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic) 
 {
 	switch (Renderer::GetAPI()) 
 	{
@@ -81,7 +81,7 @@ VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic)
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return new OpenGLVertexBuffer(vertices, size, dynamic);
+			return std::make_shared<OpenGLVertexBuffer>(vertices, size, dynamic);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");
@@ -89,7 +89,7 @@ VertexBuffer* VertexBuffer::Create(float* vertices, uint32_t size, bool dynamic)
 	}
 }
 
-IndexBuffer* IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dynamic) 
+Ref<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dynamic) 
 {
 	switch (Renderer::GetAPI()) 
 	{
@@ -98,7 +98,7 @@ IndexBuffer* IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dynamic
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return new OpenGLIndexBuffer(indices, count, dynamic);
+			return std::make_shared<OpenGLIndexBuffer>(indices, count, dynamic);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

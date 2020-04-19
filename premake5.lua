@@ -11,10 +11,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
-IncludeDir["GLFW"] = "Hazel/vendor/GLFW/include"
 IncludeDir["Glad"] = "Hazel/vendor/Glad/include"
-IncludeDir["ImGui"] = "Hazel/vendor/ImGui"
+IncludeDir["GLFW"] = "Hazel/vendor/GLFW/include"
 IncludeDir["glm"] = "Hazel/vendor/glm"
+IncludeDir["ImGui"] = "Hazel/vendor/ImGui"
+IncludeDir["stb_image"] = "Hazel/vendor/stb_image"
 
 group "Dependencies"
 	include "Hazel/vendor/GLFW"
@@ -39,14 +40,17 @@ project "Hazel"
 	files {
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
-		"%{prj.name}/vendor/glm/glm/**.hpp"
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp"
 	}
 	includedirs {
 		"%{prj.name}/src",
-		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.Glad}",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.stb_image}"
 	}
 	links {
 		"GLFW",
