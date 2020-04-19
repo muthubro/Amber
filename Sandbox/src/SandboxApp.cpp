@@ -1,5 +1,6 @@
 #include "Hazel.h"
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <ImGui/imgui.h>
 
 class ExampleLayer : public Hazel::Layer 
@@ -8,7 +9,9 @@ public:
 	ExampleLayer()
 		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
 			m_CameraPosition(0.0f), m_CameraMoveSpeed(1.0f),
-			m_CameraRotation(0.0f), m_CameraRotationSpeed(20.0f)
+			m_CameraRotation(0.0f), m_CameraRotationSpeed(20.0f),
+			m_SquareRows(1), m_SquareColumns(1),
+			m_SquarePosition(0.0f), m_SquareMoveSpeed(1.0f)
 	{
 		// Draw square
 		std::string squareVertexSource = R"(
@@ -17,9 +20,10 @@ public:
 			layout(location = 0) in vec3 a_Position;
 
 			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
 
 			void main() {
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
 			}
 		)";
 
@@ -29,7 +33,7 @@ public:
 			layout(location = 0) out vec4 color;
 
 			void main() {
-				color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				color = vec4(0.0f, 0.47f, 0.75f, 1.0f);
 			}
 		)";
 
@@ -38,10 +42,10 @@ public:
 		m_SquareVA.reset(Hazel::VertexArray::Create());
 
 		float squareVertices[] = {
-			-0.75f, -0.75f, 0.0f,
-			 0.75f, -0.75f, 0.0f,
-			 0.75f,  0.75f, 0.0f,
-			-0.75f,  0.75f, 0.0f
+			-0.5f, -0.5f, 0.0f,
+			 0.5f, -0.5f, 0.0f,
+			 0.5f,  0.5f, 0.0f,
+			-0.5f,  0.5f, 0.0f
 		};
 		std::shared_ptr<Hazel::VertexBuffer> squareVB;
 		squareVB.reset(Hazel::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
@@ -66,10 +70,11 @@ public:
 			layout(location = 0) out vec4 v_Color;
 
 			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
 
 			void main() {
 				v_Color = a_Color;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
 			}
 		)";
 
@@ -126,15 +131,38 @@ public:
 		else if (Hazel::Input::IsKeyPressed(HZ_KEY_D))
 			m_CameraRotation -= m_CameraRotationSpeed * ts;
 
+		if (Hazel::Input::IsKeyPressed(HZ_KEY_J))
+			m_SquarePosition.x -= m_SquareMoveSpeed * ts;
+		else if (Hazel::Input::IsKeyPressed(HZ_KEY_L))
+			m_SquarePosition.x += m_SquareMoveSpeed * ts;
+
+		if (Hazel::Input::IsKeyPressed(HZ_KEY_I))
+			m_SquarePosition.y += m_SquareMoveSpeed * ts;
+		else if (Hazel::Input::IsKeyPressed(HZ_KEY_K))
+			m_SquarePosition.y -= m_SquareMoveSpeed * ts;
+
 		Hazel::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		Hazel::RenderCommand::Clear();
 
 		m_Camera.SetPosition(m_CameraPosition);
 		m_Camera.SetRotation(m_CameraRotation);
 
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+
 		Hazel::Renderer::BeginScene(m_Camera);
 
-		Hazel::Renderer::Submit(m_SquareShader, m_SquareVA);
+		for (int y = 0; y < m_SquareRows; y++)
+		{
+			for (int x = 0; x < m_SquareColumns; x++)
+			{
+				glm::vec3 position(
+					m_SquarePosition.x + (x - m_SquareColumns/2) * 0.11f, 
+					m_SquarePosition.y + (y - m_SquareRows/2) * 0.11f, 
+					0.0f);
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * scale;
+				Hazel::Renderer::Submit(m_SquareShader, m_SquareVA, transform);
+			}
+		}
 		Hazel::Renderer::Submit(m_TriangleShader, m_TriangleVA);
 
 		Hazel::Renderer::EndScene();
@@ -145,8 +173,18 @@ public:
 	void OnImGuiRender() override
 	{
 		ImGui::Begin("Example Layer Toolkit");
-		ImGui::SliderFloat("Translation speed", &m_CameraMoveSpeed, 0.1f, 5.0f);
-		ImGui::SliderFloat("Rotation speed", &m_CameraRotationSpeed, 10.0f, 90.0f);
+
+		ImGui::Text("Camera settings:");
+		ImGui::SliderFloat("Camera translation speed", &m_CameraMoveSpeed, 0.1f, 10.0f);
+		ImGui::SliderFloat("Camera rotation speed", &m_CameraRotationSpeed, 10.0f, 90.0f);
+
+		ImGui::NewLine();
+
+		ImGui::Text("Square grid settings:");
+		ImGui::SliderInt("Square rows", &m_SquareRows, 1, 20);
+		ImGui::SliderInt("Square columns", &m_SquareColumns, 1, 20);
+		ImGui::SliderFloat("Square translation speed", &m_SquareMoveSpeed, 0.1f, 10.0f);
+
 		ImGui::End();
 	}
 
@@ -156,13 +194,18 @@ private:
 	std::shared_ptr<Hazel::VertexArray> m_SquareVA;
 	std::shared_ptr<Hazel::VertexArray> m_TriangleVA;
 
+	Hazel::OrthographicCamera m_Camera;
+
 	glm::vec3 m_CameraPosition;
 	float m_CameraMoveSpeed;
 
 	float m_CameraRotation;
 	float m_CameraRotationSpeed;
 
-	Hazel::OrthographicCamera m_Camera;
+	int m_SquareRows, m_SquareColumns;
+
+	glm::vec3 m_SquarePosition;
+	float m_SquareMoveSpeed;
 };
 
 class Sandbox : public Hazel::Application 
