@@ -1,9 +1,14 @@
 workspace "Hazel"
 	architecture "x64"
-	configurations {
+	configurations
+	{
 		"Debug",
 		"Release",
 		"Dist"
+	}
+	flags
+	{
+		"MultiProcessorCompile"
 	}
 	startproject "Sandbox"
 
@@ -37,14 +42,16 @@ project "Hazel"
 	pchheader "hzpch.h"
 	pchsource "%{prj.name}/src/hzpch.cpp"
 
-	files {
+	files
+	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/stb_image/**.h",
 		"%{prj.name}/vendor/stb_image/**.cpp"
 	}
-	includedirs {
+	includedirs
+	{
 		"%{prj.name}/src",
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.GLFW}",
@@ -52,21 +59,24 @@ project "Hazel"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.stb_image}"
 	}
-	links {
+	links
+	{
 		"GLFW",
 		"Glad",
 		"ImGui",
 		"opengl32.lib"
 	}
 
-	defines {
+	defines
+	{
 		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
 
-		defines {
+		defines
+		{
 			"HZ_PLATFORM_WINDOWS",
 			"GLFW_INCLUDE_NONE"
 		}
@@ -98,23 +108,27 @@ project "Sandbox"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	files {
+	files
+	{
 		"%{prj.name}/src/*.h",
 		"%{prj.name}/src/*.cpp"
 	}
-	includedirs {
+	includedirs
+	{
 		"Hazel/src",
 		"Hazel/vendor",
 		"%{IncludeDir.glm}"
 	}
-	links {
+	links
+	{
 		"Hazel"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
 
-		defines {
+		defines
+		{
 			"HZ_PLATFORM_WINDOWS"
 		}
 
