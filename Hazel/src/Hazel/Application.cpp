@@ -28,8 +28,6 @@ Application::Application()
 	PushOverlay(m_ImGuiLayer);
 }
 
-Application::~Application() {}
-
 void Application::Run() 
 {
 	while (m_Running) 
