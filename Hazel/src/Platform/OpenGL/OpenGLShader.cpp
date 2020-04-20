@@ -31,14 +31,23 @@ OpenGLShader::OpenGLShader(const std::string& filepath)
 	ReadFile(filepath, source);
 	auto shaderSources = PreProcess(source);
 	Compile(shaderSources);
+
+	auto lastSlashPos = filepath.find_last_of("/\\");
+	lastSlashPos = lastSlashPos == std::string::npos ? 0 : lastSlashPos + 1;
+	auto lastDotPos = filepath.rfind('.');
+	auto count = lastDotPos == std::string::npos ?
+		filepath.size() - lastSlashPos :
+		lastDotPos - lastSlashPos;
+
+	m_Name = filepath.substr(lastSlashPos, count);
 }
 
-OpenGLShader::OpenGLShader(const std::string& vertexSource, const std::string& fragmentSource)
+OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
+	: m_Name(name)
 {
 	std::unordered_map<GLenum, std::string> shaderSources;
 	shaderSources[GL_VERTEX_SHADER] = vertexSource;
 	shaderSources[GL_FRAGMENT_SHADER] = fragmentSource;
-
 	Compile(shaderSources);
 }
 
@@ -49,7 +58,7 @@ OpenGLShader::~OpenGLShader()
 
 void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 {
-	std::ifstream in(filepath, std::ios::in, std::ios::binary);
+	std::ifstream in(filepath, std::ios::in | std::ios::binary);
 	if (in)
 	{
 		in.seekg(0, std::ios::end);
@@ -90,11 +99,12 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 
 void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 {
-	std::vector<uint32_t> shaders;
-	shaders.reserve(shaderSources.size());
+	HZ_CORE_ASSERT(shaderSources.size() <= 2, "Only 2 shaders are supported right now!");
+	std::array<uint32_t, 2> shaderIDs;
 
 	uint32_t program = glCreateProgram();
 
+	uint8_t shaderIDIndex = 0;
 	for (auto [type, source] : shaderSources)
 	{
 		const char* src = source.c_str();
@@ -122,7 +132,7 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader
 		else
 		{
 			glAttachShader(program, shader);
-			shaders.push_back(shader);
+			shaderIDs[shaderIDIndex++] = shader;
 		}
 	}
 
@@ -141,13 +151,13 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader
 		HZ_CORE_ASSERT(false, "OpenGLShader program failed to link!");
 
 		glDeleteProgram(program);
-		for (auto shader : shaders)
-			glDeleteShader(shader);
+		for (uint8_t i = 0; i < shaderIDIndex; i++)
+			glDeleteShader(shaderIDs[i]);
 	}
 	m_RendererID = program;
 
-	for (auto shader : shaders)
-		glDetachShader(program, shader);
+	for (uint8_t i = 0; i < shaderIDIndex; i++)
+		glDetachShader(program, shaderIDs[i]);
 }
 
 void OpenGLShader::Bind() const
