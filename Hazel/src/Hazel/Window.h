@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 
 #include "Core.h"
@@ -25,7 +26,7 @@ class HAZEL_API Window
 public:
 	using EventCallbackFn = std::function<void(Event&)>;
 
-	virtual ~Window() {}
+	virtual ~Window() = default;
 
 	virtual void OnUpdate() = 0;
 

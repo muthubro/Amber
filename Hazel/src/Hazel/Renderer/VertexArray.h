@@ -11,7 +11,7 @@ namespace Hazel
 class VertexArray 
 {
 public:
-	virtual ~VertexArray() {}
+	virtual ~VertexArray() = default;
 
 	virtual void AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) = 0;
 	virtual void SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer) = 0;
