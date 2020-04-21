@@ -5,8 +5,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <ImGui/imgui.h>
 
-#include "Platform/OpenGL/OpenGLShader.h"
-
 #include "Sandbox2D.h"
 
 class ExampleLayer : public Hazel::Layer 
@@ -78,7 +76,7 @@ public:
 		m_ChernoLogoTexture = Hazel::Texture2D::Create("assets/textures/ChernoLogo.png");
 
 		textureShader->Bind();
-		std::dynamic_pointer_cast<Hazel::OpenGLShader>(textureShader)->UploadUniformInt("u_Texture", 0);
+		textureShader->SetInt("u_Texture", 0);
 
 		// Draw triangle
 		std::string triangleVertexSource = R"(
@@ -163,9 +161,9 @@ public:
 			{
 				m_FlatColorShader->Bind();
 				if ((x + y) % 2 == 0)
-					std::dynamic_pointer_cast<Hazel::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor1);
+					m_FlatColorShader->SetFloat3("u_Color", m_SquareColor1);
 				else
-					std::dynamic_pointer_cast<Hazel::OpenGLShader>(m_FlatColorShader)->UploadUniformFloat3("u_Color", m_SquareColor2);
+					m_FlatColorShader->SetFloat3("u_Color", m_SquareColor2);
 
 				glm::vec3 position(
 					m_SquarePosition.x + (x - m_SquareColumns/2) * 0.11f, 

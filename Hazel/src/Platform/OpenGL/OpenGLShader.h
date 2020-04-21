@@ -22,10 +22,15 @@ public:
 	void Bind() const override;
 	void Unbind() const override;
 
+	void SetInt(const std::string& name, int value) const override;
+	void SetFloat3(const std::string& name, const glm::vec3& value) const override;
+	void SetFloat4(const std::string& name, const glm::vec4& value) const override;
+	void SetMat4(const std::string& name, const glm::mat4& value) const override;
+
 	inline const std::string& GetName() const override { return m_Name; }
 
-	void UploadUniformInt(const std::string& name, const int value) const;
-	void UploadUniformFloat(const std::string& name, const float value) const;
+	void UploadUniformInt(const std::string& name, int value) const;
+	void UploadUniformFloat(const std::string& name, float value) const;
 	void UploadUniformFloat2(const std::string& name, const glm::vec2& values) const;
 	void UploadUniformFloat3(const std::string& name, const glm::vec3& values) const;
 	void UploadUniformFloat4(const std::string& name, const glm::vec4& values) const;
