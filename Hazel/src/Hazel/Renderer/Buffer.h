@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "Hazel/Core/Core.h"
 
 namespace Hazel 
@@ -18,9 +21,11 @@ struct BufferElement
 {
 	std::string Name;
 	ShaderDataType Type;
-	uint32_t Size, Offset;
+	uint32_t Size; 
+	size_t Offset;
 	bool Normalized;
 
+	BufferElement() = default;
 	BufferElement(ShaderDataType type, const std::string& name, bool normalized = false);
 
 	uint8_t GetComponentCount() const;
