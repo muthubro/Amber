@@ -14,6 +14,7 @@ class Renderer
 {
 public:
 	static void Init();
+	static void Shutdown();
 
 	static void BeginScene(const OrthographicCamera& camera);
 	static void EndScene();

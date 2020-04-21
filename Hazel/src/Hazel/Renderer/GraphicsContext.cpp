@@ -1,16 +1,14 @@
 #include "hzpch.h"
-#include "RendererAPI.h"
+#include "GraphicsContext.h"
 
 #include "Hazel/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLRendererAPI.h"
+#include "Platform/OpenGL/OpenGLContext.h"
 
-namespace Hazel 
+namespace Hazel
 {
 
-RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
-
-Scope<RendererAPI> RendererAPI::Create()
+Scope<GraphicsContext> GraphicsContext::Create(void* window)
 {
 	switch (Renderer::GetAPI())
 	{
@@ -19,7 +17,7 @@ Scope<RendererAPI> RendererAPI::Create()
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return CreateScope<OpenGLRendererAPI>();
+			return CreateScope<OpenGLContext>(static_cast<GLFWwindow*>(window));
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

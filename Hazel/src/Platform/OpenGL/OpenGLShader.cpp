@@ -62,10 +62,17 @@ void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 	if (in)
 	{
 		in.seekg(0, std::ios::end);
-		data.resize(in.tellg());
-		in.seekg(0, std::ios::beg);
-		in.read(&data[0], data.size());
-		in.close();
+		size_t size = in.tellg();
+		if (size != -1)
+		{
+			data.resize(in.tellg());
+			in.seekg(0, std::ios::beg);
+			in.read(&data[0], data.size());
+		}
+		else
+		{
+			HZ_CORE_ERROR("Shader file '{0}' could not be read!", filepath);
+		}
 	}
 	else
 	{

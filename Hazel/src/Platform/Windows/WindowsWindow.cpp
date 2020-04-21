@@ -5,8 +5,6 @@
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
 
-#include "Platform/OpenGL/OpenGLContext.h"
-
 namespace Hazel 
 {
 
@@ -47,7 +45,7 @@ void WindowsWindow::Init(const WindowProps& props)
 	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
 	s_GLFWWindowCount++;
 
-	m_Context = CreateScope<OpenGLContext>(m_Window);
+	m_Context = GraphicsContext::Create(m_Window);
 	m_Context->Init();
 
 	glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -140,8 +138,9 @@ void WindowsWindow::Init(const WindowProps& props)
 void WindowsWindow::Shutdown()
 {
 	glfwDestroyWindow(m_Window);
+	s_GLFWWindowCount--;
 
-	if (--s_GLFWWindowCount == 0)
+	if (s_GLFWWindowCount == 0)
 	{
 		HZ_CORE_INFO("Terminating GLFW");
 		glfwTerminate();
