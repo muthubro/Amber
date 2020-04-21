@@ -3,10 +3,10 @@
 
 #include <GLFW/glfw3.h>
 
-#include "Input.h"
-#include "Window.h"
+#include "Hazel/Core/Input.h"
+#include "Hazel/Core/Window.h"
 
-#include "Renderer/Renderer.h"
+#include "Hazel/Renderer/Renderer.h"
 
 namespace Hazel 
 {
@@ -14,7 +14,6 @@ namespace Hazel
 Application* Application::s_Instance = nullptr;
 
 Application::Application()
-	: m_Running(true), m_LastFrameTime(0.0f)
 {
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
@@ -36,8 +35,11 @@ void Application::Run()
 		Timestep ts = time - m_LastFrameTime;
 		m_LastFrameTime = time;
 
-		for (Layer* layer : m_LayerStack)
-			layer->OnUpdate(ts);
+		if (!m_Minimized)
+		{
+			for (Layer* layer : m_LayerStack)
+				layer->OnUpdate(ts);
+		}
 
 		m_ImGuiLayer->Begin();
 		for (Layer* layer : m_LayerStack)
@@ -52,6 +54,7 @@ void Application::OnEvent(Event& event)
 {
 	EventDispatcher dispatcher(event);
 	dispatcher.Dispatch<WindowCloseEvent>(HZ_BIND_EVENT_FN(Application::OnWindowClose));
+	dispatcher.Dispatch<WindowResizeEvent>(HZ_BIND_EVENT_FN(Application::OnWindowResize));
 
 	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) 
 	{
@@ -71,10 +74,21 @@ void Application::PushOverlay(Layer* overlay)
 	m_LayerStack.PushOverlay(overlay);
 }
 
-bool Application::OnWindowClose(WindowCloseEvent& event) 
+bool Application::OnWindowClose(WindowCloseEvent& e) 
 {
 	m_Running = false;
 	return true;
+}
+
+bool Application::OnWindowResize(WindowResizeEvent& e)
+{
+	if (e.GetWidth() == 0 || e.GetHeight() == 0)
+		m_Minimized = true;
+	else
+		m_Minimized = false;
+
+	Renderer::OnWindowResize((uint32_t)e.GetWidth(), (uint32_t)e.GetHeight());
+	return false;
 }
 
 }

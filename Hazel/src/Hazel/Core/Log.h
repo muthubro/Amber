@@ -2,15 +2,15 @@
 
 #ifdef HZ_DEBUG
 
-#include "spdlog/spdlog.h"
-#include "spdlog/fmt/ostr.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
 
-#include "Core.h"
+#include "Hazel/Core/Core.h"
 
 namespace Hazel 
 {
 
-class HAZEL_API Log
+class Log
 {
 public:
 	static void Init();

@@ -83,15 +83,17 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 	while (pos != std::string::npos)
 	{
 		size_t eol = source.find_first_of("\r\n", pos);
-		HZ_CORE_ASSERT(eol != std::string::npos, "Shader syntax error");
+		HZ_CORE_ASSERT(eol != std::string::npos, "Shader syntax error!");
 		size_t begin = source.find_first_not_of(" ", pos + tokenLength);
 		std::string type = source.substr(begin, eol - begin);
 		
 		size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+		HZ_CORE_ASSERT(nextLinePos != std::string::npos, "Shader syntax error!");
 		pos = source.find(typeToken, nextLinePos);
-		shaderSources[ShaderTypeFromString(type)] = source.substr(
-			nextLinePos, 
-			pos - (nextLinePos == std::string::npos ? source.size()-1 : nextLinePos));
+
+		shaderSources[ShaderTypeFromString(type)] = pos == std::string::npos ?
+			source.substr(nextLinePos) :
+			source.substr(nextLinePos, pos - nextLinePos);
 	}
 
 	return shaderSources;
@@ -152,12 +154,20 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader
 
 		glDeleteProgram(program);
 		for (uint8_t i = 0; i < shaderIDIndex; i++)
+		{
+			glDetachShader(program, shaderIDs[i]);
 			glDeleteShader(shaderIDs[i]);
+		}
+
+		return;
 	}
 	m_RendererID = program;
 
 	for (uint8_t i = 0; i < shaderIDIndex; i++)
+	{
 		glDetachShader(program, shaderIDs[i]);
+		glDeleteShader(shaderIDs[i]);
+	}
 }
 
 void OpenGLShader::Bind() const

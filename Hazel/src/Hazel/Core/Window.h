@@ -3,8 +3,8 @@
 #include <functional>
 #include <string>
 
-#include "Core.h"
-#include "Events/Event.h"
+#include "Hazel/Core/Core.h"
+#include "Hazel/Events/Event.h"
 
 namespace Hazel 
 {
@@ -21,7 +21,7 @@ struct WindowProps
 		: Title(title), Width(width), Height(height) {}
 };
 
-class HAZEL_API Window 
+class Window 
 {
 public:
 	using EventCallbackFn = std::function<void(Event&)>;
@@ -39,7 +39,7 @@ public:
 
 	virtual void* GetNativeWindow() const = 0;
 
-	static Window* Create(const WindowProps& props = WindowProps());
+	static Scope<Window> Create(const WindowProps& props = WindowProps());
 };
 
 }

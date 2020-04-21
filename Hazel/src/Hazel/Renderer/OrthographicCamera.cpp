@@ -8,9 +8,14 @@ namespace Hazel
 {
 
 OrthographicCamera::OrthographicCamera(float left, float right, float bottom, float top, float zNear, float zFar)
-	: m_ViewMatrix(1.0f), m_ProjectionMatrix(glm::ortho(left, right, bottom, top, zNear, zFar)),
-		m_VPMatrix(m_ProjectionMatrix * m_ViewMatrix),
-		m_Position(0.0f), m_Rotation(0.0f) {}
+	: m_ProjectionMatrix(glm::ortho(left, right, bottom, top, zNear, zFar)),
+		m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix) {}
+
+void OrthographicCamera::SetProjection(float left, float right, float bottom, float top, float zNear, float zFar)
+{
+	m_ProjectionMatrix = glm::ortho(left, right, bottom, top, zNear, zFar);
+	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+}
 
 void OrthographicCamera::SetPosition(glm::vec3 position)
 {
@@ -31,7 +36,7 @@ void OrthographicCamera::CalculateViewMatrix()
 	transform = glm::rotate(transform, glm::radians(m_Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	m_ViewMatrix = glm::inverse(transform);
-	m_VPMatrix = m_ProjectionMatrix * m_ViewMatrix;
+	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
 }

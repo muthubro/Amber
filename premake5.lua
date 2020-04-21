@@ -74,12 +74,7 @@ project "Hazel"
 
 	filter "system:windows"
 		systemversion "latest"
-
-		defines
-		{
-			"HZ_PLATFORM_WINDOWS",
-			"GLFW_INCLUDE_NONE"
-		}
+		defines "GLFW_INCLUDE_NONE"
 
 	filter "configurations:Debug"
 		defines "HZ_DEBUG"
@@ -126,11 +121,6 @@ project "Sandbox"
 
 	filter "system:windows"
 		systemversion "latest"
-
-		defines
-		{
-			"HZ_PLATFORM_WINDOWS"
-		}
 
 	filter "configurations:Debug"
 		defines "HZ_DEBUG"

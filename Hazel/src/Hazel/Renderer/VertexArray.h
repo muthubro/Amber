@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 
-#include "Buffer.h"
+#include "Hazel/Renderer/Buffer.h"
 
 namespace Hazel 
 {

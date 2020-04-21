@@ -28,7 +28,6 @@ static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
 }
 
 OpenGLVertexArray::OpenGLVertexArray()
-	: m_VertexBufferIndex(0)
 {
 	glCreateVertexArrays(1, &m_RendererID);
 }

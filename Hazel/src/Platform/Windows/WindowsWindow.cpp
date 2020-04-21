@@ -1,33 +1,33 @@
 #include "hzpch.h"
-#include "OpenGLWindow.h"
-
-#include <glad/glad.h>
+#include "WindowsWindow.h"
 
 #include "Hazel/Events/ApplicationEvent.h"
 #include "Hazel/Events/KeyEvent.h"
 #include "Hazel/Events/MouseEvent.h"
 
+#include "Platform/OpenGL/OpenGLContext.h"
+
 namespace Hazel 
 {
 
-static bool s_GLFWInitialized = false;
+static uint8_t s_GLFWWindowCount = 0;
 
-Window* Window::Create(const WindowProps& props) 
+Scope<Window> Window::Create(const WindowProps& props)
 {
-	return new OpenGLWindow(props);
+	return CreateScope<WindowsWindow>(props);
 }
 
-OpenGLWindow::OpenGLWindow(const WindowProps& props) 
+WindowsWindow::WindowsWindow(const WindowProps& props)
 {
 	Init(props);
 }
 
-OpenGLWindow::~OpenGLWindow() 
+WindowsWindow::~WindowsWindow()
 {
 	Shutdown();
 }
 
-void OpenGLWindow::Init(const WindowProps& props) 
+void WindowsWindow::Init(const WindowProps& props)
 {
 	m_Data.Title = props.Title;
 	m_Data.Width = props.Width;
@@ -35,34 +35,27 @@ void OpenGLWindow::Init(const WindowProps& props)
 
 	HZ_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
-	if (!s_GLFWInitialized) 
+	if (s_GLFWWindowCount == 0)
 	{
 		int success = glfwInit();
 		HZ_CORE_ASSERT(success, "Could not initialize GLFW!");
 		glfwSetErrorCallback([](int error, const char* description) {
 			HZ_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 		});
-
-		s_GLFWInitialized = true;
 	}
 
-	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, props.Title.c_str(), nullptr, nullptr);
+	m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+	s_GLFWWindowCount++;
 
-	glfwMakeContextCurrent(m_Window);
-	int success = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-	HZ_CORE_ASSERT(success, "Could not initialize Glad!");
-
-	HZ_CORE_INFO("OpenGL Info:");
-	HZ_CORE_INFO("	Vendor: {0}", glGetString(GL_VENDOR));
-	HZ_CORE_INFO("	Renderer: {0}", glGetString(GL_RENDERER));
-	HZ_CORE_INFO("	Version: {0}", glGetString(GL_VERSION));
+	m_Context = CreateScope<OpenGLContext>(m_Window);
+	m_Context->Init();
 
 	glfwSetWindowUserPointer(m_Window, &m_Data);
 	SetVSync(true);
 
 	// Set GLFW callbacks
 	glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height) {
-		WindowData& data = *(WindowData*) glfwGetWindowUserPointer(window);
+		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 		data.Width = width;
 		data.Height = height;
 
@@ -78,24 +71,24 @@ void OpenGLWindow::Init(const WindowProps& props)
 
 	glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		
-		switch (action) 
+
+		switch (action)
 		{
-			case GLFW_PRESS: 
+			case GLFW_PRESS:
 			{
 				KeyPressedEvent event(key, 0);
 				data.EventCallback(event);
 				break;
 			}
-		
-			case GLFW_REPEAT: 
+
+			case GLFW_REPEAT:
 			{
 				KeyPressedEvent event(key, 1);
 				data.EventCallback(event);
 				break;
 			}
 
-			case GLFW_RELEASE: 
+			case GLFW_RELEASE:
 			{
 				KeyReleasedEvent event(key);
 				data.EventCallback(event);
@@ -113,16 +106,16 @@ void OpenGLWindow::Init(const WindowProps& props)
 	glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-		switch (action) 
+		switch (action)
 		{
-			case GLFW_PRESS: 
+			case GLFW_PRESS:
 			{
 				MouseButtonPressedEvent event(button);
 				data.EventCallback(event);
 				break;
 			}
 
-			case GLFW_RELEASE: 
+			case GLFW_RELEASE:
 			{
 				MouseButtonReleasedEvent event(button);
 				data.EventCallback(event);
@@ -133,7 +126,7 @@ void OpenGLWindow::Init(const WindowProps& props)
 
 	glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xpos, double ypos) {
 		WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-		MouseMovedEvent event((float) xpos, (float) ypos);
+		MouseMovedEvent event((float)xpos, (float)ypos);
 		data.EventCallback(event);
 	});
 
@@ -144,19 +137,24 @@ void OpenGLWindow::Init(const WindowProps& props)
 	});
 }
 
-void OpenGLWindow::Shutdown() 
+void WindowsWindow::Shutdown()
 {
 	glfwDestroyWindow(m_Window);
-	glfwTerminate();
+
+	if (--s_GLFWWindowCount == 0)
+	{
+		HZ_CORE_INFO("Terminating GLFW");
+		glfwTerminate();
+	}
 }
 
-void OpenGLWindow::OnUpdate() 
+void WindowsWindow::OnUpdate()
 {
 	glfwPollEvents();
-	glfwSwapBuffers(m_Window);
+	m_Context->SwapBuffers();
 }
 
-void OpenGLWindow::SetVSync(bool enabled) 
+void WindowsWindow::SetVSync(bool enabled)
 {
 	if (enabled)
 		glfwSwapInterval(1);
@@ -166,7 +164,7 @@ void OpenGLWindow::SetVSync(bool enabled)
 	m_Data.VSync = enabled;
 }
 
-bool OpenGLWindow::IsVSync() const
+bool WindowsWindow::IsVSync() const
 {
 	return m_Data.VSync;
 }

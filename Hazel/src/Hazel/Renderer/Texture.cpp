@@ -1,7 +1,7 @@
 #include "hzpch.h"
 #include "Texture.h"
 
-#include "Renderer.h"
+#include "Hazel/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLTexture.h"
 
@@ -17,7 +17,7 @@ Ref<Texture2D> Texture2D::Create(const std::string& path)
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLTexture2D>(path);
+			return CreateRef<OpenGLTexture2D>(path);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

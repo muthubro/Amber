@@ -2,13 +2,13 @@
 
 #include <vector>
 
-#include "Core.h"
-#include "Layer.h"
+#include "Hazel/Core/Core.h"
+#include "Hazel/Core/Layer.h"
 
 namespace Hazel 
 {
 
-class HAZEL_API LayerStack 
+class LayerStack 
 {
 public:
 	LayerStack();
@@ -24,7 +24,7 @@ public:
 
 private:
 	std::vector<Layer*> m_Layers;
-	unsigned int m_LayerInsertIndex = 0;
+	uint32_t m_LayerInsertIndex = 0;
 };
 
 }

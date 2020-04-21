@@ -10,9 +10,9 @@ class ExampleLayer : public Hazel::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_Camera(-1.6f, 1.6f, -0.9f, 0.9f),
-			m_CameraPosition(0.0f), m_CameraMoveSpeed(1.0f),
-			m_CameraRotation(0.0f), m_CameraRotationSpeed(20.0f),
+		: Layer("Example"),
+			m_CameraController(1280.0f / 720.0f, true),
+			m_CameraTranslationSpeed(1.0f), m_CameraRotationSpeed(20.0f),
 			m_SquareRows(11), m_SquareColumns(11),
 			m_SquareColor1(0.2f, 0.3f, 0.8f),
 			m_SquareColor2(0.8f, 0.3f, 0.2f),
@@ -133,20 +133,9 @@ public:
 
 	void OnUpdate(Hazel::Timestep ts) override 
 	{
-		if (Hazel::Input::IsKeyPressed(HZ_KEY_LEFT))
-			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-		else if (Hazel::Input::IsKeyPressed(HZ_KEY_RIGHT))
-			m_CameraPosition.x += m_CameraMoveSpeed * ts;
-
-		if (Hazel::Input::IsKeyPressed(HZ_KEY_UP))
-			m_CameraPosition.y += m_CameraMoveSpeed * ts;
-		else if (Hazel::Input::IsKeyPressed(HZ_KEY_DOWN))
-			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
-		if (Hazel::Input::IsKeyPressed(HZ_KEY_A))
-			m_CameraRotation += m_CameraRotationSpeed * ts;
-		else if (Hazel::Input::IsKeyPressed(HZ_KEY_D))
-			m_CameraRotation -= m_CameraRotationSpeed * ts;
+		m_CameraController.SetCameraTranslationSpeed(m_CameraTranslationSpeed);
+		m_CameraController.SetCameraRotationSpeed(m_CameraRotationSpeed);
+		m_CameraController.OnUpdate(ts);
 
 		if (Hazel::Input::IsKeyPressed(HZ_KEY_J))
 			m_SquarePosition.x -= m_SquareMoveSpeed * ts;
@@ -161,12 +150,9 @@ public:
 		Hazel::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		Hazel::RenderCommand::Clear();
 
-		m_Camera.SetPosition(m_CameraPosition);
-		m_Camera.SetRotation(m_CameraRotation);
-
 		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-		Hazel::Renderer::BeginScene(m_Camera);
+		Hazel::Renderer::BeginScene(m_CameraController.GetCamera());
 
 		for (int y = 0; y < m_SquareRows; y++)
 		{
@@ -200,12 +186,17 @@ public:
 		Hazel::Renderer::EndScene();
 	}
 
+	void OnEvent(Hazel::Event& e) override
+	{
+		m_CameraController.OnEvent(e);
+	}
+
 	void OnImGuiRender() override
 	{
 		ImGui::Begin("Example Layer Toolkit");
 
 		ImGui::Text("Camera settings:");
-		ImGui::SliderFloat("Camera translation speed", &m_CameraMoveSpeed, 0.1f, 10.0f);
+		ImGui::SliderFloat("Camera translation speed", &m_CameraTranslationSpeed, 0.1f, 10.0f);
 		ImGui::SliderFloat("Camera rotation speed", &m_CameraRotationSpeed, 10.0f, 90.0f);
 
 		ImGui::NewLine();
@@ -230,11 +221,9 @@ private:
 	Hazel::Ref<Hazel::VertexArray> m_SquareVA;
 	Hazel::Ref<Hazel::VertexArray> m_TriangleVA;
 
-	Hazel::OrthographicCamera m_Camera;
+	Hazel::OrthographicCameraController m_CameraController;
 
-	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed;
-	float m_CameraRotation;
+	float m_CameraTranslationSpeed;
 	float m_CameraRotationSpeed;
 
 	int m_SquareRows, m_SquareColumns;

@@ -1,10 +1,8 @@
 #include "hzpch.h"
 #include "VertexArray.h"
 
-#include "hzpch.h"
-#include "Shader.h"
-
-#include "Renderer.h"
+#include "Hazel/Renderer/Renderer.h"
+#include "Hazel/Renderer/Shader.h"
 
 #include "Platform/OpenGL/OpenGLShader.h"
 
@@ -20,7 +18,7 @@ Ref<Shader> Shader::Create(const std::string& filepath)
 		return nullptr;
 
 	case RendererAPI::API::OpenGL:
-		return std::make_shared<OpenGLShader>(filepath);
+		return CreateRef<OpenGLShader>(filepath);
 
 	default:
 		HZ_CORE_ASSERT(false, "Unknown Renderer API");
@@ -37,7 +35,7 @@ Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSou
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLShader>(name, vertexSource, fragmentSource);
+			return CreateRef<OpenGLShader>(name, vertexSource, fragmentSource);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

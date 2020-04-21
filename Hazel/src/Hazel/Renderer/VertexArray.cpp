@@ -1,7 +1,7 @@
 #include "hzpch.h"
 #include "VertexArray.h"
 
-#include "Renderer.h"
+#include "Hazel/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLVertexArray.h"
 
@@ -17,7 +17,7 @@ Ref<VertexArray> VertexArray::Create()
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLVertexArray>();
+			return CreateRef<OpenGLVertexArray>();
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");

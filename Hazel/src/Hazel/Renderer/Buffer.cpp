@@ -1,7 +1,7 @@
 #include "hzpch.h"
 #include "Buffer.h"
 
-#include "Renderer.h"
+#include "Hazel/Renderer/Renderer.h"
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
 
@@ -81,7 +81,7 @@ Ref<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size, bool dyna
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLVertexBuffer>(vertices, size, dynamic);
+			return CreateRef<OpenGLVertexBuffer>(vertices, size, dynamic);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");
@@ -98,7 +98,7 @@ Ref<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t count, bool dyn
 			return nullptr;
 
 		case RendererAPI::API::OpenGL:
-			return std::make_shared<OpenGLIndexBuffer>(indices, count, dynamic);
+			return CreateRef<OpenGLIndexBuffer>(indices, count, dynamic);
 
 		default:
 			HZ_CORE_ASSERT(false, "Unknown Renderer API");
