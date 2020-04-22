@@ -10,7 +10,7 @@
 namespace Hazel
 {
 
-static GLenum ShaderTypeFromString(const std::string& type)
+static uint32_t ShaderTypeFromString(const std::string& type)
 {
 	if (type == "vertex")
 	{
@@ -49,7 +49,7 @@ OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSou
 {
 	HZ_PROFILE_FUNCTION();
 
-	std::unordered_map<GLenum, std::string> shaderSources;
+	std::unordered_map<uint32_t, std::string> shaderSources;
 	shaderSources[GL_VERTEX_SHADER] = vertexSource;
 	shaderSources[GL_FRAGMENT_SHADER] = fragmentSource;
 	Compile(shaderSources);
@@ -88,11 +88,11 @@ void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 	}
 }
 
-std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
+std::unordered_map<uint32_t, std::string> OpenGLShader::PreProcess(const std::string& source)
 {
 	HZ_PROFILE_FUNCTION();
 
-	std::unordered_map<GLenum, std::string> shaderSources;
+	std::unordered_map<uint32_t, std::string> shaderSources;
 
 	const char* typeToken = "#type";
 	size_t tokenLength = strlen(typeToken);
@@ -116,7 +116,7 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 	return shaderSources;
 }
 
-void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
+void OpenGLShader::Compile(const std::unordered_map<uint32_t, std::string>& shaderSources)
 {
 	HZ_PROFILE_FUNCTION();
 

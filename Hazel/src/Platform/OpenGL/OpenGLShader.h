@@ -9,9 +9,6 @@
 namespace Hazel
 {
 
-// TODO: REMOVE!
-using GLenum = unsigned int;
-
 class OpenGLShader : public Shader
 {
 public:
@@ -28,8 +25,6 @@ public:
 	void SetFloat4(const std::string& name, const glm::vec4& value) override;
 	void SetMat4(const std::string& name, const glm::mat4& value) override;
 
-	inline const std::string& GetName() const override { return m_Name; }
-
 	void UploadUniformInt(const std::string& name, int value);
 	void UploadUniformFloat(const std::string& name, float value);
 	void UploadUniformFloat2(const std::string& name, const glm::vec2& values);
@@ -38,14 +33,16 @@ public:
 	void UploadUniformMat3(const std::string& name, const glm::mat3& matrix);
 	void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 
-private:
-	void ReadFile(const std::string& filepath, std::string& data);
-	std::unordered_map<GLenum, std::string> PreProcess(const std::string& source);
-	void Compile(const std::unordered_map<GLenum, std::string>& shaderSources);
+	inline const std::string& GetName() const override { return m_Name; }
 
+private:
 	std::unordered_map<std::string, int> m_LocationMap;
 	uint32_t m_RendererID;
 	std::string m_Name;
+
+	void ReadFile(const std::string& filepath, std::string& data);
+	std::unordered_map<uint32_t, std::string> PreProcess(const std::string& source);
+	void Compile(const std::unordered_map<uint32_t, std::string>& shaderSources);
 };
 
 }

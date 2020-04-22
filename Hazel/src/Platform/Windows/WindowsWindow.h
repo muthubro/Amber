@@ -36,13 +36,12 @@ private:
 		EventCallbackFn EventCallback;
 	};
 
-	virtual void Init(const WindowProps& props);
-	virtual void Shutdown();
-
 	GLFWwindow* m_Window;
 	Scope<GraphicsContext> m_Context;
-
 	WindowData m_Data;
+
+	virtual void Init(const WindowProps& props);
+	virtual void Shutdown();
 };
 
 }

@@ -7,8 +7,6 @@
 namespace Hazel
 {
 
-Scope<Input> Input::s_Instance = CreateScope<WindowsInput>();
-
 bool WindowsInput::IsKeyPressedImpl(KeyCode keycode) const
 {
 	auto window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());

@@ -47,10 +47,10 @@ public:
 	inline std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
 
 private:
-	void CalculateOffsetsAndStride();
-
 	std::vector<BufferElement> m_Elements;
 	uint32_t m_Stride;
+	
+	void CalculateOffsetsAndStride();
 };
 
 class VertexBuffer 

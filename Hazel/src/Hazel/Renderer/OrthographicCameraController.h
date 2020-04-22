@@ -25,9 +25,6 @@ public:
 	void OnEvent(Event& e);
 
 private:
-	bool OnWindowResize(WindowResizeEvent& e);
-	bool OnMouseScrolled(MouseScrolledEvent& e);
-
 	float m_AspectRatio;
 	float m_ZoomLevel = 1.0f;
 	bool m_RotationEnabled;
@@ -39,6 +36,9 @@ private:
 	
 	float m_CameraRotation = 0.0f;
 	float m_CameraRotationSpeed = 20.0f;
+
+	bool OnWindowResize(WindowResizeEvent& e);
+	bool OnMouseScrolled(MouseScrolledEvent& e);
 };
 
 }
