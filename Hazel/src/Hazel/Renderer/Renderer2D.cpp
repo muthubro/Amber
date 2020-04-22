@@ -21,9 +21,12 @@ static Renderer2DStorage* s_Data;
 
 void Renderer2D::Init()
 {
+	HZ_PROFILE_FUNCTION();
+
 	s_Data = new Renderer2DStorage();
 
 	s_Data->TextureShader = Shader::Create("assets/shaders/Texture.glsl");
+	s_Data->TextureShader->Bind();
 	s_Data->TextureShader->SetInt("u_Texture", 0);
 
 	s_Data->WhiteTexture = Texture2D::Create(1, 1);
@@ -55,43 +58,57 @@ void Renderer2D::Init()
 
 void Renderer2D::Shutdown()
 {
+	HZ_PROFILE_FUNCTION();
+
 	delete s_Data;
 }
 
 void Renderer2D::BeginScene(const OrthographicCamera& camera)
 {
+	HZ_PROFILE_FUNCTION();
+
 	s_Data->TextureShader->Bind();
 	s_Data->TextureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 }
 
 void Renderer2D::EndScene()
 {
+	HZ_PROFILE_FUNCTION();
 }
 
 void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-	DrawQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data->WhiteTexture, color);
+	DrawQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data->WhiteTexture, 1.0f, color);
 }
 
 void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-	DrawQuad(position, size, rotation, s_Data->WhiteTexture, color);
+	DrawQuad(position, size, rotation, s_Data->WhiteTexture, 1.0f, color);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color)
+void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture,
+	float tilingFactor, const glm::vec4& color)
 {
-	DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, color);
+	DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, color);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color)
+void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, 
+	float tilingFactor, const glm::vec4& color)
 {
-	s_Data->TextureShader->SetFloat4("u_Color", color);
+	HZ_PROFILE_FUNCTION();
+
 	texture->Bind();
+	s_Data->TextureShader->SetFloat("u_TilingFactor", tilingFactor);
+	s_Data->TextureShader->SetFloat4("u_Color", color);
 
 	glm::mat4 transform(1.0f);
-	transform = glm::translate(transform, position);
-	transform = glm::rotate(transform, glm::radians(rotation), { 0.0f, 0.0f, 1.0f });
-	transform = glm::scale(transform, { size.x, size.y, 1.0f });
+	{
+		HZ_PROFILE_SCOPE("DrawQuad Compute Transform");
+		transform = glm::translate(transform, position);
+		if (rotation)		// Avoid needless math (rotation is slightly expensive)
+			transform = glm::rotate(transform, glm::radians(rotation), { 0.0f, 0.0f, 1.0f });
+		transform = glm::scale(transform, { size.x, size.y, 1.0f });
+	}
 	s_Data->TextureShader->SetMat4("u_Transform", transform);
 
 	s_Data->QuadVertexArray->Bind();

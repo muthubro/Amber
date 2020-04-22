@@ -27,6 +27,8 @@ static GLenum ShaderTypeFromString(const std::string& type)
 
 OpenGLShader::OpenGLShader(const std::string& filepath)
 {
+	HZ_PROFILE_FUNCTION();
+
 	std::string source;
 	ReadFile(filepath, source);
 	auto shaderSources = PreProcess(source);
@@ -45,6 +47,8 @@ OpenGLShader::OpenGLShader(const std::string& filepath)
 OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
 	: m_Name(name)
 {
+	HZ_PROFILE_FUNCTION();
+
 	std::unordered_map<GLenum, std::string> shaderSources;
 	shaderSources[GL_VERTEX_SHADER] = vertexSource;
 	shaderSources[GL_FRAGMENT_SHADER] = fragmentSource;
@@ -53,11 +57,15 @@ OpenGLShader::OpenGLShader(const std::string& name, const std::string& vertexSou
 
 OpenGLShader::~OpenGLShader()
 {
+	HZ_PROFILE_FUNCTION();
+
 	glDeleteProgram(m_RendererID);
 }
 
 void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 {
+	HZ_PROFILE_FUNCTION();
+
 	std::ifstream in(filepath, std::ios::in | std::ios::binary);
 	if (in)
 	{
@@ -82,6 +90,8 @@ void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 
 std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::string& source)
 {
+	HZ_PROFILE_FUNCTION();
+
 	std::unordered_map<GLenum, std::string> shaderSources;
 
 	const char* typeToken = "#type";
@@ -108,6 +118,8 @@ std::unordered_map<GLenum, std::string> OpenGLShader::PreProcess(const std::stri
 
 void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shaderSources)
 {
+	HZ_PROFILE_FUNCTION();
+
 	HZ_CORE_ASSERT(shaderSources.size() <= 2, "Only 2 shaders are supported right now!");
 	std::array<uint32_t, 2> shaderIDs;
 
@@ -179,91 +191,131 @@ void OpenGLShader::Compile(const std::unordered_map<GLenum, std::string>& shader
 
 void OpenGLShader::Bind() const
 {
+	HZ_PROFILE_FUNCTION();
+
 	glUseProgram(m_RendererID);
 }
 
 void OpenGLShader::Unbind() const
 {
+	HZ_PROFILE_FUNCTION();
+
 	glUseProgram(0);
 }
 
-void OpenGLShader::SetInt(const std::string& name, int value) const
+void OpenGLShader::SetInt(const std::string& name, int value)
 {
+	HZ_PROFILE_FUNCTION();
+
 	UploadUniformInt(name, value);
 }
 
-void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value) const
+void OpenGLShader::SetFloat(const std::string& name, float value)
 {
+	HZ_PROFILE_FUNCTION();
+
+	UploadUniformFloat(name, value);
+}
+
+void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value)
+{
+	HZ_PROFILE_FUNCTION();
+
 	UploadUniformFloat3(name, value);
 }
 
-void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value) const
+void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value)
 {
+	HZ_PROFILE_FUNCTION();
+
 	UploadUniformFloat4(name, value);
 }
 
-void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value) const
+void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value)
 {
+	HZ_PROFILE_FUNCTION();
+
 	UploadUniformMat4(name, value);
 }
 
-void OpenGLShader::UploadUniformInt(const std::string& name, int value) const
+void OpenGLShader::UploadUniformInt(const std::string& name, int value)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform1i(location, value);
 }
 
-void OpenGLShader::UploadUniformFloat(const std::string& name, float value) const
+void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform1f(location, value);
 }
 
-void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& values) const
+void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& values)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform2f(location, values.x, values.y);
 }
 
-void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& values) const
+void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& values)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform3f(location, values.x, values.y, values.z);
 }
 
-void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& values) const
+void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& values)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform4f(location, values.x, values.y, values.z, values.w);
 }
 
-void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix) const
+void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix) const
+void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 {
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
 	if (location == -1)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else

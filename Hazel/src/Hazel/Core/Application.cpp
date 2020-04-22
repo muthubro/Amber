@@ -15,6 +15,8 @@ Application* Application::s_Instance = nullptr;
 
 Application::Application()
 {
+	HZ_PROFILE_FUNCTION();
+
 	HZ_CORE_ASSERT(!s_Instance, "Application already exists!");
 	s_Instance = this;
 
@@ -29,26 +31,36 @@ Application::Application()
 
 Application::~Application()
 {
+	HZ_PROFILE_FUNCTION();
+
 	Renderer::Shutdown();
 }
 
 void Application::Run() 
 {
+	HZ_PROFILE_FUNCTION();
+
 	while (m_Running) 
 	{
+		HZ_PROFILE_SCOPE("RunLoop");
+
 		float time = (float)glfwGetTime();
 		Timestep ts = time - m_LastFrameTime;
 		m_LastFrameTime = time;
 
 		if (!m_Minimized)
 		{
+			HZ_PROFILE_SCOPE("LayerStack OnUpdate");
 			for (Layer* layer : m_LayerStack)
 				layer->OnUpdate(ts);
 		}
 
 		m_ImGuiLayer->Begin();
-		for (Layer* layer : m_LayerStack)
-			layer->OnImGuiRender();
+		{
+			HZ_PROFILE_SCOPE("LayerStack OnImGuiRender");
+			for (Layer* layer : m_LayerStack)
+				layer->OnImGuiRender();
+		}
 		m_ImGuiLayer->End();
 
 		m_Window->OnUpdate();
@@ -57,13 +69,15 @@ void Application::Run()
 
 void Application::OnEvent(Event& event) 
 {
+	HZ_PROFILE_FUNCTION();
+
 	EventDispatcher dispatcher(event);
 	dispatcher.Dispatch<WindowCloseEvent>(HZ_BIND_EVENT_FN(Application::OnWindowClose));
 	dispatcher.Dispatch<WindowResizeEvent>(HZ_BIND_EVENT_FN(Application::OnWindowResize));
 
-	for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();) 
+	for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it) 
 	{
-		(*--it)->OnEvent(event);
+		(*it)->OnEvent(event);
 		if (event.Handled)
 			break;
 	}
@@ -71,12 +85,18 @@ void Application::OnEvent(Event& event)
 
 void Application::PushLayer(Layer* layer) 
 {
+	HZ_PROFILE_FUNCTION();
+
 	m_LayerStack.PushLayer(layer);
+	layer->OnAttach();
 }
 
 void Application::PushOverlay(Layer* overlay) 
 {
+	HZ_PROFILE_FUNCTION();
+
 	m_LayerStack.PushOverlay(overlay);
+	overlay->OnAttach();
 }
 
 bool Application::OnWindowClose(WindowCloseEvent& e) 
@@ -87,6 +107,8 @@ bool Application::OnWindowClose(WindowCloseEvent& e)
 
 bool Application::OnWindowResize(WindowResizeEvent& e)
 {
+	HZ_PROFILE_FUNCTION();
+
 	if (e.GetWidth() == 0 || e.GetHeight() == 0)
 		m_Minimized = true;
 	else

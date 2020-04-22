@@ -21,6 +21,8 @@ ImGuiLayer::~ImGuiLayer() {}
 
 void ImGuiLayer::OnAttach() 
 {
+	HZ_PROFILE_FUNCTION();
+
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -45,13 +47,26 @@ void ImGuiLayer::OnAttach()
 
 void ImGuiLayer::OnDetach() 
 {
+	HZ_PROFILE_FUNCTION();
+
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 }
 
+void ImGuiLayer::OnImGuiRender()
+{
+	HZ_PROFILE_FUNCTION();
+
+	ImGui::Begin("Debug");
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::End();
+}
+
 void ImGuiLayer::Begin() 
 {
+	HZ_PROFILE_FUNCTION();
+
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -59,6 +74,8 @@ void ImGuiLayer::Begin()
 
 void ImGuiLayer::End() 
 {
+	HZ_PROFILE_FUNCTION();
+
 	Application& app = Application::Get();
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());
@@ -74,13 +91,6 @@ void ImGuiLayer::End()
 		ImGui::RenderPlatformWindowsDefault();
 		glfwMakeContextCurrent(backup_current_context);
 	}
-}
-
-void ImGuiLayer::OnImGuiRender() 
-{
-	ImGui::Begin("Debug");
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::End();
 }
 
 }
