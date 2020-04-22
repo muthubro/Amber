@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Event.h"
+#include "Hazel/Events/Event.h"
+#include "Hazel/Core/Input.h"
 
 namespace Hazel 
 {
@@ -8,20 +9,20 @@ namespace Hazel
 class KeyEvent : public Event 
 {
 public:
-	inline int GetKeyCode() const { return m_KeyCode; }
+	inline KeyCode GetKeyCode() const { return m_KeyCode; }
 
 	EVENT_CLASS_CATEGORY(EventCategoryInput | EventCategoryKeyboard)
 
 protected:
-	KeyEvent(int keycode) : m_KeyCode(keycode) {}
+	KeyEvent(KeyCode keycode) : m_KeyCode(keycode) {}
 
-	int m_KeyCode;
+	KeyCode m_KeyCode;
 };
 
 class KeyPressedEvent : public KeyEvent 
 {
 public:
-	KeyPressedEvent(int keycode, int repeatCount)
+	KeyPressedEvent(KeyCode keycode, int repeatCount)
 		: KeyEvent(keycode), m_RepeatCount(repeatCount) {}
 
 	inline int GetRepeatCount() const { return m_RepeatCount; }
@@ -42,7 +43,7 @@ private:
 class KeyReleasedEvent : public KeyEvent 
 {
 public:
-	KeyReleasedEvent(int keycode) : KeyEvent(keycode) {}
+	KeyReleasedEvent(KeyCode keycode) : KeyEvent(keycode) {}
 
 	std::string ToString() const override 
 	{
@@ -57,7 +58,7 @@ public:
 class KeyTypedEvent : public KeyEvent 
 {
 public:
-	KeyTypedEvent(int keycode) : KeyEvent(keycode) {}
+	KeyTypedEvent(KeyCode keycode) : KeyEvent(keycode) {}
 
 	std::string ToString() const override 
 	{
