@@ -50,7 +50,7 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 	glBindVertexArray(m_RendererID);
 	vertexBuffer->Bind();
 
-	const BufferLayout& layout = vertexBuffer->GetLayout();
+	const auto& layout = vertexBuffer->GetLayout();
 	for (const auto& element : layout) 
 	{
 		glEnableVertexAttribArray(m_VertexBufferIndex);

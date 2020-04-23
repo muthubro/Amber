@@ -17,9 +17,9 @@ void OpenGLMessageCallback(
 {
 	switch (severity)
 	{
-		case GL_DEBUG_SEVERITY_HIGH: HZ_CORE_CRITICAL(message); return;
-		case GL_DEBUG_SEVERITY_MEDIUM: HZ_CORE_ERROR(message); return;
-		case GL_DEBUG_SEVERITY_LOW: HZ_CORE_WARN(message); return;
+		case GL_DEBUG_SEVERITY_HIGH:		 HZ_CORE_CRITICAL(message); return;
+		case GL_DEBUG_SEVERITY_MEDIUM:		 HZ_CORE_ERROR(message); return;
+		case GL_DEBUG_SEVERITY_LOW:			 HZ_CORE_WARN(message); return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: HZ_CORE_TRACE(message); return;
 	}
 
@@ -43,7 +43,7 @@ void OpenGLRendererAPI::Init()
 	glEnable(GL_DEPTH_TEST);
 }
 
-void OpenGLRendererAPI::SetViewPort(int x, int y, uint32_t width, uint32_t height)
+void OpenGLRendererAPI::SetViewport(int x, int y, uint32_t width, uint32_t height)
 {
 	glViewport(x, y, width, height);
 }
@@ -58,12 +58,11 @@ void OpenGLRendererAPI::Clear()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray)
+void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
 {
-	glDrawElements(GL_TRIANGLES,
-		vertexArray->GetIndexBuffer()->GetCount(),
-		GL_UNSIGNED_INT,
-		nullptr);
+	uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
+	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 }

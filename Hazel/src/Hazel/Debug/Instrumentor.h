@@ -4,8 +4,11 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <mutex>
 #include <string>
 #include <thread>
+
+#include "Hazel/Core/Log.h"
 
 namespace Hazel {
 
@@ -36,8 +39,7 @@ public:
 
 		if (m_CurrentSession)
 		{
-			if (Log::GetCoreLogger())
-				HZ_CORE_ERROR("Instrumentor::BeginSession('{0}') when session '{1}' already open!", name, m_CurrentSession->Name);
+			HZ_CORE_ERROR("Instrumentor::BeginSession('{0}') when session '{1}' already open!", name, m_CurrentSession->Name);
 
 			InternalEndSession();
 		}
@@ -50,8 +52,7 @@ public:
 		}
 		else
 		{
-			if (Log::GetCoreLogger())
-				HZ_CORE_ERROR("Instrumentor could not open results file '{0}'", filepath);
+			HZ_CORE_ERROR("Instrumentor could not open results file '{0}'", filepath);
 		}
 	}
 

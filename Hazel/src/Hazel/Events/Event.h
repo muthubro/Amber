@@ -34,7 +34,7 @@ public:
 	virtual int GetCategoryFlags() const = 0;
 	virtual std::string ToString() const { return GetName(); }
 
-	inline bool IsInCategory(EventCategory category) const 
+	bool IsInCategory(EventCategory category) 
 	{
 		return GetCategoryFlags() & category;
 	}

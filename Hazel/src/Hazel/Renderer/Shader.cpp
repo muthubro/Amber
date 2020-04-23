@@ -13,17 +13,16 @@ Ref<Shader> Shader::Create(const std::string& filepath)
 {
 	switch (Renderer::GetAPI())
 	{
-	case RendererAPI::API::None:
-		HZ_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-		return nullptr;
+		case RendererAPI::API::None:
+			HZ_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
+			return nullptr;
 
-	case RendererAPI::API::OpenGL:
-		return CreateRef<OpenGLShader>(filepath);
-
-	default:
-		HZ_CORE_ASSERT(false, "Unknown Renderer API");
-		return nullptr;
+		case RendererAPI::API::OpenGL:
+			return CreateRef<OpenGLShader>(filepath);
 	}
+
+	HZ_CORE_ASSERT(false, "Unknown Renderer API");
+	return nullptr;
 }
 
 Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
@@ -36,11 +35,10 @@ Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSou
 
 		case RendererAPI::API::OpenGL:
 			return CreateRef<OpenGLShader>(name, vertexSource, fragmentSource);
-
-		default:
-			HZ_CORE_ASSERT(false, "Unknown Renderer API");
-			return nullptr;
 	}
+
+	HZ_CORE_ASSERT(false, "Unknown Renderer API");
+	return nullptr;
 }
 
 void ShaderLibrary::Add(const std::string& name, const Ref<Shader>& shader)
@@ -71,8 +69,13 @@ Ref<Shader> ShaderLibrary::Load(const std::string& name, const std::string& file
 
 Ref<Shader> ShaderLibrary::Get(const std::string& name)
 {
-	HZ_CORE_ASSERT(Exists(name), "Shader does not exist!");
+	HZ_CORE_ASSERT(Exists(name), "Shader not found!");
 	return m_Shaders[name];
+}
+
+bool ShaderLibrary::Exists(const std::string& name) const
+{
+	return m_Shaders.find(name) != m_Shaders.end();
 }
 
 }

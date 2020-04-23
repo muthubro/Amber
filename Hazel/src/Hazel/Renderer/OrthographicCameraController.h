@@ -15,11 +15,14 @@ class OrthographicCameraController
 public:
 	OrthographicCameraController(float aspectRatio, bool enableRotation = false);
 
-	inline OrthographicCamera& GetCamera() { return m_Camera; }
-	inline const OrthographicCamera& GetCamera() const { return m_Camera; }
+	OrthographicCamera& GetCamera() { return m_Camera; }
+	const OrthographicCamera& GetCamera() const { return m_Camera; }
 
-	inline void SetCameraTranslationSpeed(float translationSpeed) { m_CameraTranslationSpeed = translationSpeed; }
-	inline void SetCameraRotationSpeed(float rotationSpeed) { m_CameraRotationSpeed = rotationSpeed; }
+	float GetZoomLevel() const { return m_ZoomLevel; }
+	void SetZoomLevel(float level) { m_ZoomLevel = level; }
+
+	void SetCameraTranslationSpeed(float translationSpeed) { m_CameraTranslationSpeed = translationSpeed; }
+	void SetCameraRotationSpeed(float rotationSpeed) { m_CameraRotationSpeed = rotationSpeed; }
 
 	void OnUpdate(Timestep ts);
 	void OnEvent(Event& e);

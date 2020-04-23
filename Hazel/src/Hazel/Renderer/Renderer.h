@@ -16,7 +16,7 @@ public:
 	static void Init();
 	static void Shutdown();
 
-	static void BeginScene(const OrthographicCamera& camera);
+	static void BeginScene(OrthographicCamera& camera);
 	static void EndScene();
 
 	static void Submit(const Ref<Shader>& shader,

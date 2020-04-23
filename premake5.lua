@@ -20,6 +20,7 @@ IncludeDir["Glad"] = "Hazel/vendor/Glad/include"
 IncludeDir["GLFW"] = "Hazel/vendor/GLFW/include"
 IncludeDir["glm"] = "Hazel/vendor/glm"
 IncludeDir["ImGui"] = "Hazel/vendor/ImGui"
+IncludeDir["spdlog"] = "Hazel/vendor/spdlog/include"
 IncludeDir["stb_image"] = "Hazel/vendor/stb_image"
 
 group "Dependencies"
@@ -47,6 +48,7 @@ project "Hazel"
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl",
 		"%{prj.name}/vendor/stb_image/**.h",
 		"%{prj.name}/vendor/stb_image/**.cpp"
 	}
@@ -57,7 +59,8 @@ project "Hazel"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.spdlog}"
 	}
 	links
 	{
@@ -69,19 +72,17 @@ project "Hazel"
 
 	defines
 	{
-		"_CRT_SECURE_NO_WARNINGS"
+		"_CRT_SECURE_NO_WARNINGS",
+		"GLFW_INCLUDE_NONE"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
-		defines "GLFW_INCLUDE_NONE"
 
 	filter "configurations:Debug"
 		defines "HZ_DEBUG"
 		runtime "Debug"
 		symbols "on"
-
-		includedirs "%{prj.name}/vendor/spdlog/include"
 
 	filter "configurations:Release"
 		defines "HZ_RELEASE"
@@ -105,14 +106,15 @@ project "Sandbox"
 
 	files
 	{
-		"%{prj.name}/src/*.h",
-		"%{prj.name}/src/*.cpp"
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
 	}
 	includedirs
 	{
 		"Hazel/src",
 		"Hazel/vendor",
-		"%{IncludeDir.glm}"
+		"%{IncludeDir.glm}",
+		"%{IncludeDir.spdlog}"
 	}
 	links
 	{
@@ -126,8 +128,6 @@ project "Sandbox"
 		defines "HZ_DEBUG"
 		runtime "Debug"
 		symbols "on"
-
-		includedirs "Hazel/vendor/spdlog/include" 
 
 	filter "configurations:Release"
 		defines "HZ_RELEASE"

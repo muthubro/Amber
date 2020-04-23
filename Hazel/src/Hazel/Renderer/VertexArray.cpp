@@ -18,11 +18,10 @@ Ref<VertexArray> VertexArray::Create()
 
 		case RendererAPI::API::OpenGL:
 			return CreateRef<OpenGLVertexArray>();
-
-		default:
-			HZ_CORE_ASSERT(false, "Unknown Renderer API");
-			return nullptr;
 	}
+
+	HZ_CORE_ASSERT(false, "Unknown Renderer API");
+	return nullptr;
 }
 
 }

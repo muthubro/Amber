@@ -1,6 +1,5 @@
 #include "hzpch.h"
-
-#ifdef HZ_DEBUG
+#include "Log.h"
 
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -32,6 +31,4 @@ void Log::Init()
 }
 
 }
-
-#endif // HZ_DEBUG
 

@@ -20,11 +20,10 @@ Scope<RendererAPI> RendererAPI::Create()
 
 		case RendererAPI::API::OpenGL:
 			return CreateScope<OpenGLRendererAPI>();
-
-		default:
-			HZ_CORE_ASSERT(false, "Unknown Renderer API");
-			return nullptr;
 	}
+
+	HZ_CORE_ASSERT(false, "Unknown Renderer API");
+	return nullptr;
 }
 
 }

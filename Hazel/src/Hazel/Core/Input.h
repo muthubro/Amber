@@ -1,7 +1,5 @@
 #pragma once
 
-#include <memory>
-
 #include "Hazel/Core/Core.h"
 #include "Hazel/Core/KeyCodes.h"
 #include "Hazel/Core/MouseCodes.h"
@@ -29,12 +27,12 @@ public:
 protected:
 	Input() = default;
 
-	virtual	bool IsKeyPressedImpl(KeyCode keycode) const = 0;
+	virtual	bool IsKeyPressedImpl(KeyCode keycode) = 0;
 
-	virtual	bool IsMouseButtonPressedImpl(MouseCode button) const = 0;
-	virtual	std::pair<float, float> GetMousePositionImpl() const = 0;
-	virtual	float GetMouseXImpl() const = 0;
-	virtual	float GetMouseYImpl() const = 0;
+	virtual	bool IsMouseButtonPressedImpl(MouseCode button) = 0;
+	virtual	std::pair<float, float> GetMousePositionImpl() = 0;
+	virtual	float GetMouseXImpl() = 0;
+	virtual	float GetMouseYImpl() = 0;
 
 private:
 	static Scope<Input> s_Instance;

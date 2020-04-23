@@ -23,7 +23,7 @@ void OrthographicCamera::SetProjection(float left, float right, float bottom, fl
 	m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
-void OrthographicCamera::SetPosition(glm::vec3 position)
+void OrthographicCamera::SetPosition(const glm::vec3& position)
 {
 	m_Position = position;
 	CalculateViewMatrix();

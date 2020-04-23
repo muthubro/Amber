@@ -19,8 +19,8 @@ OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
 	glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTextureParameterf(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameterf(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
 OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
@@ -31,7 +31,13 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
 	stbi_set_flip_vertically_on_load(1);
 
 	int width, height, channels;
-	unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+	uint8_t* data = nullptr;
+	{
+		HZ_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
+		data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+	}
+	HZ_CORE_ASSERT(data, "Failed to load image!");
+
 	m_Width = width;
 	m_Height = height;
 
@@ -57,8 +63,8 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
 	glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glTextureParameterf(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameterf(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, dataFormat, GL_UNSIGNED_BYTE, data);
 
@@ -72,7 +78,7 @@ OpenGLTexture2D::~OpenGLTexture2D()
 	glDeleteTextures(1, &m_RendererID);
 }
 
-void OpenGLTexture2D::SetData(void* data, uint32_t size) const
+void OpenGLTexture2D::SetData(void* data, uint32_t size)
 {
 	HZ_PROFILE_FUNCTION();
 

@@ -12,19 +12,19 @@ class WindowsWindow : public Window
 {
 public:
 	WindowsWindow(const WindowProps& props);
-	virtual ~WindowsWindow();
+	~WindowsWindow();
 
 	void OnUpdate() override;
 
-	inline unsigned int GetWidth() const override { return m_Data.Width; }
-	inline unsigned int GetHeight() const override { return m_Data.Height; }
+	unsigned int GetWidth() const override { return m_Data.Width; }
+	unsigned int GetHeight() const override { return m_Data.Height; }
 
 	// Window attributes
-	inline void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
+	void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
 	void SetVSync(bool enabled) override;
 	bool IsVSync() const override;
 
-	inline virtual void* GetNativeWindow() const { return m_Window; }
+	void* GetNativeWindow() const { return m_Window; }
 
 private:
 	struct WindowData
@@ -40,8 +40,8 @@ private:
 	Scope<GraphicsContext> m_Context;
 	WindowData m_Data;
 
-	virtual void Init(const WindowProps& props);
-	virtual void Shutdown();
+	void Init(const WindowProps& props);
+	void Shutdown();
 };
 
 }

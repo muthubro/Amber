@@ -21,7 +21,7 @@ void Renderer::Shutdown()
 	Renderer2D::Shutdown();
 }
 
-void Renderer::BeginScene(const OrthographicCamera& camera)
+void Renderer::BeginScene(OrthographicCamera& camera)
 {
 	s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 }
@@ -35,6 +35,7 @@ void Renderer::Submit(const Ref<Shader>& shader,
 	shader->Bind();
 	shader->SetMat4("u_ViewProjection", s_SceneData->ViewProjectionMatrix);
 	shader->SetMat4("u_Transform", transform);
+
 	vertexArray->Bind();
 	RenderCommand::DrawIndexed(vertexArray);
 }

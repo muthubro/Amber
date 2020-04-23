@@ -50,18 +50,23 @@ void Application::Run()
 
 		if (!m_Minimized)
 		{
-			HZ_PROFILE_SCOPE("LayerStack OnUpdate");
-			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate(ts);
+			{
+				HZ_PROFILE_SCOPE("LayerStack OnUpdate");
+				
+				for (Layer* layer : m_LayerStack)
+					layer->OnUpdate(ts);
+			}
+
+			m_ImGuiLayer->Begin();
+			{
+				HZ_PROFILE_SCOPE("LayerStack OnImGuiRender");
+			
+				for (Layer* layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
+			m_ImGuiLayer->End();
 		}
 
-		m_ImGuiLayer->Begin();
-		{
-			HZ_PROFILE_SCOPE("LayerStack OnImGuiRender");
-			for (Layer* layer : m_LayerStack)
-				layer->OnImGuiRender();
-		}
-		m_ImGuiLayer->End();
 
 		m_Window->OnUpdate();
 	}
@@ -110,11 +115,14 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
 	HZ_PROFILE_FUNCTION();
 
 	if (e.GetWidth() == 0 || e.GetHeight() == 0)
+	{
 		m_Minimized = true;
-	else
-		m_Minimized = false;
-
+		return false;
+	}
+	
+	m_Minimized = false;
 	Renderer::OnWindowResize((uint32_t)e.GetWidth(), (uint32_t)e.GetHeight());
+	
 	return false;
 }
 

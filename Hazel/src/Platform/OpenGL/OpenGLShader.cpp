@@ -13,15 +13,11 @@ namespace Hazel
 static uint32_t ShaderTypeFromString(const std::string& type)
 {
 	if (type == "vertex")
-	{
 		return GL_VERTEX_SHADER;
-	}
-	else if (type == "fragment" || type == "pixel")
-	{
+	if (type == "fragment" || type == "pixel")
 		return GL_FRAGMENT_SHADER;
-	}
 
-	HZ_CORE_ASSERT(false, "Invalid shader type '{0}'", type);
+	HZ_CORE_ASSERT(false, "Invalid shader type!");
 	return 0;
 }
 
@@ -73,9 +69,9 @@ void OpenGLShader::ReadFile(const std::string& filepath, std::string& data)
 		size_t size = in.tellg();
 		if (size != -1)
 		{
-			data.resize(in.tellg());
+			data.resize(size);
 			in.seekg(0, std::ios::beg);
-			in.read(&data[0], data.size());
+			in.read(&data[0], size);
 		}
 		else
 		{
@@ -96,12 +92,13 @@ std::unordered_map<uint32_t, std::string> OpenGLShader::PreProcess(const std::st
 
 	const char* typeToken = "#type";
 	size_t tokenLength = strlen(typeToken);
-	size_t pos = source.find_first_of(typeToken, 0);
+	size_t pos = source.find(typeToken, 0);
 	while (pos != std::string::npos)
 	{
 		size_t eol = source.find_first_of("\r\n", pos);
 		HZ_CORE_ASSERT(eol != std::string::npos, "Shader syntax error!");
 		size_t begin = source.find_first_not_of(" ", pos + tokenLength);
+		HZ_CORE_ASSERT(begin != std::string::npos, "Shader syntax error!");
 		std::string type = source.substr(begin, eol - begin);
 		
 		size_t nextLinePos = source.find_first_not_of("\r\n", eol);
@@ -126,10 +123,10 @@ void OpenGLShader::Compile(const std::unordered_map<uint32_t, std::string>& shad
 	uint32_t program = glCreateProgram();
 
 	uint8_t shaderIDIndex = 0;
-	for (auto [type, source] : shaderSources)
+	for (auto& [type, source] : shaderSources)
 	{
 		const char* src = source.c_str();
-		unsigned int shader = glCreateShader(type);
+		uint32_t shader = glCreateShader(type);
 		glShaderSource(shader, 1, &src, nullptr);
 
 		glCompileShader(shader);
@@ -150,11 +147,9 @@ void OpenGLShader::Compile(const std::unordered_map<uint32_t, std::string>& shad
 
 			break;
 		}
-		else
-		{
-			glAttachShader(program, shader);
-			shaderIDs[shaderIDIndex++] = shader;
-		}
+
+		glAttachShader(program, shader);
+		shaderIDs[shaderIDIndex++] = shader;
 	}
 
 	glLinkProgram(program);
@@ -172,20 +167,20 @@ void OpenGLShader::Compile(const std::unordered_map<uint32_t, std::string>& shad
 		HZ_CORE_ASSERT(false, "OpenGLShader program failed to link!");
 
 		glDeleteProgram(program);
-		for (uint8_t i = 0; i < shaderIDIndex; i++)
+		for (auto id : shaderIDs)
 		{
-			glDetachShader(program, shaderIDs[i]);
-			glDeleteShader(shaderIDs[i]);
+			glDetachShader(program, id);
+			glDeleteShader(id);
 		}
 
 		return;
 	}
 	m_RendererID = program;
 
-	for (uint8_t i = 0; i < shaderIDIndex; i++)
+	for (auto id : shaderIDs)
 	{
-		glDetachShader(program, shaderIDs[i]);
-		glDeleteShader(shaderIDs[i]);
+		glDetachShader(program, id);
+		glDeleteShader(id);
 	}
 }
 
@@ -208,6 +203,13 @@ void OpenGLShader::SetInt(const std::string& name, int value)
 	HZ_PROFILE_FUNCTION();
 
 	UploadUniformInt(name, value);
+}
+
+void OpenGLShader::SetIntArray(const std::string& name, int* values, uint32_t count)
+{
+	HZ_PROFILE_FUNCTION();
+
+	UploadUniformIntArray(name, values, count);
 }
 
 void OpenGLShader::SetFloat(const std::string& name, float value)
@@ -248,6 +250,18 @@ void OpenGLShader::UploadUniformInt(const std::string& name, int value)
 		HZ_CORE_ERROR("Uniform {0} not found!", name);
 	else
 		glUniform1i(location, value);
+}
+
+void OpenGLShader::UploadUniformIntArray(const std::string& name, int* values, uint32_t count)
+{
+	if (m_LocationMap.find(name) == m_LocationMap.end())
+		m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+	int location = m_LocationMap[name];
+	if (location == -1)
+		HZ_CORE_ERROR("Uniform {0} not found!", name);
+	else
+		glUniform1iv(location, count, values);
 }
 
 void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
