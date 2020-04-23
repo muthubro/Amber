@@ -44,10 +44,20 @@ void Sandbox2D::OnUpdate(Hazel::Timestep ts)
 		rotation += ts * 50.0f;
 
 		Hazel::Renderer2D::BeginScene(m_CameraController.GetCamera());
-		Hazel::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, { 0.8f, 0.3f, 0.2f, 1.0f });
+		Hazel::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, { 
+			{ 0.0f, 0.0f, 0.0f, 1.0f },
+			{ 1.0f, 0.0f, 0.0f, 1.0f },
+			{ 1.0f, 1.0f, 0.0f, 1.0f },
+			{ 0.0f, 1.0f, 0.0f, 1.0f },
+		});
 		Hazel::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, 30.0f, { 0.2f, 0.3f, 0.8f, 1.0f });
 		Hazel::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, 0.0f, m_CheckerboardTexture, 10.0f);
-		Hazel::Renderer2D::DrawQuad({ -0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f }, rotation, m_CheckerboardTexture, 20.0f);
+		Hazel::Renderer2D::DrawQuad({ -0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f }, rotation, m_CheckerboardTexture, 20.0f, {
+			{ 1.0f, 0.6f, 0.3f, 1.0f },
+			{ 0.6f, 0.3f, 0.0f, 1.0f },
+			{ 0.3f, 0.0f, 1.0f, 1.0f },
+			{ 0.0f, 1.0f, 0.6f, 1.0f },
+		});
 		Hazel::Renderer2D::EndScene();
 
 		Hazel::Renderer2D::BeginScene(m_CameraController.GetCamera());
