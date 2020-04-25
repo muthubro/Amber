@@ -1,6 +1,7 @@
 #include "hzpch.h"
 #include "OrthographicCameraController.h"
 
+#include "Hazel/Core/Application.h"
 #include "Hazel/Core/Input.h"
 #include "Hazel/Core/KeyCodes.h"
 
@@ -9,7 +10,8 @@ namespace Hazel
 
 OrthographicCameraController::OrthographicCameraController(float aspectRatio, bool enableRotation)
 	: m_AspectRatio(aspectRatio), m_RotationEnabled(enableRotation),
-		m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel) {}
+		m_Camera(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel),
+		m_Bounds({ -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel }) {}
 
 void OrthographicCameraController::OnUpdate(Timestep ts)
 {
@@ -73,6 +75,8 @@ bool OrthographicCameraController::OnWindowResize(WindowResizeEvent& e)
 
 	m_AspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 	m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+	m_Bounds = { -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel };
+
 	return false;
 }
 
@@ -83,8 +87,15 @@ bool OrthographicCameraController::OnMouseScrolled(MouseScrolledEvent& e)
 	m_ZoomLevel -= e.GetYOffset() * 0.25f;
 	m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
 	m_Camera.SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+	m_Bounds = { -m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel };
+
 	m_CameraTranslationSpeed = m_ZoomLevel;
 	return false;
+}
+
+glm::vec3 OrthographicCameraController::GetWorldCoordinates(const glm::vec3& screenCoordinates)
+{
+	return glm::inverse(m_Camera.GetViewProjectionMatrix()) * glm::vec4(screenCoordinates, 1.0f);
 }
 
 }

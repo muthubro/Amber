@@ -189,6 +189,8 @@ float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
 {
 	HZ_PROFILE_FUNCTION();
 
+	if (!texture) return 0.0f;
+
 	float textureIndex = -1.0f;
 	for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
 	{

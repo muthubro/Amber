@@ -18,4 +18,9 @@ public:
 private:
 	Hazel::OrthographicCameraController m_CameraController;
 	Hazel::Ref<Hazel::Texture2D> m_CheckerboardTexture;
+
+	Hazel::ParticleSystem m_SquareParticleSystem;
+	Hazel::ParticleSystem m_CircleParticleSystem;
+	Hazel::ParticleProps m_ParticleProperties;
+	bool m_SquareParticles = true;
 };
