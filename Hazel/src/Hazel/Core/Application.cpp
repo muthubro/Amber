@@ -8,6 +8,8 @@
 
 #include "Hazel/Renderer/Renderer.h"
 
+#include "Hazel/Utils/Random.h"
+
 namespace Hazel 
 {
 
@@ -24,6 +26,7 @@ Application::Application()
 	m_Window->SetEventCallback(HZ_BIND_EVENT_FN(Application::OnEvent));
 
 	Renderer::Init();
+	Random::Init();
 
 	m_ImGuiLayer = new ImGuiLayer();
 	PushOverlay(m_ImGuiLayer);
