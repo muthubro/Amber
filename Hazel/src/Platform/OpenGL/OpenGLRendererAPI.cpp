@@ -36,16 +36,32 @@ void OpenGLRendererAPI::Init()
 	glDebugMessageCallback(OpenGLMessageCallback, nullptr);
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
 #endif
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glEnable(GL_DEPTH_TEST);
 }
 
 void OpenGLRendererAPI::SetViewport(int x, int y, uint32_t width, uint32_t height)
 {
 	glViewport(x, y, width, height);
+}
+
+void OpenGLRendererAPI::EnableBlending()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void OpenGLRendererAPI::DisableBlending()
+{
+	glDisable(GL_BLEND);
+}
+
+void OpenGLRendererAPI::EnableDepthBuffer()
+{
+	glEnable(GL_DEPTH_TEST);
+}
+
+void OpenGLRendererAPI::DisableDepthBuffer()
+{
+	glDisable(GL_DEPTH_TEST);
 }
 
 void OpenGLRendererAPI::SetClearColor(const glm::vec4& color)
@@ -60,8 +76,7 @@ void OpenGLRendererAPI::Clear()
 
 void OpenGLRendererAPI::DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
 {
-	uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
-	glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
