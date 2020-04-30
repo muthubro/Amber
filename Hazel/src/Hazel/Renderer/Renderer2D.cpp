@@ -21,7 +21,7 @@ struct QuadVertex
 
 struct Renderer2DData
 {
-	static const uint32_t MaxQuads = 20000;
+	static const uint32_t MaxQuads = 200000;
 	static const uint32_t MaxVertices = MaxQuads * 4;
 	static const uint32_t MaxIndices = MaxQuads * 6;
 	static const uint32_t MaxTextureSlots = 32;
@@ -230,7 +230,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
 
 		glm::mat4 transform(1.0f);
 		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, glm::radians(rotation), { 0.0f, 0.0f, 1.0f });
+		transform = glm::rotate(transform, rotation, { 0.0f, 0.0f, 1.0f });
 		transform = glm::scale(transform, { size.x, size.y, 1.0f });
 			
 		actualPosition = transform * s_Data.QuadVertexPositions;
@@ -285,7 +285,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
 
 		glm::mat4 transform(1.0f);
 		transform = glm::translate(transform, position);
-		transform = glm::rotate(transform, glm::radians(rotation), { 0.0f, 0.0f, 1.0f });
+		transform = glm::rotate(transform, rotation, { 0.0f, 0.0f, 1.0f });
 		transform = glm::scale(transform, { size.x, size.y, 1.0f });
 
 		actualPosition = transform * s_Data.QuadVertexPositions;

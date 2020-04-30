@@ -49,6 +49,8 @@ void ParticleSystem::Emit(const ParticleProps& properties, uint32_t particleCoun
 		particle.Lifetime = properties.Lifetime;
 		particle.LifeRemaining = properties.Lifetime;
 
+		particle.Gravity = properties.Gravity;
+
 		particle.DoesRotate = m_ParticleType == ParticleType::Square ? properties.DoesRotate : false;
 		if (particle.DoesRotate)
 			particle.Rotation = (Random::Float() - 0.5f) * 45.0f;
@@ -95,8 +97,9 @@ void ParticleSystem::OnUpdate(Timestep ts)
 
 		particle.LifeRemaining -= ts;
 		particle.Position += particle.Velocity * (float)ts;
+		particle.Velocity.y -= particle.Gravity * (float)ts;
 		if (particle.DoesRotate)
-			particle.Rotation += 180.0 * ts;
+			particle.Rotation += glm::radians(180.0f * ts);
 
 		float life = particle.LifeRemaining / particle.Lifetime;
 		float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);

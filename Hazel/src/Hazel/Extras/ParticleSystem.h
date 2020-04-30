@@ -16,6 +16,7 @@ struct ParticleProps
 	glm::vec4 ColorBegin, ColorEnd;
 	float SizeBegin, SizeEnd, SizeVariation;
 	float Lifetime;
+	float Gravity = 0.0f;
 	bool DoesRotate = false;
 };
 
@@ -43,8 +44,9 @@ private:
 		float SizeBegin, SizeEnd;
 		float Lifetime, LifeRemaining;
 
-		bool DoesRotate;
 		bool Active = false;
+		bool DoesRotate = false;
+		float Gravity = 0.0f;
 	};
 
 	const uint32_t m_PoolSize;

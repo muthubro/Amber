@@ -114,7 +114,8 @@ project "Sandbox"
 		"Hazel/src",
 		"Hazel/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.spdlog}"
+		"%{IncludeDir.spdlog}",
+		"%{prj.name}/src"
 	}
 	links
 	{
