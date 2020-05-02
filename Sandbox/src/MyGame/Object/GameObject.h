@@ -2,13 +2,12 @@
 
 #include <glm/glm.hpp>
 
-enum class GameObjectType
+// First byte is reserved for GameObjectType
+enum class GameObjectType : uint32_t
 {
-	Empty = 0,
-	GroundTile, SurfaceTile,
-	Player,
-	Enemy,
-	Count
+	Empty		= 0,
+	Block		= BIT(1),
+	Character   = BIT(2),
 };
 
 class GameObject
@@ -19,15 +18,8 @@ public:
 	virtual const glm::vec2& GetSize() const { return m_Size; }
 	virtual void SetSize(const glm::vec2& size) { m_Size = size; }
 
-	virtual const GameObjectType& GetType() const { return m_Type; }
-	virtual void SetType(const GameObjectType& type) { m_Type = type; }
-
-	virtual bool IsGround() const { return m_Type == GameObjectType::GroundTile || m_Type == GameObjectType::SurfaceTile; }
-	virtual bool IsEnemy() const { return m_Type == GameObjectType::Enemy; }
-
 protected:
 	glm::vec2 m_Size;
-	GameObjectType m_Type;
 
 	GameObject() = default;
 };

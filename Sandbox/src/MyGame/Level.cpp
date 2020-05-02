@@ -7,7 +7,7 @@ Level::Level(const std::string& mapString, uint32_t levelWidth, uint32_t levelHe
 {
     HZ_ASSERT(mapString.size() == levelWidth * levelHeight, "Map dimensions are incorrect!");
 
-    for (uint32_t i = 0; i < (uint32_t)GameObjectType::Count; i++) m_Tiles[i] = nullptr;
+    for (uint32_t i = 0; i < (uint32_t)TileType::Count; i++) m_Tiles[i] = nullptr;
     BuildMap(mapString);
 }
 
@@ -32,26 +32,6 @@ void Level::OnRender(float left, float right, float bottom, float top)
     {
         for (uint32_t col = leftCol; col < rightCol; col++)
         {
-            glm::mat4 color = {
-                { 0.0f, 0.0f, 0.0f, 1.0f},
-                { 0.0f, 0.0f, 0.0f, 1.0f},
-                { 1.0f, 1.0f, 1.0f, 1.0f},
-                { 1.0f, 1.0f, 1.0f, 1.0f}
-            };
-            if (row == 14)
-            {
-                //Renderer2D::DrawQuad({ col * m_TileSize, row * m_TileSize }, { m_TileSize, m_TileSize }, 0.0f, color);
-                //m_Tiles[m_Map[row-1][col]]->OnRender({ col * m_TileSize, row * m_TileSize });
-
-                continue;
-            }
-            else if (row == 13)
-            {
-                //Renderer2D::DrawQuad({ col * m_TileSize, row * m_TileSize }, { m_TileSize, m_TileSize }, 0.0f, { 1.0f, 0.0f, 0.0f, 1.0f });
-                //m_Tiles[m_Map[row+1][col]]->OnRender({ col * m_TileSize, row * m_TileSize });
-
-                continue;
-            }
             if (m_Map[row][col])
                 m_Tiles[m_Map[row][col]]->OnRender(TileToPosition(row, col));
         }
@@ -74,17 +54,35 @@ void Level::BuildMap(const std::string& mapString)
                 case '1':
                     m_Map[flippedRow][col] = 1;
                     if (!m_Tiles[1])
-                        m_Tiles[1] = CreateRef<Tile>(glm::vec2(m_TileSize), GameObjectType::GroundTile);
+                        m_Tiles[1] = CreateRef<Tile>(glm::vec2(m_TileSize), TileType::GroundTile);
                     break;
 
                 case '2':
                     m_Map[flippedRow][col] = 2;
                     if (!m_Tiles[2])
-                        m_Tiles[2] = CreateRef<Tile>(glm::vec2(m_TileSize), GameObjectType::SurfaceTile);
+                        m_Tiles[2] = CreateRef<Tile>(glm::vec2(m_TileSize), TileType::SurfaceTile);
+                    break;
+
+                case '3':
+                    m_Map[flippedRow][col] = 3;
+                    if (!m_Tiles[3])
+                        m_Tiles[3] = CreateRef<Tile>(glm::vec2(m_TileSize), TileType::FloatingLeftTile);
+                    break;
+
+                case '4':
+                    m_Map[flippedRow][col] = 4;
+                    if (!m_Tiles[4])
+                        m_Tiles[4] = CreateRef<Tile>(glm::vec2(m_TileSize), TileType::FloatingRightTile);
+                    break;
+
+                case '5':
+                    m_Map[flippedRow][col] = 5;
+                    if (!m_Tiles[5])
+                        m_Tiles[5] = CreateRef<Tile>(glm::vec2(m_TileSize), TileType::FloatingTile);
                     break;
 
                 case 'P':
-                    m_Player.SetPosition({ col * m_TileSize, flippedRow * m_TileSize });
+                    m_Player.SetPosition(flippedRow, col);
                     m_Map[flippedRow][col] = 0;
                     break;
 

@@ -1,15 +1,39 @@
 #include "Player.h"
 
+#include "MyGame/Color.h"
 #include "MyGame/Level.h"
 
 Player::Player(const glm::vec2& size, Level* level)
 {
-	m_Size = size;
-	m_AABB.HalfSize = glm::vec2(size.x * 0.3f, size.y) * 0.5f;
-	m_AABBOffset = size * 0.5f;
-	m_Type = GameObjectType::Player;
+	m_Size = { size.x * 2.0f, size.y * 4.0f };
+	m_AABB.HalfSize = { m_Size.x * 0.5f - 2.0f, m_Size.y * 0.55f * 0.5f };
+	m_AABBOffset = m_AABB.HalfSize - m_Size * 0.5f;
+	m_Type = CharacterType::Player;
+
 	m_State = CharacterState::Standing;
-	m_Texture = Texture2D::Create("assets/textures/Player.png");
+	m_KeyFrameID = 0;
+
+	m_Texture = Texture2D::Create("assets/textures/spritesheet_players.png");
+
+	m_TexCoords[0][0] = { 128.0f		  , 1792.0f			};
+	m_TexCoords[0][1] = { 128.0f + 128.0f , 1792.0f			};
+	m_TexCoords[0][2] = { 128.0f + 128.0f , 1792.0f + 256.0f };
+	m_TexCoords[0][3] = { 128.0f		  , 1792.0f + 256.0f };
+
+	m_TexCoords[1][0] = { 128.0f		  , 1024.0f			};
+	m_TexCoords[1][1] = { 128.0f + 128.0f , 1024.0f			};
+	m_TexCoords[1][2] = { 128.0f + 128.0f , 1024.0f + 256.0f };
+	m_TexCoords[1][3] = { 128.0f		  , 1024.0f + 256.0f };
+
+	m_TexCoords[2][0] = { 128.0f		  , 768.0f			};
+	m_TexCoords[2][1] = { 128.0f + 128.0f , 768.0f			};
+	m_TexCoords[2][2] = { 128.0f + 128.0f , 768.0f + 256.0f };
+	m_TexCoords[2][3] = { 128.0f		  , 768.0f + 256.0f };
+
+	m_TexCoords[3][0] = { 256.0f		  , 0.0f		  };
+	m_TexCoords[3][1] = { 256.0f + 128.0f , 0.0f		  };
+	m_TexCoords[3][2] = { 256.0f + 128.0f , 0.0f + 256.0f };
+	m_TexCoords[3][3] = { 256.0f		  , 0.0f + 256.0f };
 
 	m_Level = level;
 }
@@ -23,7 +47,7 @@ void Player::OnEvent(Event& e)
 		{
 			m_State = CharacterState::Jumping;
 			m_JumpMode++;
-			m_Velocity.y += m_JumpSpeed;
+			m_Velocity.y = std::min(m_Velocity.y + m_JumpSpeed, m_MaxJumpSpeed);
 		}
 	}
 }
@@ -31,20 +55,48 @@ void Player::OnEvent(Event& e)
 void Player::OnRender()
 {
 	glm::vec2 size = m_FacingRight ? m_Size : glm::vec2(-m_Size.x, m_Size.y);
-	Renderer2D::DrawQuad(m_Position, size, 0.0f, m_Texture, 1.0f);
+	
+	if (m_State == CharacterState::Jumping)
+	{
+		m_KeyFrameID = 3;
+	}
+	else if (m_WalkingAccumulatedTime >= 2.0f * m_AnimationTimestep)
+	{
+		m_WalkingAccumulatedTime -= 2.0f * m_AnimationTimestep;
+		m_KeyFrameID = 1;
+	}
+	else if (m_WalkingAccumulatedTime >= m_AnimationTimestep)
+	{
+		m_KeyFrameID = 2;
+	}
+	else if (m_State == CharacterState::Walking)
+	{
+		m_KeyFrameID = 1;
+	}
+	else
+	{
+		m_KeyFrameID = 0;
+	}
+
+	Renderer2D::DrawQuad(m_Position, size, 0.0f, m_Texture, m_TexCoords[m_KeyFrameID]);
 }
 
 void Player::OnUpdate(Timestep ts)
 {
 	if (Input::IsKeyPressed(HZ_KEY_D))
 	{
-		if (!m_PushingRight) m_Velocity.x = m_MoveSpeed;
+		m_Velocity.x = m_MoveSpeed;
 		m_FacingRight = true;
 	}
 	else if (Input::IsKeyPressed(HZ_KEY_A))
 	{
-		if (!m_PushingLeft) m_Velocity.x = -m_MoveSpeed;
+		m_Velocity.x = -m_MoveSpeed;
 		m_FacingRight = false;
+	}
+	else
+	{
+		m_Velocity.x = 0.0f;
+		m_WalkingAccumulatedTime = 0.0f;
 	}
 
 	glm::vec2 oldPosition = m_Position;
@@ -58,12 +110,7 @@ void Player::OnUpdate(Timestep ts)
 		if (oldPosition.x + m_AABB.HalfSize.x + m_AABBOffset.x <= wallX)
 		{
 			m_Position.x = wallX - m_AABB.HalfSize.x - m_AABBOffset.x;
-			m_PushingRight = true;
 		}
-	}
-	else
-	{
-		m_PushingRight = false;
 	}
 
 	if (m_Velocity.x <= 0.0f && HasWall(wallX))
@@ -71,12 +118,7 @@ void Player::OnUpdate(Timestep ts)
 		if (oldPosition.x - m_AABB.HalfSize.x + m_AABBOffset.x >= wallX)
 		{
 			m_Position.x = wallX + m_AABB.HalfSize.x - m_AABBOffset.x;
-			m_PushingLeft = true;
 		}
-	}
-	else
-	{
-		m_PushingLeft = false;
 	}
 
 	m_Position.y += m_Velocity.y * ts;
@@ -85,7 +127,15 @@ void Player::OnUpdate(Timestep ts)
 	float groundY = 0.0f;
 	if (m_Velocity.y <= 0.0f && HasGround(groundY))
 	{
-		m_State = CharacterState::Standing;
+		if (std::abs(m_Velocity.x) > 0.0f)
+		{
+			m_State = CharacterState::Walking;
+			m_WalkingAccumulatedTime += ts;
+		}
+		else
+		{
+			m_State = CharacterState::Standing;
+		}
 		m_JumpMode = 0;
 		m_Velocity.y = 0.0f;
 		m_Position.y = groundY + m_AABB.HalfSize.y - m_AABBOffset.y;
@@ -97,7 +147,12 @@ void Player::OnUpdate(Timestep ts)
 		m_Velocity.y = std::max(m_Velocity.y - m_Gravity * ts, -300.0f);
 	}
 
-	m_Velocity.x = 0.0f;
+	float ceilingY = 0.0f;
+	if (m_Velocity.y > 0.0f && HasCeiling(ceilingY))
+	{
+		m_Velocity.y = 0.0f;
+		m_Position.y = ceilingY - m_AABB.HalfSize.y - m_AABBOffset.y;
+	}
 }
 
 bool Player::HasGround(float& groundY)
@@ -114,7 +169,7 @@ bool Player::HasGround(float& groundY)
 
 		auto [row, col] = m_Level->PositionToTile(tile);
 
-		groundY = (float)(row + 1) * tileSize;
+		groundY = (float)(row + 0.5) * tileSize;
 
 		auto obj = m_Level->GetTile(row, col);
 
@@ -122,6 +177,34 @@ bool Player::HasGround(float& groundY)
 			return true;
 
 		if (tile.x >= bottomRight.x)
+			break;
+	}
+
+	return false;
+}
+
+bool Player::HasCeiling(float& ceilingY)
+{
+	auto center = m_Position + m_AABBOffset;
+
+	auto topRight = center + m_AABB.HalfSize + glm::vec2(0.0f, 1.0f) - glm::vec2(1.0f, 0.0f);
+	auto topLeft = topRight - glm::vec2(m_AABB.HalfSize.x * 2.0f - 2.0f, 0.0f);
+
+	auto tileSize = m_Level->GetTileSize();
+	for (auto tile = topLeft; ; tile.x += tileSize)
+	{
+		tile.x = std::min(tile.x, topRight.x);
+
+		auto [row, col] = m_Level->PositionToTile(tile);
+
+		ceilingY = (float)(row - 0.5) * tileSize;
+
+		auto obj = m_Level->GetTile(row, col);
+
+		if (obj && obj->IsGround())
+			return true;
+
+		if (tile.x >= topRight.x)
 			break;
 	}
 
@@ -142,7 +225,7 @@ bool Player::HasWall(float& wallX)
 
 		auto [row, col] = m_Level->PositionToTile(tile);
 
-		wallX = (float)(m_FacingRight ? col : col + 1) * tileSize;
+		wallX = (float)(m_FacingRight ? col - 0.5f : col + 0.5f) * tileSize;
 
 		auto obj = m_Level->GetTile(row, col);
 
@@ -155,3 +238,9 @@ bool Player::HasWall(float& wallX)
 
 	return false;
 }
+
+void Player::SetPosition(uint32_t row, uint32_t col)
+{
+	SetPosition(m_Level->TileToPosition(row, col) + (m_Size - m_Level->GetTileSize()) * 0.5f);
+}
+

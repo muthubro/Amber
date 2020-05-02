@@ -25,6 +25,12 @@ struct AABB
 	}
 };
 
+enum class CharacterType : uint32_t
+{
+	Player = (uint32_t)GameObjectType::Character | BIT(8),
+	Enemy  = (uint32_t)GameObjectType::Character | BIT(9)
+};
+
 enum class CharacterState
 {
 	Idle = 0,
@@ -41,14 +47,19 @@ public:
 	virtual void SetPosition(const glm::vec2& position) { m_Position = position; m_AABB.Center = position + m_AABBOffset; }
 
 	virtual const CharacterState& GetState() const { return m_State; }
-	virtual void SetPosition(const CharacterState& state) { m_State = state; }
+	virtual void SetState(const CharacterState& state) { m_State = state; }
+
+	virtual const CharacterType& GetType() const { return m_Type; }
+	virtual void SetType(const CharacterType& type) { m_Type = type; }
+
+	virtual bool IsEnemy() const { return m_Type == CharacterType::Enemy; }
 
 protected:
 	glm::vec2 m_Position;
 	AABB m_AABB;
 	glm::vec2 m_AABBOffset;
+	CharacterType m_Type;
 	CharacterState m_State;
-	Ref<Texture2D> m_Texture;
 
 	Character() = default;
 };
