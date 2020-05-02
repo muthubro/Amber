@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Hazel.h>
+#include <Amber.h>
 
 #include "Color.h"
 #include "Level.h"
 #include "Viewport.h"
 
-using namespace Hazel;
+using namespace Amber;
 
 class MyGameLayer : public Layer
 {

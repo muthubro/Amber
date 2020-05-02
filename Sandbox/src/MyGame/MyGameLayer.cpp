@@ -52,7 +52,7 @@ void MyGameLayer::OnDetach() {}
 void MyGameLayer::OnEvent(Event& e)
 {
 	EventDispatcher dispatcher(e);
-	dispatcher.Dispatch<WindowResizeEvent>(HZ_BIND_EVENT_FN(MyGameLayer::OnWindowResize));
+	dispatcher.Dispatch<WindowResizeEvent>(AB_BIND_EVENT_FN(MyGameLayer::OnWindowResize));
 
 	m_Level.OnEvent(e);
 }
@@ -87,7 +87,7 @@ bool MyGameLayer::OnWindowResize(WindowResizeEvent& e)
 
 void MyGameLayer::OnImGuiRender()
 {
-	HZ_PROFILE_FUNCTION();
+	AB_PROFILE_FUNCTION();
 
 	ImGui::Begin("Settings");
 

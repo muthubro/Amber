@@ -5,7 +5,7 @@
 Level::Level(const std::string& mapString, uint32_t levelWidth, uint32_t levelHeight)
     : m_Width(levelWidth), m_Height(levelHeight), m_Player(glm::vec2(m_TileSize), this)
 {
-    HZ_ASSERT(mapString.size() == levelWidth * levelHeight, "Map dimensions are incorrect!");
+    AB_ASSERT(mapString.size() == levelWidth * levelHeight, "Map dimensions are incorrect!");
 
     for (uint32_t i = 0; i < (uint32_t)TileType::Count; i++) m_Tiles[i] = nullptr;
     BuildMap(mapString);
@@ -87,7 +87,7 @@ void Level::BuildMap(const std::string& mapString)
                     break;
 
                 default:
-                    HZ_ASSERT(obj == ' ', "Unknown object type in map!");
+                    AB_ASSERT(obj == ' ', "Unknown object type in map!");
                     m_Map[flippedRow][col] = 0;
             }
         }

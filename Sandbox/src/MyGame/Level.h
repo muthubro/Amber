@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include <Hazel.h>
+#include <Amber.h>
 
 #include "Object/Player.h"
 #include "Object/Tile.h"

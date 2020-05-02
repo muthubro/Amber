@@ -1,4 +1,4 @@
-workspace "Hazel"
+workspace "Amber"
 	architecture "x86_64"
 	configurations
 	{
@@ -16,22 +16,22 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
-IncludeDir["Glad"] = "Hazel/vendor/Glad/include"
-IncludeDir["GLFW"] = "Hazel/vendor/GLFW/include"
-IncludeDir["glm"] = "Hazel/vendor/glm"
-IncludeDir["ImGui"] = "Hazel/vendor/ImGui"
-IncludeDir["spdlog"] = "Hazel/vendor/spdlog/include"
-IncludeDir["stb_image"] = "Hazel/vendor/stb_image"
+IncludeDir["Glad"] = "Amber/vendor/Glad/include"
+IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
+IncludeDir["glm"] = "Amber/vendor/glm"
+IncludeDir["ImGui"] = "Amber/vendor/ImGui"
+IncludeDir["spdlog"] = "Amber/vendor/spdlog/include"
+IncludeDir["stb_image"] = "Amber/vendor/stb_image"
 
 group "Dependencies"
-	include "Hazel/vendor/GLFW"
-	include "Hazel/vendor/Glad"
-	include "Hazel/vendor/ImGui"
+	include "Amber/vendor/GLFW"
+	include "Amber/vendor/Glad"
+	include "Amber/vendor/ImGui"
 
 group ""
 
-project "Hazel"
-	location "Hazel"
+project "Amber"
+	location "Amber"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
@@ -40,8 +40,8 @@ project "Hazel"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	pchheader "hzpch.h"
-	pchsource "%{prj.name}/src/hzpch.cpp"
+	pchheader "abpch.h"
+	pchsource "%{prj.name}/src/abpch.cpp"
 
 	files
 	{
@@ -80,17 +80,17 @@ project "Hazel"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "HZ_DEBUG"
+		defines "AB_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
-		defines "HZ_RELEASE"
+		defines "AB_RELEASE"
 		runtime "Release"
 		optimize "on"
 
 	filter "configurations:Dist"
-		defines "HZ_DIST"
+		defines "AB_DIST"
 		runtime "Release"
 		optimize "on"
 
@@ -111,31 +111,31 @@ project "Sandbox"
 	}
 	includedirs
 	{
-		"Hazel/src",
-		"Hazel/vendor",
+		"Amber/src",
+		"Amber/vendor",
 		"%{IncludeDir.glm}",
 		"%{IncludeDir.spdlog}",
 		"%{prj.name}/src"
 	}
 	links
 	{
-		"Hazel"
+		"Amber"
 	}
 
 	filter "system:windows"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "HZ_DEBUG"
+		defines "AB_DEBUG"
 		runtime "Debug"
 		symbols "on"
 
 	filter "configurations:Release"
-		defines "HZ_RELEASE"
+		defines "AB_RELEASE"
 		runtime "Release"
 		optimize "on"
 
 	filter "configurations:Dist"
-		defines "HZ_DIST"
+		defines "AB_DIST"
 		runtime "Release"
 		optimize "on"

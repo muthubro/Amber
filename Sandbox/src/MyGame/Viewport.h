@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Hazel.h>
+#include <Amber.h>
 
 struct ViewportBounds
 {
@@ -17,13 +17,13 @@ public:
 	Viewport(float left, float right, float bottom, float top);
 
 	const ViewportBounds& GetBounds() const { return m_Bounds; }
-	const Hazel::Scope<Hazel::OrthographicCamera>& GetCamera() const { return m_Camera; }
+	const Amber::Scope<Amber::OrthographicCamera>& GetCamera() const { return m_Camera; }
 
 	void SetBounds(const ViewportBounds& bounds);
 	void SetPosition(float x, float y, float maxWidth, float maxHeight);
 
 private:
-	Hazel::Scope<Hazel::OrthographicCamera> m_Camera;
+	Amber::Scope<Amber::OrthographicCamera> m_Camera;
 
 	ViewportBounds m_Bounds;
 };

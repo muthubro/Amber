@@ -2,11 +2,11 @@
 
 #include <glm/glm.hpp>
 
-#include <Hazel.h>
+#include <Amber.h>
 
 #include "GameObject.h"
 
-using namespace Hazel;
+using namespace Amber;
 
 enum class TileType : uint32_t
 {

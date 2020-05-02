@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Hazel.h>
+#include <Amber.h>
 
-class Sandbox2D : public Hazel::Layer
+class Sandbox2D : public Amber::Layer
 {
 public:
 	Sandbox2D();
@@ -11,11 +11,11 @@ public:
 	void OnAttach() override;
 	void OnDetach() override;
 
-	void OnUpdate(Hazel::Timestep ts) override;
-	void OnEvent(Hazel::Event& e) override;
+	void OnUpdate(Amber::Timestep ts) override;
+	void OnEvent(Amber::Event& e) override;
 	void OnImGuiRender() override;
 
 private:
-	Hazel::OrthographicCameraController m_CameraController;
-	Hazel::Ref<Hazel::Texture2D> m_CheckerboardTexture;
+	Amber::OrthographicCameraController m_CameraController;
+	Amber::Ref<Amber::Texture2D> m_CheckerboardTexture;
 };

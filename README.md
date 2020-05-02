@@ -1,13 +1,9 @@
-# Hazel
-Hazel Engine
-
-![Hazel](/Resources/Branding/Hazel_Logo_Text_Light_Square.png?raw=true "Hazel")
+# Amber
+Amber Engine is a personal game engine project based on the Hazel Engine being built by TheCherno in his YouTube channel.
 
 ## Getting Started
-Visual Studio 2017 or 2019 is recommended, Hazel is officially untested on other development environments whilst we focus on a Windows build.
+Visual Studio 2017 or 2019 is recommended. Amber is officially untested on other development environments.
 
-You can clone the repository to a local destination using git:
+To clone the repository to a local destination using git:
 
-`git clone --recursive https://github.com/muthubro/Hazel`
-
-Make sure that you do a `--recursive` clone to fetch all of the submodules!
+`git clone --recursive https://github.com/muthubro/Amber`

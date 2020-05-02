@@ -1,11 +1,11 @@
-#include <Hazel.h>
-#include <Hazel/Core/EntryPoint.h>
+#include <Amber.h>
+#include <Amber/Core/EntryPoint.h>
 
 #include "ExampleLayer.h"
 #include "Sandbox2D.h"
 #include "MyGame/MyGameLayer.h"
 
-class Sandbox : public Hazel::Application 
+class Sandbox : public Amber::Application 
 {
 public:
 	Sandbox() 
@@ -18,7 +18,7 @@ public:
 	~Sandbox() {}
 };
 
-Hazel::Application* Hazel::CreateApplication() 
+Amber::Application* Amber::CreateApplication() 
 {
 	return new Sandbox();
 }

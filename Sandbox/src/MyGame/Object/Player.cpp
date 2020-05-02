@@ -43,7 +43,7 @@ void Player::OnEvent(Event& e)
 	if (e.GetEventType() == EventType::KeyPressed)
 	{
 		KeyPressedEvent& keyEvent = static_cast<KeyPressedEvent&>(e);
-		if (keyEvent.GetKeyCode() == HZ_KEY_SPACE && m_JumpMode < 2)
+		if (keyEvent.GetKeyCode() == AB_KEY_SPACE && m_JumpMode < 2)
 		{
 			m_State = CharacterState::Jumping;
 			m_JumpMode++;
@@ -83,12 +83,12 @@ void Player::OnRender()
 
 void Player::OnUpdate(Timestep ts)
 {
-	if (Input::IsKeyPressed(HZ_KEY_D))
+	if (Input::IsKeyPressed(AB_KEY_D))
 	{
 		m_Velocity.x = m_MoveSpeed;
 		m_FacingRight = true;
 	}
-	else if (Input::IsKeyPressed(HZ_KEY_A))
+	else if (Input::IsKeyPressed(AB_KEY_A))
 	{
 		m_Velocity.x = -m_MoveSpeed;
 		m_FacingRight = false;

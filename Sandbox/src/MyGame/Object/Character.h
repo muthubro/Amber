@@ -2,11 +2,11 @@
 
 #include <glm/glm.hpp>
 
-#include <Hazel.h>
+#include <Amber.h>
 
 #include "GameObject.h"
 
-using namespace Hazel;
+using namespace Amber;
 
 struct AABB
 {

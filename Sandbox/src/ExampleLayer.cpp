@@ -39,9 +39,9 @@ ExampleLayer::ExampleLayer()
 		}
 	)";
 
-	m_FlatColorShader = Hazel::Shader::Create("FlatColorShader", flatColorVertexSource, flatColorFragmentSource);
+	m_FlatColorShader = Amber::Shader::Create("FlatColorShader", flatColorVertexSource, flatColorFragmentSource);
 
-	m_SquareVA = Hazel::VertexArray::Create();
+	m_SquareVA = Amber::VertexArray::Create();
 
 	float squareVertices[] = {
 		-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
@@ -49,25 +49,25 @@ ExampleLayer::ExampleLayer()
 			0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
 		-0.5f,  0.5f, 0.0f, 0.0f, 1.0f
 	};
-	Hazel::Ref<Hazel::VertexBuffer> squareVB;
-	squareVB = Hazel::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
+	Amber::Ref<Amber::VertexBuffer> squareVB;
+	squareVB = Amber::VertexBuffer::Create(squareVertices, sizeof(squareVertices));
 	squareVB->SetLayout({
-		{ Hazel::ShaderDataType::Float3, "a_Position" },
-		{ Hazel::ShaderDataType::Float2, "a_TexCoord" },
+		{ Amber::ShaderDataType::Float3, "a_Position" },
+		{ Amber::ShaderDataType::Float2, "a_TexCoord" },
 		});
 	m_SquareVA->AddVertexBuffer(squareVB);
 
 	uint32_t squareIndices[] = { 0, 1, 2, 2, 3, 0 };
-	Hazel::Ref<Hazel::IndexBuffer> squareIB;
-	squareIB = Hazel::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
+	Amber::Ref<Amber::IndexBuffer> squareIB;
+	squareIB = Amber::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 
 	m_SquareVA->SetIndexBuffer(squareIB);
 
 	// Draw textured square
 	auto& textureShader = m_ShaderLibrary.Load("assets/shaders/Texture.glsl");
 
-	m_Texture = Hazel::Texture2D::Create("assets/textures/Checkerboard.png");
-	m_ChernoLogoTexture = Hazel::Texture2D::Create("assets/textures/ChernoLogo.png");
+	m_Texture = Amber::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_ChernoLogoTexture = Amber::Texture2D::Create("assets/textures/ChernoLogo.png");
 
 	textureShader->Bind();
 	textureShader->SetInt("u_Texture", 0);
@@ -102,52 +102,52 @@ ExampleLayer::ExampleLayer()
 		}
 	)";
 
-	m_TriangleShader = Hazel::Shader::Create("PosColorShader", triangleVertexSource, triangleFragmentSource);
+	m_TriangleShader = Amber::Shader::Create("PosColorShader", triangleVertexSource, triangleFragmentSource);
 
-	m_TriangleVA = Hazel::VertexArray::Create();
+	m_TriangleVA = Amber::VertexArray::Create();
 
 	float triangleVertices[] = {
 		-0.2f, -0.2f, 0.0f, 0.8f, 0.2f, 0.8f, 1.0f,
 			0.2f, -0.2f, 0.0f, 0.2f, 0.3f, 0.8f, 1.0f,
 			0.0f,  0.2f, 0.0f, 0.8f, 0.8f, 0.2f, 1.0f
 	};
-	Hazel::Ref<Hazel::VertexBuffer> triangleVB;
-	triangleVB = Hazel::VertexBuffer::Create(triangleVertices, sizeof(triangleVertices));
+	Amber::Ref<Amber::VertexBuffer> triangleVB;
+	triangleVB = Amber::VertexBuffer::Create(triangleVertices, sizeof(triangleVertices));
 	triangleVB->SetLayout({
-		{ Hazel::ShaderDataType::Float3, "a_Position" },
-		{ Hazel::ShaderDataType::Float4, "a_Color" }
+		{ Amber::ShaderDataType::Float3, "a_Position" },
+		{ Amber::ShaderDataType::Float4, "a_Color" }
 		});
 	m_TriangleVA->AddVertexBuffer(triangleVB);
 
 	uint32_t triangleIndices[] = { 0, 1, 2 };
-	Hazel::Ref<Hazel::IndexBuffer> triangleIB;
-	triangleIB = Hazel::IndexBuffer::Create(triangleIndices, sizeof(triangleIndices) / sizeof(uint32_t));
+	Amber::Ref<Amber::IndexBuffer> triangleIB;
+	triangleIB = Amber::IndexBuffer::Create(triangleIndices, sizeof(triangleIndices) / sizeof(uint32_t));
 
 	m_TriangleVA->SetIndexBuffer(triangleIB);
 }
 
-void ExampleLayer::OnUpdate(Hazel::Timestep ts)
+void ExampleLayer::OnUpdate(Amber::Timestep ts)
 {
 	m_CameraController.SetCameraTranslationSpeed(m_CameraTranslationSpeed);
 	m_CameraController.SetCameraRotationSpeed(m_CameraRotationSpeed);
 	m_CameraController.OnUpdate(ts);
 
-	if (Hazel::Input::IsKeyPressed(HZ_KEY_J))
+	if (Amber::Input::IsKeyPressed(AB_KEY_J))
 		m_SquarePosition.x -= m_SquareMoveSpeed * ts;
-	else if (Hazel::Input::IsKeyPressed(HZ_KEY_L))
+	else if (Amber::Input::IsKeyPressed(AB_KEY_L))
 		m_SquarePosition.x += m_SquareMoveSpeed * ts;
 
-	if (Hazel::Input::IsKeyPressed(HZ_KEY_I))
+	if (Amber::Input::IsKeyPressed(AB_KEY_I))
 		m_SquarePosition.y += m_SquareMoveSpeed * ts;
-	else if (Hazel::Input::IsKeyPressed(HZ_KEY_K))
+	else if (Amber::Input::IsKeyPressed(AB_KEY_K))
 		m_SquarePosition.y -= m_SquareMoveSpeed * ts;
 
-	Hazel::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
-	Hazel::RenderCommand::Clear();
+	Amber::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+	Amber::RenderCommand::Clear();
 
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-	Hazel::Renderer::BeginScene(m_CameraController.GetCamera());
+	Amber::Renderer::BeginScene(m_CameraController.GetCamera());
 
 	for (int y = 0; y < m_SquareRows; y++)
 	{
@@ -164,24 +164,24 @@ void ExampleLayer::OnUpdate(Hazel::Timestep ts)
 				m_SquarePosition.y + (y - m_SquareRows / 2) * 0.11f,
 				0.0f);
 			glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * scale;
-			Hazel::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
+			Amber::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
 		}
 	}
 
 	auto& textureShader = m_ShaderLibrary.Get("Texture");
 
 	m_Texture->Bind();
-	Hazel::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+	Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
 
 	m_ChernoLogoTexture->Bind();
-	Hazel::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+	Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
 
-	//Hazel::Renderer::Submit(m_TriangleShader, m_TriangleVA);
+	//Amber::Renderer::Submit(m_TriangleShader, m_TriangleVA);
 
-	Hazel::Renderer::EndScene();
+	Amber::Renderer::EndScene();
 }
 
-void ExampleLayer::OnEvent(Hazel::Event& e)
+void ExampleLayer::OnEvent(Amber::Event& e)
 {
 	m_CameraController.OnEvent(e);
 }
