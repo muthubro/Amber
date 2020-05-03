@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Color.h"
+
 Level::Level(const std::string& mapString, uint32_t levelWidth, uint32_t levelHeight)
     : m_Width(levelWidth), m_Height(levelHeight), m_Player(glm::vec2(m_TileSize), this)
 {
@@ -9,6 +11,9 @@ Level::Level(const std::string& mapString, uint32_t levelWidth, uint32_t levelHe
 
     for (uint32_t i = 0; i < (uint32_t)TileType::Count; i++) m_Tiles[i] = nullptr;
     BuildMap(mapString);
+
+    m_CloudTexture = Texture2D::Create("assets/textures/Cloud.png");
+    m_SunTexture = Texture2D::Create("assets/textures/Sun.png");
 }
 
 void Level::OnEvent(Event& e)
@@ -23,10 +28,25 @@ void Level::OnUpdate(Timestep ts)
 
 void Level::OnRender(float left, float right, float bottom, float top)
 {
+    RenderCommand::SetClearColor(Color::SkyBlue);
+    RenderCommand::Clear();
+
     uint32_t leftCol = (uint32_t)std::max(0, (int)std::floor(left / m_TileSize));
     uint32_t rightCol = std::min(m_Width, (uint32_t)std::ceil(right / m_TileSize) + 1);
     uint32_t bottomRow = (uint32_t)std::max(0, (int)std::floor(bottom / m_TileSize));
     uint32_t topRow = std::min(m_Height, (uint32_t)std::ceil(top / m_TileSize) + 1);
+
+    if (topRow >= 15)
+    {
+        uint32_t col = leftCol > 2 ? leftCol - 2 : 0;
+        for (; col < std::min(rightCol + 2, m_Width); col++)
+        {
+            if (col % 10 == 0)
+                Renderer2D::DrawQuad(glm::vec2(ColumnToX(col), top - 160.0f) + glm::vec2(m_TileSize * 1.5f), glm::vec2(4 * m_TileSize), 0.0f, m_CloudTexture);
+        }
+
+        Renderer2D::DrawQuad(glm::vec2(left + 64.0f, top - 160.0f) + glm::vec2(m_TileSize), glm::vec2(3 * m_TileSize), 0.0f, m_SunTexture, Color::Yellow);
+    }
 
     for (uint32_t row = bottomRow; row < topRow; row++)
     {

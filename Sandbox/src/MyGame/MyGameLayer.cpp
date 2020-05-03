@@ -7,8 +7,18 @@ static const char* game =
 "                                                      "
 "                                                      "
 "                                                      "
+"                     322222224                        "
+"                                                      "
+"                                   5                  "
 "                                                      "
 "                                                      "
+"                            34                        "
+"                                                      "
+"                     5                                "
+"                                                      "
+"             5                                        "
+"                                                      "
+"                  322224                              "
 "                                                      "
 "                           5                          "
 "                                                      "
@@ -29,7 +39,7 @@ static const char* game =
 "111111111111111111111111111111111111111111111111111111";
 
 static const uint32_t levelWidth = 54;
-static const uint32_t levelHeight = 24;
+static const uint32_t levelHeight = 34;
 
 
 MyGameLayer::MyGameLayer()
@@ -67,9 +77,6 @@ void MyGameLayer::OnUpdate(Timestep ts)
 	m_Viewport.SetPosition(playerPos.x, playerPos.y, (levelWidth - 1) * tileSize, (levelHeight - 1) * tileSize);
 
 	// Render
-	RenderCommand::SetClearColor(Color::SkyBlue);
-	RenderCommand::Clear();
-
 	Renderer2D::ResetStats();
 
 	auto& bounds = m_Viewport.GetBounds();

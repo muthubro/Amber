@@ -9,141 +9,6 @@
 
 #define MAX_LEVEL_SIZE 100
 
-
-static glm::vec2 WillCollide(glm::vec2 rect1[4], glm::vec2 rect2[4], glm::vec2 velocity)
-{
-    glm::vec2 minDeflectionAxis = { 0.0f, 0.0f };
-    float minDeflection = std::numeric_limits<float>::max();
-
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        glm::vec2& p1 = rect1[i];
-        glm::vec2& p2 = rect1[(i + 1) % 4];
-
-        glm::vec2 normal = { p2.y - p1.y, p1.x - p2.x };
-        float mod = sqrt(normal.x * normal.x + normal.y * normal.y);
-        normal /= mod;
-
-        float velocityProjection = normal.x * velocity.x + normal.y * velocity.y;
-
-        float minA = std::numeric_limits<float>::max();
-        float maxA = -(std::numeric_limits<float>::max() - 1.0f);
-        for (uint8_t j = 0; j < 4; j++)
-        {
-            float projected = normal.x * rect1[j].x + normal.y * rect1[j].y;
-            if (projected < minA)
-                minA = projected;
-            if (projected > maxA)
-                maxA = projected;
-        }
-
-        float minB = std::numeric_limits<float>::max();
-        float maxB = -(std::numeric_limits<float>::max() - 1.0f);
-        for (uint8_t j = 0; j < 4; j++)
-        {
-            float projected = normal.x * rect2[j].x + normal.y * rect2[j].y;
-            if (projected < minB)
-                minB = projected;
-            if (projected > maxB)
-                maxB = projected;
-        }
-
-        if (velocityProjection < 0)
-            minA += velocityProjection;
-        else
-            maxA += velocityProjection;
-
-        if (maxA < minB || maxB < minA)
-            return { 0.0f, 0.0f };
-
-        float distance = minA < minB ? minB - maxA : minA - maxB;
-        distance = std::abs(distance);
-        if (distance < minDeflection)
-        {
-            minDeflection = distance;
-            minDeflectionAxis = normal;
-
-            glm::vec2 centerA = { 0.0f, 0.0f };
-            for (uint8_t i = 0; i < 4; i++)
-                centerA += rect1[i];
-            centerA *= 0.25f;
-
-            glm::vec2 centerB = { 0.0f, 0.0f };
-            for (uint8_t i = 0; i < 4; i++)
-                centerB += rect2[i];
-            centerB *= 0.25f;
-
-            glm::vec2 dist = centerA - centerB;
-            if (normal.x * dist.x + normal.y * dist.y < 0)
-                minDeflectionAxis = -minDeflectionAxis;
-        }
-    }
-
-    for (uint8_t i = 0; i < 4; i++)
-    {
-        glm::vec2& p1 = rect2[i];
-        glm::vec2& p2 = rect2[(i + 1) % 4];
-
-        glm::vec2 normal = { p2.y - p1.y, p1.x - p2.x };
-
-        float velocityProjection = normal.x * velocity.x + normal.y * velocity.y;
-
-        float minA = std::numeric_limits<float>::max();
-        float maxA = -(std::numeric_limits<float>::max() - 1.0f);
-        for (uint8_t j = 0; j < 4; j++)
-        {
-            float projected = normal.x * rect1[j].x + normal.y * rect1[j].y;
-            if (projected < minA)
-                minA = projected;
-            if (projected > maxA)
-                maxA = projected;
-        }
-
-        float minB = std::numeric_limits<float>::max();
-        float maxB = -(std::numeric_limits<float>::max() - 1.0f);
-        for (uint8_t j = 0; j < 4; j++)
-        {
-            float projected = normal.x * rect2[j].x + normal.y * rect2[j].y;
-            if (projected < minB)
-                minB = projected;
-            if (projected > maxB)
-                maxB = projected;
-        }
-
-        if (velocityProjection < 0)
-            minA += velocityProjection;
-        else
-            maxA += velocityProjection;
-
-        if (maxA < minB || maxB < minA)
-            return { 0.0f, 0.0f };
-
-        float distance = minA < minB ? minB - maxA : minA - maxB;
-        distance = std::abs(distance);
-        if (distance < minDeflection)
-        {
-            minDeflection = distance;
-            minDeflectionAxis = normal;
-
-            glm::vec2 centerA = { 0.0f, 0.0f };
-            for (uint8_t i = 0; i < 4; i++)
-                centerA += rect1[i];
-            centerA *= 0.25f;
-
-            glm::vec2 centerB = { 0.0f, 0.0f };
-            for (uint8_t i = 0; i < 4; i++)
-                centerB += rect2[i];
-            centerB *= 0.25f;
-
-            glm::vec2 dist = centerA - centerB;
-            if (normal.x * dist.x + normal.y * dist.y < 0)
-                minDeflectionAxis = -minDeflectionAxis;
-        }
-    }
-
-    return minDeflectionAxis * minDeflection;
-}
-
 class Level
 {
 public:
@@ -171,6 +36,9 @@ public:
 private:
 	uint32_t m_Width, m_Height;
 	float m_TileSize = 32.0f;
+
+	Ref<Texture2D> m_CloudTexture;
+	Ref<Texture2D> m_SunTexture;
 
 	uint8_t m_Map[MAX_LEVEL_SIZE][MAX_LEVEL_SIZE];
 	Ref<Tile> m_Tiles[(uint32_t)TileType::Count];
