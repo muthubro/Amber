@@ -9,7 +9,7 @@ Viewport::Viewport(float left, float right, float bottom, float top)
 void Viewport::SetBounds(const ViewportBounds& bounds)
 {
 	m_Bounds = bounds;
-	m_Camera = Amber::CreateScope<Amber::OrthographicCamera>(bounds.Left, bounds.Right, bounds.Bottom, bounds.Top);
+	m_Camera->SetProjection(bounds.Left, bounds.Right, bounds.Bottom, bounds.Top);
 }
 
 void Viewport::SetPosition(float x, float y, float maxWidth, float maxHeight)
@@ -40,5 +40,5 @@ void Viewport::SetPosition(float x, float y, float maxWidth, float maxHeight)
 	m_Bounds.Bottom = std::max(minBottom, maxBottom);
 	m_Bounds.Top = std::min(minTop, maxTop);
 
-	m_Camera = Amber::CreateScope<Amber::OrthographicCamera>(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top);
+	m_Camera->SetProjection(m_Bounds.Left, m_Bounds.Right, m_Bounds.Bottom, m_Bounds.Top);
 }

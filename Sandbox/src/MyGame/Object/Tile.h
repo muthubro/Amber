@@ -35,5 +35,4 @@ public:
 protected:
     TileType m_Type;
     Ref<Texture2D> m_Texture;
-    glm::vec2 m_TexCoords[4];
 };
