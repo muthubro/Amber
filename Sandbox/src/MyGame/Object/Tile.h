@@ -25,7 +25,7 @@ public:
     Tile(const glm::vec2& size, const TileType& type);
     virtual ~Tile() = default;
 
-    void OnRender(const glm::vec2& position);
+    void OnRender(const glm::vec2& position, float shade);
 
     virtual const TileType& GetType() const { return m_Type; }
     virtual void SetType(const TileType& type) { m_Type = type; }

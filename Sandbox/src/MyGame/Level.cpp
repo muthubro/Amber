@@ -1,6 +1,7 @@
 #include "Level.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtx/compatibility.hpp>
 
 #include "Color.h"
 
@@ -14,6 +15,7 @@ Level::Level(const std::string& mapString, uint32_t levelWidth, uint32_t levelHe
 
     m_CloudTexture = Texture2D::Create("assets/textures/Cloud.png");
     m_SunTexture = Texture2D::Create("assets/textures/Sun.png");
+    m_MoonTexture = Texture2D::Create("assets/textures/Circle.png");
 }
 
 void Level::OnEvent(Event& e)
@@ -23,12 +25,25 @@ void Level::OnEvent(Event& e)
 
 void Level::OnUpdate(Timestep ts)
 {
+    m_Time += ts;
+    if (m_Time >= m_DayLength) m_Time -= m_DayLength;
+
     m_Player.OnUpdate(ts);
 }
 
 void Level::OnRender(float left, float right, float bottom, float top)
 {
-    RenderCommand::SetClearColor(Color::SkyBlue);
+    float timeRatio = 0.5f * (1.0f + std::cos(m_Time * 2.0 * std::_Pi / m_DayLength));
+
+    glm::vec4 clearColor;
+    if (timeRatio > 0.3f)
+        clearColor = glm::lerp(Color::SunSet, Color::SkyBlue, (timeRatio - 0.3f) / 0.7f);
+    else if (timeRatio > 0.1f)
+        clearColor = glm::lerp(Color::MidnightBlue, Color::SunSet, (timeRatio - 0.1f) / 0.2f);
+    else
+        clearColor = Color::MidnightBlue;
+
+    RenderCommand::SetClearColor(clearColor);
     RenderCommand::Clear();
 
     uint32_t leftCol = (uint32_t)std::max(0, (int)std::floor(left / m_TileSize));
@@ -38,22 +53,38 @@ void Level::OnRender(float left, float right, float bottom, float top)
 
     if (topRow >= 15)
     {
+        float cloudAlpha = glm::lerp(0.0f, 1.0f, timeRatio);
+
         uint32_t col = leftCol > 2 ? leftCol - 2 : 0;
         for (; col < std::min(rightCol + 2, m_Width); col++)
         {
             if (col % 10 == 0)
-                Renderer2D::DrawQuad(glm::vec2(ColumnToX(col), top - 160.0f) + glm::vec2(m_TileSize * 1.5f), glm::vec2(4 * m_TileSize), 0.0f, m_CloudTexture);
+            {
+                auto pos = glm::vec2(ColumnToX(col), top - 160.0f) + glm::vec2(m_TileSize * 1.5f);
+                Renderer2D::DrawQuad(pos, glm::vec2(4 * m_TileSize), 0.0f, m_CloudTexture, { 1.0f, 1.0f, 1.0f, cloudAlpha });
+            }
         }
-
-        Renderer2D::DrawQuad(glm::vec2(left + 64.0f, top - 160.0f) + glm::vec2(m_TileSize), glm::vec2(3 * m_TileSize), 0.0f, m_SunTexture, Color::Yellow);
     }
 
+    if (timeRatio > 0.3f)
+    {
+        float sunPos = glm::lerp(bottom - 100.0f, top - 160.0f, (timeRatio - 0.3f) / 0.7f);
+        auto sunColor = glm::lerp(Color::SunSet, Color::Yellow, (timeRatio - 0.3f) / 0.7f);
+        Renderer2D::DrawQuad(glm::vec2(left + 64.0f, sunPos) + glm::vec2(m_TileSize), glm::vec2(3 * m_TileSize), 0.0f, m_SunTexture, sunColor);
+    }
+    else
+    {
+        float moonPos = glm::lerp(top - 160.0f, bottom - 100.0f, timeRatio / 0.3f);
+        Renderer2D::DrawQuad(glm::vec2(left + 64.0f, moonPos) + glm::vec2(m_TileSize), glm::vec2(3 * m_TileSize), 0.0f, m_MoonTexture);
+    }
+
+    float shade = glm::lerp(0.15f, 1.0f, timeRatio);
     for (uint32_t row = bottomRow; row < topRow; row++)
     {
         for (uint32_t col = leftCol; col < rightCol; col++)
         {
             if (m_Map[row][col])
-                m_Tiles[m_Map[row][col]]->OnRender(TileToPosition(row, col));
+                m_Tiles[m_Map[row][col]]->OnRender(TileToPosition(row, col), shade);
         }
     }
 

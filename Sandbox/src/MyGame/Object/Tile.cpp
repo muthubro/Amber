@@ -29,7 +29,7 @@ Tile::Tile(const glm::vec2& size, const TileType& type)
 	}
 }
 
-void Tile::OnRender(const glm::vec2& position)
+void Tile::OnRender(const glm::vec2& position, float shade)
 {
-	Renderer2D::DrawQuad(position, m_Size, 0.0f, m_Texture);
+	Renderer2D::DrawQuad(position, m_Size, 0.0f, m_Texture, { shade, shade, shade, 1.0f });
 }

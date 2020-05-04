@@ -36,9 +36,12 @@ public:
 private:
 	uint32_t m_Width, m_Height;
 	float m_TileSize = 32.0f;
+	float m_Time = 0.0f;
+	float m_DayLength = 300.0f;
 
 	Ref<Texture2D> m_CloudTexture;
 	Ref<Texture2D> m_SunTexture;
+	Ref<Texture2D> m_MoonTexture;
 
 	uint8_t m_Map[MAX_LEVEL_SIZE][MAX_LEVEL_SIZE];
 	Ref<Tile> m_Tiles[(uint32_t)TileType::Count];

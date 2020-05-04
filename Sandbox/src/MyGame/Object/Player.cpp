@@ -123,6 +123,8 @@ void Player::OnUpdate(Timestep ts)
 
 	m_Position.y += m_Velocity.y * ts;
 	m_Position.y = glm::clamp(m_Position.y, 0.0f, m_Level->RowToY(m_Level->GetHeight()));
+	if (m_Position.y == m_Level->RowToY(m_Level->GetHeight()))
+		m_Velocity.y = 0.0f;
 
 	float groundY = 0.0f;
 	if (m_Velocity.y <= 0.0f && HasGround(groundY))
