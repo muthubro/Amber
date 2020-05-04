@@ -114,8 +114,7 @@ project "Sandbox"
 		"Amber/src",
 		"Amber/vendor",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.spdlog}",
-		"%{prj.name}/src"
+		"%{IncludeDir.spdlog}"
 	}
 	links
 	{

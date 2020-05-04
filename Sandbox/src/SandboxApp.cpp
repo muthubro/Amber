@@ -3,16 +3,13 @@
 
 #include "ExampleLayer.h"
 #include "Sandbox2D.h"
-#include "MyGame/MyGameLayer.h"
 
 class Sandbox : public Amber::Application 
 {
 public:
 	Sandbox() 
 	{
-		//PushLayer(new ExampleLayer());
-		//PushLayer(new Sandbox2D());
-		PushLayer(new MyGameLayer());
+		PushLayer(new Sandbox2D());
 	}
 
 	~Sandbox() {}
