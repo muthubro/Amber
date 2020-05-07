@@ -7,15 +7,15 @@
 class Sandbox : public Amber::Application 
 {
 public:
-	Sandbox() 
-	{
-		PushLayer(new Sandbox2D());
-	}
+    Sandbox() 
+    {
+        PushLayer(new Sandbox2D());
+    }
 
-	~Sandbox() {}
+    ~Sandbox() {}
 };
 
 Amber::Application* Amber::CreateApplication() 
 {
-	return new Sandbox();
+    return new Sandbox();
 }

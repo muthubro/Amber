@@ -11,10 +11,10 @@ namespace Amber
 Scope<Window> Window::Create(const WindowProps& props)
 {
 #ifdef AB_PLATFORM_WINDOWS
-	return CreateScope<WindowsWindow>(props);
+    return CreateScope<WindowsWindow>(props);
 #else
-	AB_CORE_ASSERT(false, "Unknown platform!");
-	return nullptr;
+    AB_CORE_ASSERT(false, "Unknown platform!");
+    return nullptr;
 #endif
 }
 

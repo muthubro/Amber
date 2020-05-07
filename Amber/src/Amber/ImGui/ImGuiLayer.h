@@ -9,15 +9,15 @@ namespace Amber
 class ImGuiLayer : public Layer 
 {
 public:
-	ImGuiLayer();
-	~ImGuiLayer() = default;
+    ImGuiLayer();
+    ~ImGuiLayer() = default;
 
-	void OnAttach() override;
-	void OnDetach() override;
-	void OnImGuiRender() override;
+    void OnAttach() override;
+    void OnDetach() override;
+    void OnImGuiRender() override;
 
-	void Begin();
-	void End();
+    void Begin();
+    void End();
 };
 
 }

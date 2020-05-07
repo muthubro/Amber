@@ -10,18 +10,18 @@ namespace Amber
 
 Ref<VertexArray> VertexArray::Create()
 {
-	switch (Renderer::GetAPI()) 
-	{
-		case RendererAPI::API::None:
-			AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-			return nullptr;
+    switch (Renderer::GetAPI()) 
+    {
+        case RendererAPI::API::None:
+            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
+            return nullptr;
 
-		case RendererAPI::API::OpenGL:
-			return CreateRef<OpenGLVertexArray>();
-	}
+        case RendererAPI::API::OpenGL:
+            return CreateRef<OpenGLVertexArray>();
+    }
 
-	AB_CORE_ASSERT(false, "Unknown Renderer API");
-	return nullptr;
+    AB_CORE_ASSERT(false, "Unknown Renderer API");
+    return nullptr;
 }
 
 }

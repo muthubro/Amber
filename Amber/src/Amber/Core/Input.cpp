@@ -13,10 +13,10 @@ Scope<Input> Input::s_Instance = Input::Create();
 Scope<Input> Input::Create()
 {
 #ifdef AB_PLATFORM_WINDOWS
-	return CreateScope<WindowsInput>();
+    return CreateScope<WindowsInput>();
 #else
-	AB_CORE_ASSERT(false, "Unknown platform!");
-	return nullptr;
+    AB_CORE_ASSERT(false, "Unknown platform!");
+    return nullptr;
 #endif
 }
 

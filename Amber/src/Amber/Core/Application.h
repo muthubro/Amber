@@ -18,34 +18,34 @@ namespace Amber
 class Application
 {
 public:
-	Application();
-	virtual ~Application();
+    Application();
+    virtual ~Application();
 
-	void OnEvent(Event& event);
+    void OnEvent(Event& event);
 
-	void PushLayer(Layer* layer);
-	void PushOverlay(Layer* layer);
+    void PushLayer(Layer* layer);
+    void PushOverlay(Layer* layer);
 
-	Window& GetWindow() { return *m_Window; }
+    Window& GetWindow() { return *m_Window; }
 
-	static Application& Get() { return *s_Instance; }
+    static Application& Get() { return *s_Instance; }
 
 private:
-	Scope<Window> m_Window;
-	LayerStack m_LayerStack;
-	ImGuiLayer* m_ImGuiLayer;
+    Scope<Window> m_Window;
+    LayerStack m_LayerStack;
+    ImGuiLayer* m_ImGuiLayer;
 
-	float m_LastFrameTime = 0.0f;
-	bool m_Running = true;
-	bool m_Minimized = false;
+    float m_LastFrameTime = 0.0f;
+    bool m_Running = true;
+    bool m_Minimized = false;
 
-	static Application* s_Instance;
+    static Application* s_Instance;
 
-	void Run();
-	bool OnWindowClose(WindowCloseEvent& e);
-	bool OnWindowResize(WindowResizeEvent& e);
+    void Run();
+    bool OnWindowClose(WindowCloseEvent& e);
+    bool OnWindowResize(WindowResizeEvent& e);
 
-	friend int ::main(int argc, char** argv);
+    friend int ::main(int argc, char** argv);
 };
 
 // For use by CLIENT only
