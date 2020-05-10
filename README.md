@@ -1,4 +1,7 @@
 # Amber
+
+![Amber](/Resources/Branding/Logo.png?raw=true "Amber")
+
 Amber Engine is a personal game engine project based on the Hazel Engine being built by TheCherno in his YouTube channel.
 
 ## Getting Started
