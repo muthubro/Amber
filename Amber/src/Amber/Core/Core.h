@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#define AMBER_BUILD_ID "v0.1a"
+
 // Platform detection using predefined macros
 #ifdef _WIN32
     /* Windows x64/x86 */
@@ -75,6 +77,8 @@
 
 namespace Amber 
 {
+
+using byte = uint8_t;
 
 template<typename T>
 using Scope = std::unique_ptr<T>;

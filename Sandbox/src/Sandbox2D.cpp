@@ -62,7 +62,9 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
             { 0.0f, 1.0f, 0.6f, 1.0f },
         }, 20.0f);
         Amber::Renderer2D::EndScene();
+        Amber::Renderer::WaitAndRender();
 
+#if 0
         Amber::Renderer2D::BeginScene(m_CameraController.GetCamera());
         for (float y = -5.0f; y < 5.0f; y += 0.5f)
         {
@@ -73,6 +75,8 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
             }
         }
         Amber::Renderer2D::EndScene();
+        Amber::Renderer::WaitAndRender();
+#endif
     }
 }
 

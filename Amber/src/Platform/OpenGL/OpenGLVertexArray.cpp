@@ -3,6 +3,8 @@
 
 #include <glad/glad.h>
 
+#include "Amber/Renderer/RenderCommand.h"
+
 namespace Amber 
 {
 
@@ -31,14 +33,22 @@ OpenGLVertexArray::OpenGLVertexArray()
 {
     AB_PROFILE_FUNCTION();
 
-    glCreateVertexArrays(1, &m_RendererID);
+    RenderCommand::Submit([=]()
+    {
+        glCreateVertexArrays(1, &m_RendererID);
+
+        AB_CORE_TRACE("Creating vertex array {}", m_RendererID);
+    });
 }
 
 OpenGLVertexArray::~OpenGLVertexArray()
 {
     AB_PROFILE_FUNCTION();
 
-    glDeleteVertexArrays(1, &m_RendererID);
+    RenderCommand::Submit([=]()
+    {
+        glDeleteVertexArrays(1, &m_RendererID);
+    });
 }
 
 void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
@@ -47,21 +57,25 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 
     AB_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex buffer layout not set!");
 
-    glBindVertexArray(m_RendererID);
+    Bind();
     vertexBuffer->Bind();
-
-    const auto& layout = vertexBuffer->GetLayout();
-    for (const auto& element : layout) 
+    RenderCommand::Submit([=]()
     {
-        glEnableVertexAttribArray(m_VertexBufferIndex);
-        glVertexAttribPointer(m_VertexBufferIndex,
-            element.GetComponentCount(),
-            ShaderDataTypeToOpenGLBaseType(element.Type),
-            element.Normalized ? GL_TRUE : GL_FALSE,
-            layout.GetStride(),
-            (const void*)element.Offset);
-        m_VertexBufferIndex++;
-    }
+        const auto & layout = vertexBuffer->GetLayout();
+        for (const auto& element : layout)
+        {
+            glEnableVertexAttribArray(m_VertexBufferIndex);
+            glVertexAttribPointer(m_VertexBufferIndex,
+                element.GetComponentCount(),
+                ShaderDataTypeToOpenGLBaseType(element.Type),
+                element.Normalized ? GL_TRUE : GL_FALSE,
+                layout.GetStride(),
+                (const void*)element.Offset);
+            m_VertexBufferIndex++;
+        }
+
+        AB_CORE_TRACE("Adding vertex buffer {0} to vertex array {1}", vertexBuffer->GetRendererID(), m_RendererID);
+    });
 
     m_VertexBuffers.push_back(vertexBuffer);
 }
@@ -70,7 +84,7 @@ void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
 {
     AB_PROFILE_FUNCTION();
 
-    glBindVertexArray(m_RendererID);
+    Bind();
     indexBuffer->Bind();
 
     m_IndexBuffer = indexBuffer;
@@ -80,14 +94,22 @@ void OpenGLVertexArray::Bind() const
 {
     AB_PROFILE_FUNCTION();
 
-    glBindVertexArray(m_RendererID);
+    RenderCommand::Submit([=]()
+    {
+        glBindVertexArray(m_RendererID);
+
+        AB_CORE_TRACE("Binding vertex array {}", m_RendererID);
+    });
 }
 
 void OpenGLVertexArray::Unbind() const
 {
     AB_PROFILE_FUNCTION();
 
-    glBindVertexArray(0);
+    RenderCommand::Submit([=]()
+    {
+        glBindVertexArray(0);
+    });
 }
 
 }

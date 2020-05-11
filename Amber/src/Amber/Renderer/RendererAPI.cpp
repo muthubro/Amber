@@ -12,7 +12,7 @@ RendererAPI::API RendererAPI::s_API = RendererAPI::API::OpenGL;
 
 Scope<RendererAPI> RendererAPI::Create()
 {
-    switch (Renderer::GetAPI())
+    switch (s_API)
     {
         case RendererAPI::API::None:
             AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");

@@ -37,7 +37,12 @@ void Renderer::Submit(const Ref<Shader>& shader,
     shader->SetMat4("u_Transform", transform);
 
     vertexArray->Bind();
-    RenderCommand::DrawIndexed(vertexArray, vertexArray->GetIndexBuffer()->GetCount());
+    RenderCommand::DrawIndexed(vertexArray->GetIndexBuffer()->GetCount());
+}
+
+void Renderer::WaitAndRender()
+{
+    RenderCommand::GetCommandQueue().Execute();
 }
 
 void Renderer::OnWindowResize(uint32_t width, uint32_t height)

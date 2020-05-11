@@ -20,6 +20,8 @@ public:
     const BufferLayout& GetLayout() const override { return m_Layout; }
     void SetLayout(const BufferLayout& layout) override { m_Layout = layout; }
 
+    uint32_t& GetRendererID() override { return m_RendererID; }
+
 private:
     uint32_t m_RendererID;
     BufferLayout m_Layout;
@@ -35,6 +37,7 @@ public:
     void Unbind() const override;
 
     uint32_t GetCount() const override { return m_Count; }
+    uint32_t& GetRendererID() override { return m_RendererID; }
 
 private:
     uint32_t m_RendererID;

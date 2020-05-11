@@ -21,7 +21,7 @@ public:
     void SetClearColor(const glm::vec4& color) override;
     void Clear() override;
 
-    void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount) override;
+    void DrawIndexed(uint32_t indexCount) override;
 };
 
 }

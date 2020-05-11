@@ -59,7 +59,7 @@ namespace Amber
             { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Float, "a_TexIndex" },
             { ShaderDataType::Float, "a_TilingFactor" }
-            });
+        });
         s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
         s_Data.QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
@@ -77,7 +77,6 @@ namespace Amber
         }
         Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxIndices);
         s_Data.QuadVertexArray->SetIndexBuffer(quadIndexBuffer);
-        delete[] quadIndices;
 
         s_Data.WhiteTexture = Texture2D::Create(1, 1);
         uint32_t whiteTextureData = 0xffffffff;
@@ -150,7 +149,7 @@ namespace Amber
         for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
             s_Data.TextureSlots[i]->Bind(i);
 
-        RenderCommand::DrawIndexed(s_Data.QuadVertexArray, s_Data.QuadIndexCount);
+        RenderCommand::DrawIndexed(s_Data.QuadIndexCount);
         s_Data.Stats.DrawCalls++;
     }
 

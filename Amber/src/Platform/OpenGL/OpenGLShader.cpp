@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Amber/Renderer/RenderCommand.h"
+
 namespace Amber
 {
 
@@ -118,84 +120,92 @@ void OpenGLShader::Compile(const std::unordered_map<uint32_t, std::string>& shad
     AB_PROFILE_FUNCTION();
 
     AB_CORE_ASSERT(shaderSources.size() <= 2, "Only 2 shaders are supported right now!");
-    std::array<uint32_t, 2> shaderIDs;
 
-    uint32_t program = glCreateProgram();
-
-    uint8_t shaderIDIndex = 0;
-    for (auto& [type, source] : shaderSources)
+    RenderCommand::Submit([=]()
     {
-        const char* src = source.c_str();
-        uint32_t shader = glCreateShader(type);
-        glShaderSource(shader, 1, &src, nullptr);
+        std::array<uint32_t, 2> shaderIDs;
 
-        glCompileShader(shader);
+        uint32_t program = glCreateProgram();
+
+        uint8_t shaderIDIndex = 0;
+        for (auto& [type, source] : shaderSources)
+        {
+            const char* src = source.c_str();
+            uint32_t shader = glCreateShader(type);
+            glShaderSource(shader, 1, &src, nullptr);
+
+            glCompileShader(shader);
+            int status;
+            glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+            if (status == GL_FALSE)
+            {
+                int length;
+                glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+
+                std::vector<char> log(length);
+                glGetShaderInfoLog(shader, length, &length, &log[0]);
+
+                AB_CORE_ERROR("{0}", log.data());
+                AB_CORE_ASSERT(false, "Shader failed to compile!");
+
+                glDeleteShader(shader);
+            }
+
+            glAttachShader(program, shader);
+            shaderIDs[shaderIDIndex++] = shader;
+        }
+
+        glLinkProgram(program);
         int status;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+        glGetProgramiv(program, GL_LINK_STATUS, &status);
         if (status == GL_FALSE)
         {
             int length;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
+            glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &length);
 
             std::vector<char> log(length);
-            glGetShaderInfoLog(shader, length, &length, &log[0]);
+            glGetProgramInfoLog(m_RendererID, length, &length, &log[0]);
 
             AB_CORE_ERROR("{0}", log.data());
-            AB_CORE_ASSERT(false, "Shader failed to compile!");
+            AB_CORE_ASSERT(false, "OpenGLShader program failed to link!");
 
-            glDeleteShader(shader);
+            glDeleteProgram(program);
+            for (auto id : shaderIDs)
+            {
+                glDetachShader(program, id);
+                glDeleteShader(id);
+            }
 
-            break;
+            return;
         }
+        m_RendererID = program;
 
-        glAttachShader(program, shader);
-        shaderIDs[shaderIDIndex++] = shader;
-    }
-
-    glLinkProgram(program);
-    int status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if (status == GL_FALSE)
-    {
-        int length;
-        glGetProgramiv(m_RendererID, GL_INFO_LOG_LENGTH, &length);
-
-        std::vector<char> log(length);
-        glGetProgramInfoLog(m_RendererID, length, &length, &log[0]);
-
-        AB_CORE_ERROR("{0}", log.data());
-        AB_CORE_ASSERT(false, "OpenGLShader program failed to link!");
-
-        glDeleteProgram(program);
         for (auto id : shaderIDs)
         {
             glDetachShader(program, id);
             glDeleteShader(id);
         }
-
-        return;
-    }
-    m_RendererID = program;
-
-    for (auto id : shaderIDs)
-    {
-        glDetachShader(program, id);
-        glDeleteShader(id);
-    }
+    });
 }
 
 void OpenGLShader::Bind() const
 {
     AB_PROFILE_FUNCTION();
 
-    glUseProgram(m_RendererID);
+    RenderCommand::Submit([=]()
+    {
+        glUseProgram(m_RendererID);
+    });
 }
 
 void OpenGLShader::Unbind() const
 {
     AB_PROFILE_FUNCTION();
 
-    glUseProgram(0);
+    RenderCommand::Submit([=]()
+    {
+        glUseProgram(0);
+    });
 }
 
 void OpenGLShader::SetInt(const std::string& name, int value)
@@ -242,98 +252,126 @@ void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value)
 
 void OpenGLShader::UploadUniformInt(const std::string& name, int value)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform1i(location, value);
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform1i(location, value);
+    });
 }
 
 void OpenGLShader::UploadUniformIntArray(const std::string& name, int* values, uint32_t count)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        int32_t samplers[32];
+        for (uint32_t i = 0; i < 32; i++)
+            samplers[i] = i;
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform1iv(location, count, values);
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform1iv(location, count, samplers);
+    });
 }
 
 void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform1f(location, value);
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform1f(location, value);
+    });
 }
 
 void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& values)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform2f(location, values.x, values.y);
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform2f(location, values.x, values.y);
+    });
 }
 
 void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& values)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform3f(location, values.x, values.y, values.z);
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform3f(location, values.x, values.y, values.z);
+    });
 }
 
 void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& values)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniform4f(location, values.x, values.y, values.z, values.w);
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniform4f(location, values.x, values.y, values.z, values.w);
+    });
 }
 
 void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+    });
 }
 
 void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
 {
-    if (m_LocationMap.find(name) == m_LocationMap.end())
-        m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
+    RenderCommand::Submit([=]()
+    {
+        if (m_LocationMap.find(name) == m_LocationMap.end())
+            m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
 
-    int location = m_LocationMap[name];
-    if (location == -1)
-        AB_CORE_ERROR("Uniform {0} not found!", name);
-    else
-        glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+        int location = m_LocationMap[name];
+        if (location == -1)
+            AB_CORE_ERROR("Uniform {0} not found!", name);
+        else
+            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+    });
 }
 
 }
