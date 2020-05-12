@@ -62,14 +62,9 @@
     #define AB_DEBUGBREAK()
 #endif
 
+#define AB_EXPAND_VARGS(x) x
 
-#ifdef AB_ENABLE_ASSERTS
-    #define AB_ASSERT(x, ...) { if(!(x)) { AB_ERROR("Assertion Failed: {0}", __VA_ARGS__); AB_DEBUGBREAK(); } }
-    #define AB_CORE_ASSERT(x, ...) { if(!(x)) { AB_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); AB_DEBUGBREAK(); } }
-#else
-    #define AB_ASSERT(x, ...)
-    #define AB_CORE_ASSERT(x, ...)
-#endif
+#include "Assert.h"
 
 #define BIT(x) (1 << x)
 
@@ -79,6 +74,7 @@ namespace Amber
 {
 
 using byte = uint8_t;
+using RendererID = uint32_t;
 
 template<typename T>
 using Scope = std::unique_ptr<T>;

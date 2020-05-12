@@ -8,11 +8,23 @@
 namespace Amber 
 {
 
+static GLenum OpenGLUsage(VertexBufferUsage usage)
+{
+    switch (usage)
+    {
+        case VertexBufferUsage::Static:  return GL_STATIC_DRAW;
+        case VertexBufferUsage::Dynamic: return GL_DYNAMIC_DRAW;
+    }
+
+    AB_CORE_ASSERT("Unknown vertex buffer usage!");
+    return 0;
+}
+
 /////////////////////////////////////////////////////////////////
 ////////     VERTEX BUFFER     //////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
+OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage)
 {
     AB_PROFILE_FUNCTION();
 
@@ -20,11 +32,11 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size)
     {
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, size, nullptr, OpenGLUsage(usage));
     });
 }
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size, bool dynamic)
+OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage)
 {
     AB_PROFILE_FUNCTION();
 
@@ -32,7 +44,7 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(float* vertices, uint32_t size, bool dyna
     {
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, size, vertices, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, size, data, OpenGLUsage(usage));
 
         AB_CORE_TRACE("Creating vertex buffer {}", m_RendererID);
     });
@@ -69,14 +81,14 @@ void OpenGLVertexBuffer::Unbind() const
     });
 }
 
-void OpenGLVertexBuffer::SetData(const void* data, uint32_t size)
+void OpenGLVertexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
 {
     AB_PROFILE_FUNCTION();
 
     RenderCommand::Submit([=]()
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, size, buffer);
     });
 }
 
@@ -84,7 +96,7 @@ void OpenGLVertexBuffer::SetData(const void* data, uint32_t size)
 ////////     INDEX BUFFER     ///////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count)
+OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, uint32_t count)
     : m_Count(count) 
 {
     AB_PROFILE_FUNCTION();
@@ -93,9 +105,9 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* indices, uint32_t count)
     {
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), data, GL_STATIC_DRAW);
 
-        delete[] indices;
+        delete[] data;
 
         AB_CORE_TRACE("Creating index buffer {}", m_RendererID);
     });
@@ -131,6 +143,10 @@ void OpenGLIndexBuffer::Unbind() const
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     });
+}
+
+void OpenGLIndexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
+{
 }
 
 }

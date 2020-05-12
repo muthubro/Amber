@@ -38,6 +38,24 @@ void OpenGLRendererAPI::Init()
     glDebugMessageCallback(OpenGLMessageCallback, nullptr);
     glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
 #endif
+
+    glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    auto& caps = RendererAPI::GetCapabilities();
+    caps.Vendor = (const char*)glGetString(GL_VENDOR);
+    caps.Renderer = (const char*)glGetString(GL_RENDERER);
+    caps.Version = (const char*)glGetString(GL_VERSION);
+    glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &caps.MaxTextureSlots);
+
+    GLenum error = glGetError();
+    while (error != GL_NO_ERROR)
+    {
+        AB_CORE_ERROR("OpenGL Error {0}", error);
+        error = glGetError();
+    }
 }
 
 void OpenGLRendererAPI::SetViewport(int x, int y, uint32_t width, uint32_t height)
@@ -71,15 +89,21 @@ void OpenGLRendererAPI::SetClearColor(const glm::vec4& color)
     glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void OpenGLRendererAPI::Clear()
+void OpenGLRendererAPI::Clear(const glm::vec4& color)
 {
+    glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRendererAPI::DrawIndexed(uint32_t indexCount)
+void OpenGLRendererAPI::DrawIndexed(uint32_t indexCount, bool depthTest)
 {
+    if (!depthTest)
+        glDisable(GL_DEPTH_TEST);
+
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (!depthTest)
+        glEnable(GL_DEPTH_TEST);
 }
 
 }

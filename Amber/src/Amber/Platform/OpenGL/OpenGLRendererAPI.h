@@ -19,9 +19,9 @@ public:
     virtual void DisableDepthBuffer() override;
 
     void SetClearColor(const glm::vec4& color) override;
-    void Clear() override;
+    void Clear(const glm::vec4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
 
-    void DrawIndexed(uint32_t indexCount) override;
+    void DrawIndexed(uint32_t indexCount, bool depthTest = true) override;
 };
 
 }

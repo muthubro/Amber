@@ -3,7 +3,7 @@
 
 #include "Amber/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLVertexArray.h"
+#include "Amber/Platform/OpenGL/OpenGLVertexArray.h"
 
 namespace Amber 
 {

@@ -3,9 +3,9 @@
 
 #include "Amber/Core/Input.h"
 
-#include "Amber/Events/ApplicationEvent.h"
-#include "Amber/Events/KeyEvent.h"
-#include "Amber/Events/MouseEvent.h"
+#include "Amber/Core/Events/ApplicationEvent.h"
+#include "Amber/Core/Events/KeyEvent.h"
+#include "Amber/Core/Events/MouseEvent.h"
 
 #include "Amber/Renderer/Renderer.h"
 
@@ -64,7 +64,6 @@ void WindowsWindow::Init(const WindowProps& props)
     m_Context->Init();
 
     glfwSetWindowUserPointer(m_Window, &m_Data);
-    SetVSync(true);
 
     // Set GLFW callbacks
     glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height) {

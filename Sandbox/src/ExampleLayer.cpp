@@ -164,17 +164,17 @@ void ExampleLayer::OnUpdate(Amber::Timestep ts)
                 m_SquarePosition.y + (y - m_SquareRows / 2) * 0.11f,
                 0.0f);
             glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * scale;
-            Amber::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
+            //Amber::Renderer::Submit(m_FlatColorShader, m_SquareVA, transform);
         }
     }
 
     auto& textureShader = m_ShaderLibrary.Get("Texture");
 
     m_Texture->Bind();
-    Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+    //Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
 
     m_ChernoLogoTexture->Bind();
-    Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
+    //Amber::Renderer::Submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.0f)));
 
     //Amber::Renderer::Submit(m_TriangleShader, m_TriangleVA);
 

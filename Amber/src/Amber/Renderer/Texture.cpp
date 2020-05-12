@@ -3,7 +3,7 @@
 
 #include "Amber/Renderer/Renderer.h"
 
-#include "Platform/OpenGL/OpenGLTexture.h"
+#include "Amber/Platform/OpenGL/OpenGLTexture.h"
 
 namespace Amber
 {

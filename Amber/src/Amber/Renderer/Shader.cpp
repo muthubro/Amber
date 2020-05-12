@@ -4,7 +4,7 @@
 #include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Shader.h"
 
-#include "Platform/OpenGL/OpenGLShader.h"
+#include "Amber/Platform/OpenGL/OpenGLShader.h"
 
 namespace Amber
 {

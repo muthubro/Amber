@@ -15,10 +15,10 @@
 
 #include "Amber/Debug/Instrumentor.h"
 
-#include "Amber/Events/Event.h"
-#include "Amber/Events/ApplicationEvent.h"
-#include "Amber/Events/KeyEvent.h"
-#include "Amber/Events/MouseEvent.h"
+#include "Amber/Core/Events/Event.h"
+#include "Amber/Core/Events/ApplicationEvent.h"
+#include "Amber/Core/Events/KeyEvent.h"
+#include "Amber/Core/Events/MouseEvent.h"
 
 #include "Amber/Extras/ParticleSystem.h"
 

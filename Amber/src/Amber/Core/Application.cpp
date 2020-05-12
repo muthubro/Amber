@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
 #include "Amber/Core/Input.h"
 #include "Amber/Core/Window.h"
@@ -24,8 +25,11 @@ Application::Application()
 
     m_Window = Window::Create();
     m_Window->SetEventCallback(AB_BIND_EVENT_FN(Application::OnEvent));
+    m_Window->SetVSync(false);
 
     Renderer::Init();
+    Renderer::WaitAndRender();
+
     Random::Init();
 
     m_ImGuiLayer = new ImGuiLayer();
@@ -48,7 +52,7 @@ void Application::Run()
         AB_PROFILE_SCOPE("RunLoop");
 
         float time = (float)glfwGetTime();
-        Timestep ts = time - m_LastFrameTime;
+        m_Timestep = time - m_LastFrameTime;
         m_LastFrameTime = time;
 
         if (!m_Minimized)
@@ -57,19 +61,14 @@ void Application::Run()
                 AB_PROFILE_SCOPE("LayerStack OnUpdate");
                 
                 for (Layer* layer : m_LayerStack)
-                    layer->OnUpdate(ts);
+                    layer->OnUpdate(m_Timestep);
             }
 
-            m_ImGuiLayer->Begin();
-            {
-                AB_PROFILE_SCOPE("LayerStack OnImGuiRender");
-            
-                for (Layer* layer : m_LayerStack)
-                    layer->OnImGuiRender();
-            }
-            m_ImGuiLayer->End();
+            auto app = this;
+            Renderer::Submit([app]() { app->RenderImGui(); });
+
+            Renderer::WaitAndRender();
         }
-
 
         m_Window->OnUpdate();
     }
@@ -89,6 +88,28 @@ void Application::OnEvent(Event& event)
         if (event.Handled)
             break;
     }
+}
+
+void Application::RenderImGui()
+{
+    m_ImGuiLayer->Begin();
+
+    ImGui::Begin("Renderer");
+    auto& caps = RendererAPI::GetCapabilities();
+    ImGui::Text("Vendor: %s", caps.Vendor.c_str());
+    ImGui::Text("Renderer: %s", caps.Renderer.c_str());
+    ImGui::Text("Version: %s", caps.Version.c_str());
+    ImGui::Text("Frame Time: %.2fms", m_Timestep.GetMilliseconds());
+    ImGui::End();
+
+    {
+        AB_PROFILE_SCOPE("LayerStack OnImGuiRender");
+
+        for (Layer* layer : m_LayerStack)
+            layer->OnImGuiRender();
+    }
+
+    m_ImGuiLayer->End();
 }
 
 void Application::PushLayer(Layer* layer) 
@@ -117,14 +138,15 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
 {
     AB_PROFILE_FUNCTION();
 
-    if (e.GetWidth() == 0 || e.GetHeight() == 0)
+    uint32_t width = e.GetWidth(), height = e.GetHeight();
+    if (width == 0 || height == 0)
     {
         m_Minimized = true;
         return false;
     }
     
     m_Minimized = false;
-    Renderer::OnWindowResize((uint32_t)e.GetWidth(), (uint32_t)e.GetHeight());
+    RenderCommand::SetViewPort(0, 0, width, height);
     
     return false;
 }

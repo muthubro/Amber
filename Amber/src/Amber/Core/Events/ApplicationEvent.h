@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include "Amber/Events/Event.h"
+#include "Amber/Core/Events/Event.h"
 
 namespace Amber 
 {

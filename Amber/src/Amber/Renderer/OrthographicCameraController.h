@@ -2,8 +2,8 @@
 
 #include "Amber/Core/Timestep.h"
 
-#include "Amber/Events/ApplicationEvent.h"
-#include "Amber/Events/MouseEvent.h"
+#include "Amber/Core/Events/ApplicationEvent.h"
+#include "Amber/Core/Events/MouseEvent.h"
 
 #include "Amber/Renderer/OrthographicCamera.h"
 

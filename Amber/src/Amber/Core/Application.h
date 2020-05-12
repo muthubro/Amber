@@ -3,14 +3,13 @@
 #include "Amber/Core/Core.h"
 #include "Amber/Core/Layer.h"
 #include "Amber/Core/LayerStack.h"
+#include "Amber/Core/Timestep.h"
 #include "Amber/Core/Window.h"
 
-#include "Amber/Events/Event.h"
-#include "Amber/Events/ApplicationEvent.h"
+#include "Amber/Core/Events/Event.h"
+#include "Amber/Core/Events/ApplicationEvent.h"
 
 #include "Amber/ImGui/ImGuiLayer.h"
-
-int main(int argc, char** argv);
 
 namespace Amber 
 {
@@ -21,7 +20,11 @@ public:
     Application();
     virtual ~Application();
 
+    void Run();
+
     void OnEvent(Event& event);
+
+    void RenderImGui();
 
     void PushLayer(Layer* layer);
     void PushOverlay(Layer* layer);
@@ -34,6 +37,7 @@ private:
     Scope<Window> m_Window;
     LayerStack m_LayerStack;
     ImGuiLayer* m_ImGuiLayer;
+    Timestep m_Timestep;
 
     float m_LastFrameTime = 0.0f;
     bool m_Running = true;
@@ -41,11 +45,8 @@ private:
 
     static Application* s_Instance;
 
-    void Run();
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);
-
-    friend int ::main(int argc, char** argv);
 };
 
 // For use by CLIENT only

@@ -4,7 +4,7 @@
 #include <string>
 
 #include "Amber/Core/Core.h"
-#include "Amber/Events/Event.h"
+#include "Amber/Core/Events/Event.h"
 
 namespace Amber 
 {

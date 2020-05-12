@@ -1,7 +1,7 @@
 #include "abpch.h"
 #include "RenderCommand.h"
 
-#include "Platform/OpenGL/OpenGLRendererAPI.h"
+#include "Amber/Platform/OpenGL/OpenGLRendererAPI.h"
 
 #include <glad/glad.h>
 
