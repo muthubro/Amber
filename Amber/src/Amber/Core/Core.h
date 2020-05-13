@@ -74,7 +74,6 @@ namespace Amber
 {
 
 using byte = uint8_t;
-using RendererID = uint32_t;
 
 template<typename T>
 using Scope = std::unique_ptr<T>;

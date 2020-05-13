@@ -7,21 +7,21 @@
 namespace Amber
 {
 
-class OpenGLShaderUniformDeclaration : ShaderUniformDeclaration
+class OpenGLShaderUniform : public ShaderUniform
 {
 public:
     enum class Type
     {
         None,
+        Int32,
         Float32,
         Vec2, Vec3, Vec4,
         Mat3, Mat4,
-        Int32,
         Struct
     };
 
-    OpenGLShaderUniformDeclaration(ShaderDomain domain, Type type, const std::string& name, uint32_t count = 1);
-    OpenGLShaderUniformDeclaration(ShaderDomain domain, ShaderUniformStruct* uniformStruct, const std::string& name, uint32_t count = 1);
+    OpenGLShaderUniform(ShaderDomain domain, Type type, const std::string& name, uint32_t count = 1);
+    OpenGLShaderUniform(ShaderDomain domain, ShaderUniformStruct* uniformStruct, const std::string& name, uint32_t count = 1);
 
     const std::string& GetName() const override { return m_Name; }
     uint32_t GetSize() const override { return m_Size; }
@@ -54,16 +54,19 @@ private:
     ShaderUniformStruct* m_Struct;
     mutable int32_t m_Location = 0;
 
-    friend class OpenGLShaderUniformBufferDeclaration;
+    void SetLocation(int32_t location) { m_Location = location; }
+
+    friend class OpenGLShader;
+    friend class OpenGLShaderUniformBuffer;
 };
 
-class OpenGLShaderUniformBufferDeclaration : ShaderUniformBufferDeclaration
+class OpenGLShaderUniformBuffer : public ShaderUniformBuffer
 {
 public:
-    OpenGLShaderUniformBufferDeclaration(ShaderDomain domain, const std::string& name);
+    OpenGLShaderUniformBuffer(ShaderDomain domain, const std::string& name);
 
-    ShaderUniformDeclaration* FindUniform(const std::string& name) override;
-    void PushUniform(ShaderUniformDeclaration* uniform) override;
+    ShaderUniform* FindUniform(const std::string& name) override;
+    void PushUniform(ShaderUniform* uniform) override;
 
     const std::string& GetName() const override { return m_Name; }
     const ShaderUniformList& GetUniforms() const override { return m_Uniforms; }
@@ -79,7 +82,7 @@ private:
     ShaderDomain m_Domain;
 };
 
-class OpenGLShaderUniformResourceDeclaration : ShaderUniformResourceDeclaration
+class OpenGLShaderResource : public ShaderResource
 {
 public:
     enum class Type
@@ -87,7 +90,7 @@ public:
         None, Texture2D
     };
 
-    OpenGLShaderUniformResourceDeclaration(Type type, const std::string& name, uint32_t count = 1);
+    OpenGLShaderResource(Type type, const std::string& name, uint32_t count = 1);
 
     const std::string& GetName() const override { return m_Name; }
     uint32_t GetRegister() const override { return m_Register; }
@@ -98,12 +101,17 @@ public:
     static Type StringToType(const std::string& type);
     static std::string TypeToString(Type type);
 
+protected:
+    void SetRegister(uint32_t reg) override { m_Register = reg; }
+
 private:
     std::string m_Name;
     uint32_t m_Register = 0;
     uint32_t m_Count;
 
     Type m_Type;
+
+    friend class OpenGLShader;
 };
 
 }

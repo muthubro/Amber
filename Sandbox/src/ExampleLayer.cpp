@@ -39,7 +39,7 @@ ExampleLayer::ExampleLayer()
         }
     )";
 
-    m_FlatColorShader = Amber::Shader::Create("FlatColorShader", flatColorVertexSource, flatColorFragmentSource);
+    //m_FlatColorShader = Amber::Shader::Create("FlatColorShader", flatColorVertexSource, flatColorFragmentSource);
 
     m_SquareVA = Amber::VertexArray::Create();
 
@@ -102,7 +102,7 @@ ExampleLayer::ExampleLayer()
         }
     )";
 
-    m_TriangleShader = Amber::Shader::Create("PosColorShader", triangleVertexSource, triangleFragmentSource);
+    //m_TriangleShader = Amber::Shader::Create("PosColorShader", triangleVertexSource, triangleFragmentSource);
 
     m_TriangleVA = Amber::VertexArray::Create();
 

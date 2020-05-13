@@ -123,7 +123,7 @@ public:
     virtual void SetLayout(const BufferLayout& layout) = 0;
 
     virtual uint32_t GetSize() const = 0;
-    virtual RendererID GetRendererID() const = 0;
+    virtual uint32_t GetRendererID() const = 0;
 
     static Ref<VertexBuffer> Create(uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
     static Ref<VertexBuffer> Create(void* data, uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
@@ -141,7 +141,7 @@ public:
 
     virtual uint32_t GetCount() const = 0;
     virtual uint32_t GetSize() const = 0;
-    virtual RendererID GetRendererID() const = 0;
+    virtual uint32_t GetRendererID() const = 0;
 
     static Ref<IndexBuffer> Create(void* data, uint32_t count);
 };

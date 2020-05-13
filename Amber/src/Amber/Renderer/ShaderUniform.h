@@ -10,7 +10,7 @@ enum class ShaderDomain
 {
     Vertex, Pixel
 };
-class ShaderUniformDeclaration
+class ShaderUniform
 {
 public:
     virtual const std::string& GetName() const = 0;
@@ -26,7 +26,7 @@ private:
     friend class ShaderUniformStruct;
 };
 
-typedef std::vector<ShaderUniformDeclaration*> ShaderUniformList;
+typedef std::vector<ShaderUniform*> ShaderUniformList;
 
 class ShaderUniformStruct
 {
@@ -34,7 +34,7 @@ public:
     ShaderUniformStruct(const std::string& name)
         : m_Name(name), m_Size(0), m_Offset(0) {}
 
-    void AddField(ShaderUniformDeclaration* field)
+    void AddField(ShaderUniform* field)
     {
         m_Size += field->GetSize();
         uint32_t offset = 0;
@@ -62,12 +62,14 @@ private:
     uint32_t m_Offset;
 };
 
+typedef std::vector<ShaderUniformStruct*> ShaderUniformStructList;
 
-class ShaderUniformBufferDeclaration
+
+class ShaderUniformBuffer
 {
 public:
-    virtual ShaderUniformDeclaration* FindUniform(const std::string& name) = 0;
-    virtual void PushUniform(ShaderUniformDeclaration* uniform) = 0;
+    virtual ShaderUniform* FindUniform(const std::string& name) = 0;
+    virtual void PushUniform(ShaderUniform* uniform) = 0;
 
     virtual const std::string& GetName() const = 0;
     virtual const ShaderUniformList& GetUniforms() const = 0;
@@ -76,16 +78,19 @@ public:
     virtual ShaderDomain GetDomain() const = 0;
 };
 
-typedef std::vector<ShaderUniformBufferDeclaration*> ShaderUniformBufferList;
+typedef std::vector<ShaderUniformBuffer*> ShaderUniformBufferList;
 
-class ShaderUniformResourceDeclaration
+class ShaderResource
 {
 public:
     virtual const std::string& GetName() const = 0;
     virtual uint32_t GetRegister() const = 0;
     virtual uint32_t GetCount() const = 0;
+
+protected:
+    virtual void SetRegister(uint32_t reg) = 0;
 };
 
-typedef std::vector<ShaderUniformResourceDeclaration*> ShaderUniformResourceList;
+typedef std::vector<ShaderResource*> ShaderResourceList;
 
 }

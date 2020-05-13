@@ -34,7 +34,7 @@ struct Buffer
             memset(Data, 0, Size);
     }
 
-    void Write(void* data, uint32_t size, uint32_t offset = 0)
+    void Write(byte* data, uint32_t size, uint32_t offset = 0)
     {
         AB_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
         memcpy(Data + offset, data, size);
@@ -42,7 +42,7 @@ struct Buffer
 
     uint32_t GetSize() const { return Size; }
 
-    static Buffer Copy(void* data, uint32_t size)
+    static Buffer Copy(byte* data, uint32_t size)
     {
         Buffer buffer;
         buffer.Allocate(size);

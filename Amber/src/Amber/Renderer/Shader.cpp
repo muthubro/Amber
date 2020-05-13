@@ -25,7 +25,7 @@ Ref<Shader> Shader::Create(const std::string& filepath)
     return nullptr;
 }
 
-Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource)
+Ref<Shader> Shader::CreateFromString(const std::string& name, const std::string& source)
 {
     switch (Renderer::GetAPI())
     {
@@ -34,7 +34,7 @@ Ref<Shader> Shader::Create(const std::string& name, const std::string& vertexSou
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLShader>(name, vertexSource, fragmentSource);
+            return CreateRef<OpenGLShader>(name, source);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

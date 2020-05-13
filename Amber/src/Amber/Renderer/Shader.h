@@ -5,6 +5,9 @@
 #include <glm/glm.hpp>
 
 #include "Amber/Core/Core.h"
+#include "Amber/Core/Buffer.h"
+
+#include "Amber/Renderer/ShaderUniform.h"
 
 namespace Amber 
 {
@@ -25,9 +28,24 @@ public:
     virtual void SetMat4(const std::string& name, const glm::mat4& value) = 0;
 
     virtual const std::string& GetName() const = 0;
+    virtual uint32_t GetRendererID() const = 0;
+
+    virtual bool HasVSMaterialUniformBuffer() const = 0;
+    virtual bool HasPSMaterialUniformBuffer() const = 0;
+
+    virtual const ShaderUniformBuffer& GetVSMaterialUniformBuffer() const = 0;
+    virtual const ShaderUniformBuffer& GetPSMaterialUniformBuffer() const = 0;
+
+    virtual void SetVSMaterialUniformBuffer(Buffer buffer) = 0;
+    virtual void SetPSMaterialUniformBuffer(Buffer buffer) = 0;
+
+    virtual const ShaderResourceList& GetResources() const = 0;
 
     static Ref<Shader> Create(const std::string& filepath);
-    static Ref<Shader> Create(const std::string& name, const std::string& vertexSource, const std::string& fragmentSource);
+    static Ref<Shader> CreateFromString(const std::string& name, const std::string& source);
+
+protected:
+
 };
 
 class ShaderLibrary
