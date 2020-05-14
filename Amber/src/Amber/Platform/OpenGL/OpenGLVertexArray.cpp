@@ -36,8 +36,6 @@ OpenGLVertexArray::OpenGLVertexArray()
     RenderCommand::Submit([=]()
     {
         glCreateVertexArrays(1, &m_RendererID);
-
-        AB_CORE_TRACE("Creating vertex array {}", m_RendererID);
     });
 }
 
@@ -73,8 +71,6 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
                 (const void*)element.Offset);
             m_VertexBufferIndex++;
         }
-
-        AB_CORE_TRACE("Adding vertex buffer {0} to vertex array {1}", vertexBuffer->GetRendererID(), m_RendererID);
     });
 
     m_VertexBuffers.push_back(vertexBuffer);
@@ -97,8 +93,6 @@ void OpenGLVertexArray::Bind() const
     RenderCommand::Submit([=]()
     {
         glBindVertexArray(m_RendererID);
-
-        AB_CORE_TRACE("Binding vertex array {}", m_RendererID);
     });
 }
 

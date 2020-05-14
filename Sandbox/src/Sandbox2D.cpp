@@ -11,7 +11,7 @@ void Sandbox2D::OnAttach()
 {
     AB_PROFILE_FUNCTION();
 
-    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png");
+    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
 
     Amber::RenderCommand::EnableBlending();
     Amber::RenderCommand::EnableDepthBuffer();
@@ -64,7 +64,6 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
 
-#if 0
         Amber::Renderer2D::BeginScene(m_CameraController.GetCamera());
         for (float y = -5.0f; y < 5.0f; y += 0.5f)
         {
@@ -76,7 +75,6 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         }
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
-#endif
     }
 }
 

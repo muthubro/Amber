@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 #include "Amber/Core/Buffer.h"
@@ -64,7 +65,7 @@ private:
     ShaderResourceList m_Resources;
     ShaderUniformStructList m_Structs;
 
-    std::unordered_map<uint32_t, std::string> m_ShaderSource;
+    std::unordered_map<GLenum, std::string> m_ShaderSource;
 
     void Load(const std::string& source);
     void Reload();
@@ -98,7 +99,7 @@ private:
 
     void UploadUniformStruct(OpenGLShaderUniform* uniform, byte* buffer, uint32_t offset);
 
-    static uint32_t ShaderTypeFromString(const std::string& type);
+    static GLenum ShaderTypeFromString(const std::string& type);
 };
 
 }

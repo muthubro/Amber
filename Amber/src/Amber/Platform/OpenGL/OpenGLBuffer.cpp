@@ -45,8 +45,6 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUs
         glCreateBuffers(1, &m_RendererID);
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
         glBufferData(GL_ARRAY_BUFFER, size, data, OpenGLUsage(usage));
-
-        AB_CORE_TRACE("Creating vertex buffer {}", m_RendererID);
     });
 }
 
@@ -67,7 +65,6 @@ void OpenGLVertexBuffer::Bind() const
     RenderCommand::Submit([=]()
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        AB_CORE_TRACE("Binding vertex buffer {}", m_RendererID);
     });
 }
 
@@ -108,8 +105,6 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, uint32_t count)
         glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), data, GL_STATIC_DRAW);
 
         delete[] data;
-
-        AB_CORE_TRACE("Creating index buffer {}", m_RendererID);
     });
 }
 
@@ -130,8 +125,6 @@ void OpenGLIndexBuffer::Bind() const
     RenderCommand::Submit([=]()
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
-
-        AB_CORE_TRACE("Binding index buffer {}", m_RendererID);
     });
 }
 

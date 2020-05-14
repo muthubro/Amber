@@ -78,10 +78,11 @@ namespace Amber
         Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxIndices);
         s_Data.QuadVertexArray->SetIndexBuffer(quadIndexBuffer);
 
-        s_Data.WhiteTexture = Texture2D::Create(1, 1);
-        uint32_t* whiteTextureData = new uint32_t;
-        *whiteTextureData = 0xffffffff;
-        s_Data.WhiteTexture->SetData(whiteTextureData, sizeof(uint32_t));
+        s_Data.WhiteTexture = Texture2D::Create(TextureFormat::RGBA, 1, 1);
+        uint32_t whiteTextureData = 0xffffffff;
+        s_Data.WhiteTexture->Lock();
+        s_Data.WhiteTexture->GetWritableBuffer().Write(&whiteTextureData, sizeof(uint32_t));
+        s_Data.WhiteTexture->Unlock();
 
         int32_t samplers[Renderer2DData::MaxTextureSlots];
         for (uint32_t i = 0; i < Renderer2DData::MaxTextureSlots; i++)
