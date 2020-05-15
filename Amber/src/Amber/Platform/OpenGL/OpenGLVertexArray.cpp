@@ -80,9 +80,6 @@ void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
 {
     AB_PROFILE_FUNCTION();
 
-    Bind();
-    indexBuffer->Bind();
-
     m_IndexBuffer = indexBuffer;
 }
 
@@ -94,6 +91,8 @@ void OpenGLVertexArray::Bind() const
     {
         glBindVertexArray(m_RendererID);
     });
+    if (m_IndexBuffer)
+        m_IndexBuffer->Bind();
 }
 
 void OpenGLVertexArray::Unbind() const

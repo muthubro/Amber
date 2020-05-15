@@ -30,7 +30,7 @@ OpenGLShader::OpenGLShader(const std::string& filepath)
 {
     AB_PROFILE_FUNCTION();
 
-    auto loc = filepath.find_first_of("/\\");
+    auto loc = filepath.find_last_of("/\\");
     m_Name = loc != std::string::npos ? filepath.substr(loc + 1) : filepath;
     loc = m_Name.rfind(".");
     m_Name = loc != std::string::npos ? m_Name.substr(0, loc) : m_Name;
@@ -71,11 +71,10 @@ void OpenGLShader::Load(const std::string& source)
             glDeleteProgram(m_RendererID);
 
         CompileAndUploadShader();
+        glUseProgram(m_RendererID);
 
         if (!m_IsCompute)
             ResolveUniforms();
-
-        glUseProgram(m_RendererID);
     });
 }
 
@@ -256,16 +255,16 @@ void OpenGLShader::Parse()
 
     vstr = vertexSource.c_str();
     while (token = FindToken(vstr, "uniform"))
-        ParseUniformStruct(GetStatement(token, &vstr), ShaderDomain::Vertex);
+        ParseUniform(GetStatement(token, &vstr), ShaderDomain::Vertex);
 
     // Fragment Shader
     fstr = fragmentSource.c_str();
     while (token = FindToken(fstr, "struct"))
-        ParseUniformStruct(GetBlock(token, &fstr), ShaderDomain::Vertex);
+        ParseUniformStruct(GetBlock(token, &fstr), ShaderDomain::Pixel);
 
     fstr = fragmentSource.c_str();
     while (token = FindToken(fstr, "uniform"))
-        ParseUniformStruct(GetStatement(token, &fstr), ShaderDomain::Vertex);
+        ParseUniform(GetStatement(token, &fstr), ShaderDomain::Pixel);
 }
 
 void OpenGLShader::ParseUniformStruct(const std::string& block, ShaderDomain domain)

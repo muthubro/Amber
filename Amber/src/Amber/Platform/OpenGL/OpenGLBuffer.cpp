@@ -25,26 +25,27 @@ static GLenum OpenGLUsage(VertexBufferUsage usage)
 /////////////////////////////////////////////////////////////////
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage)
+    : m_Size(size)
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this, usage]()
     {
         glCreateBuffers(1, &m_RendererID);
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, size, nullptr, OpenGLUsage(usage));
+        glNamedBufferData(m_RendererID, m_Size, nullptr, OpenGLUsage(usage));
     });
 }
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage)
+    : m_Size(size)
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    m_LocalData = Buffer::Copy(data, size);
+    RenderCommand::Submit([this, usage]()
     {
         glCreateBuffers(1, &m_RendererID);
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, size, data, OpenGLUsage(usage));
+        glNamedBufferData(m_RendererID, m_Size, m_LocalData.Data, OpenGLUsage(usage));
     });
 }
 
@@ -52,7 +53,7 @@ OpenGLVertexBuffer::~OpenGLVertexBuffer()
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glDeleteBuffers(1, &m_RendererID);
     });
@@ -62,7 +63,7 @@ void OpenGLVertexBuffer::Bind() const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
     });
@@ -72,7 +73,7 @@ void OpenGLVertexBuffer::Unbind() const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     });
@@ -82,10 +83,11 @@ void OpenGLVertexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, size, buffer);
+    m_LocalData = Buffer::Copy(buffer, size);
+    m_Size = size;
+    RenderCommand::Submit([this, offset]()
+    {        
+        glNamedBufferSubData(m_RendererID, offset, m_Size, m_LocalData.Data);
     });
 }
 
@@ -94,17 +96,15 @@ void OpenGLVertexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
 /////////////////////////////////////////////////////////////////
 
 OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, uint32_t count)
-    : m_Count(count) 
+    : m_Count(count)
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    m_LocalData = Buffer::Copy(data, count * sizeof(uint32_t));
+    RenderCommand::Submit([this]()
     {
         glCreateBuffers(1, &m_RendererID);
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-        glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), data, GL_STATIC_DRAW);
-
-        delete[] data;
+        glNamedBufferData(m_RendererID, m_Count * sizeof(uint32_t), m_LocalData.Data, GL_STATIC_DRAW);
     });
 }
 
@@ -112,7 +112,7 @@ OpenGLIndexBuffer::~OpenGLIndexBuffer()
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glDeleteBuffers(1, &m_RendererID);
     });
@@ -122,7 +122,7 @@ void OpenGLIndexBuffer::Bind() const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
     });
@@ -132,7 +132,7 @@ void OpenGLIndexBuffer::Unbind() const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     });
@@ -140,6 +140,14 @@ void OpenGLIndexBuffer::Unbind() const
 
 void OpenGLIndexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
 {
+    AB_PROFILE_FUNCTION();
+
+    m_LocalData = Buffer::Copy(buffer, size);
+    m_Count = (uint32_t)(size / sizeof(uint32_t));
+    RenderCommand::Submit([this, size, offset]()
+    {
+        glNamedBufferSubData(m_RendererID, offset, size, m_LocalData.Data);
+    });
 }
 
 }
