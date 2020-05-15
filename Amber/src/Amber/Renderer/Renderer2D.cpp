@@ -19,11 +19,19 @@ namespace Amber
         float TilingFactor;
     };
 
+    struct LineVertex
+    {
+        glm::vec3 Position;
+        glm::vec4 Color;
+    };
+
     struct Renderer2DData
     {
+        // Quads
         static const uint32_t MaxQuads = 200000;
-        static const uint32_t MaxVertices = MaxQuads * 4;
-        static const uint32_t MaxIndices = MaxQuads * 6;
+        static const uint32_t MaxQuadVertices = MaxQuads * 4;
+        static const uint32_t MaxQuadIndices = MaxQuads * 6;
+
         static const uint32_t MaxTextureSlots = 32;
 
         Ref<VertexArray> QuadVertexArray;
@@ -31,15 +39,28 @@ namespace Amber
         Ref<Shader> TextureShader;
         Ref<Texture2D> WhiteTexture;
 
+        std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
+        uint32_t TextureSlotIndex = 1;
+
         uint32_t QuadIndexCount = 0;
         QuadVertex* QuadVertexBufferBase = nullptr;
         QuadVertex* QuadVertexBufferPtr = nullptr;
 
-        std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
-        uint32_t TextureSlotIndex = 1;
-
         glm::mat4 QuadVertexPositions;
         glm::vec2 QuadTextureCoordinates[4];
+
+        // Lines
+        static const uint32_t MaxLines = 100000;
+        static const uint32_t MaxLineVertices = MaxLines * 2;
+        static const uint32_t MaxLineIndices = MaxLines * 2;
+
+        Ref<VertexArray> LineVertexArray;
+        Ref<VertexBuffer> LineVertexBuffer;
+        Ref<Shader> LineShader;
+
+        uint32_t LineIndexCount = 0;
+        LineVertex* LineVertexBufferBase = nullptr;
+        LineVertex* LineVertexBufferPtr = nullptr;
 
         Renderer2D::Statistics Stats;
     };
@@ -50,9 +71,10 @@ namespace Amber
     {
         AB_PROFILE_FUNCTION();
 
+        // Quads
         s_Data.QuadVertexArray = VertexArray::Create();
 
-        s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(QuadVertex));
+        s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxQuadVertices * sizeof(QuadVertex));
         s_Data.QuadVertexBuffer->SetLayout({
             { ShaderDataType::Float3, "a_Position" },
             { ShaderDataType::Float4, "a_Color" },
@@ -62,10 +84,8 @@ namespace Amber
         });
         s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
 
-        s_Data.QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxVertices];
-
-        uint32_t* quadIndices = new uint32_t[Renderer2DData::MaxIndices];
-        for (uint32_t i = 0, offset = 0; i < Renderer2DData::MaxIndices; i += 6, offset += 4)
+        uint32_t* quadIndices = new uint32_t[Renderer2DData::MaxQuadIndices];
+        for (uint32_t i = 0, offset = 0; i < Renderer2DData::MaxQuadIndices; i += 6, offset += 4)
         {
             quadIndices[i + 0] = offset + 0;
             quadIndices[i + 1] = offset + 1;
@@ -75,8 +95,11 @@ namespace Amber
             quadIndices[i + 4] = offset + 3;
             quadIndices[i + 5] = offset + 0;
         }
-        Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxIndices);
+        Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxQuadIndices);
         s_Data.QuadVertexArray->SetIndexBuffer(quadIndexBuffer);
+        delete[] quadIndices;
+
+        s_Data.TextureShader = Shader::Create("assets/shaders/Renderer2D.glsl");
 
         s_Data.WhiteTexture = Texture2D::Create(TextureFormat::RGBA, 1, 1);
         uint32_t whiteTextureData = 0xffffffff;
@@ -84,15 +107,9 @@ namespace Amber
         s_Data.WhiteTexture->GetWritableBuffer().Write(&whiteTextureData, sizeof(uint32_t));
         s_Data.WhiteTexture->Unlock();
 
-        int32_t samplers[Renderer2DData::MaxTextureSlots];
-        for (uint32_t i = 0; i < Renderer2DData::MaxTextureSlots; i++)
-            samplers[i] = i;
-
-        s_Data.TextureShader = Shader::Create("assets/shaders/Texture.glsl");
-        s_Data.TextureShader->Bind();
-        s_Data.TextureShader->SetIntArray("u_Textures", samplers, Renderer2DData::MaxTextureSlots);
-
         s_Data.TextureSlots[0] = s_Data.WhiteTexture;
+
+        s_Data.QuadVertexBufferBase = new QuadVertex[Renderer2DData::MaxQuadVertices];
 
         s_Data.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
         s_Data.QuadVertexPositions[1] = { 0.5f, -0.5f, 0.0f, 1.0f };
@@ -103,6 +120,28 @@ namespace Amber
         s_Data.QuadTextureCoordinates[1] = { 1.0f, 0.0f };
         s_Data.QuadTextureCoordinates[2] = { 1.0f, 1.0f };
         s_Data.QuadTextureCoordinates[3] = { 0.0f, 1.0f };
+
+        // Lines
+        s_Data.LineVertexArray = VertexArray::Create();
+
+        s_Data.LineVertexBuffer = VertexBuffer::Create(Renderer2DData::MaxLineVertices * sizeof(LineVertex));
+        s_Data.LineVertexBuffer->SetLayout({
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float4, "a_Color" }
+        });
+        s_Data.LineVertexArray->AddVertexBuffer(s_Data.LineVertexBuffer);
+
+        uint32_t* lineIndices = new uint32_t[Renderer2DData::MaxLineIndices];
+        for (uint32_t i = 0; i < Renderer2DData::MaxLineIndices; i++)
+            lineIndices[i] = i;
+
+        Ref<IndexBuffer> lineIndexBuffer = IndexBuffer::Create(lineIndices, Renderer2DData::MaxLineIndices);
+        s_Data.LineVertexArray->SetIndexBuffer(lineIndexBuffer);
+        delete[] lineIndices;
+
+        s_Data.LineShader = Shader::Create("assets/shaders/Line.glsl");
+
+        s_Data.LineVertexBufferBase = new LineVertex[Renderer2DData::MaxLineVertices];
     }
 
     void Renderer2D::Shutdown()
@@ -121,41 +160,67 @@ namespace Amber
         s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
 
         s_Data.TextureSlotIndex = 1;
-    }
 
-    void Renderer2D::FlushAndReset()
-    {
-        AB_PROFILE_FUNCTION();
+        s_Data.LineShader->Bind();
+        s_Data.LineShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
-        EndScene();
-
-        s_Data.QuadIndexCount = 0;
-        s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
-        s_Data.TextureSlotIndex = 1;
+        s_Data.LineIndexCount = 0;
+        s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
     }
 
     void Renderer2D::EndScene()
     {
         AB_PROFILE_FUNCTION();
 
-        uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
-        s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBufferBase, dataSize);
-
-        Flush();
+        FlushQuads();
+        FlushLines();
     }
 
-    void Renderer2D::Flush()
+    void Renderer2D::FlushQuads()
     {
         AB_PROFILE_FUNCTION();
+
+        if (s_Data.QuadIndexCount == 0)
+            return;
+
+        s_Data.TextureShader->Bind();
+        s_Data.QuadVertexArray->Bind();
+
+        uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
+        s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBufferBase, dataSize);
 
         for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
             s_Data.TextureSlots[i]->Bind(i);
 
-        RenderCommand::DrawIndexed(s_Data.QuadIndexCount);
+        RenderCommand::DrawIndexed(s_Data.QuadIndexCount, PrimitiveType::Triangles);
         s_Data.Stats.DrawCalls++;
+
+        s_Data.QuadIndexCount = 0;
+        s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
+        s_Data.TextureSlotIndex = 1;
     }
 
-    void Renderer2D::SetVertexData(const glm::vec3& position, const glm::vec4& color, const glm::vec2& texCoord, float textureIndex, float tilingFactor)
+    void Renderer2D::FlushLines()
+    {
+        AB_PROFILE_FUNCTION();
+
+        if (s_Data.LineIndexCount == 0)
+            return;
+
+        s_Data.LineShader->Bind();
+        s_Data.LineVertexArray->Bind();
+
+        uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
+        s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
+
+        RenderCommand::DrawIndexed(s_Data.LineIndexCount, PrimitiveType::Lines);
+        s_Data.Stats.DrawCalls++;
+
+        s_Data.LineIndexCount = 0;
+        s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
+    }
+
+    void Renderer2D::SetQuadVertexData(const glm::vec3& position, const glm::vec4& color, const glm::vec2& texCoord, float textureIndex, float tilingFactor)
     {
         AB_PROFILE_FUNCTION();
 
@@ -184,7 +249,7 @@ namespace Amber
         if (textureIndex == -1.0f)
         {
             if (s_Data.TextureSlotIndex >= Renderer2DData::MaxTextureSlots)
-                FlushAndReset();
+                FlushQuads();
 
             textureIndex = (float)s_Data.TextureSlotIndex;
             s_Data.TextureSlots[s_Data.TextureSlotIndex] = texture;
@@ -291,8 +356,8 @@ namespace Amber
     {
         AB_PROFILE_FUNCTION();
 
-        if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
-            FlushAndReset();
+        if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
+            FlushQuads();
 
         float textureIndex = Renderer2D::GetTextureSlot(texture);
 
@@ -319,9 +384,9 @@ namespace Amber
         const uint32_t quadVertexCount = 4;
         for (uint32_t i = 0; i < quadVertexCount; i++)
         {
-            AB_PROFILE_SCOPE("DrawQuad SetVertexData loop");
+            AB_PROFILE_SCOPE("DrawQuad SetQuadVertexData loop");
 
-            Renderer2D::SetVertexData(actualPosition[i], color, texCoords[i], textureIndex, tilingFactor);
+            Renderer2D::SetQuadVertexData(actualPosition[i], color, texCoords[i], textureIndex, tilingFactor);
             s_Data.QuadVertexBufferPtr++;
         }
 
@@ -368,8 +433,8 @@ namespace Amber
     {
         AB_PROFILE_FUNCTION();
 
-        if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
-            FlushAndReset();
+        if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
+            FlushQuads();
 
         float textureIndex = Renderer2D::GetTextureSlot(texture);
 
@@ -396,13 +461,31 @@ namespace Amber
         const uint32_t quadVertexCount = 4;
         for (uint8_t i = 0; i < quadVertexCount; i++)
         {
-            Renderer2D::SetVertexData(actualPosition[i], color[i], texCoords[i], textureIndex, tilingFactor);
+            Renderer2D::SetQuadVertexData(actualPosition[i], color[i], texCoords[i], textureIndex, tilingFactor);
             s_Data.QuadVertexBufferPtr++;
         }
 
         s_Data.QuadIndexCount += 6;
-
         s_Data.Stats.QuadCount++;
+    }
+
+    void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
+    {
+        AB_PROFILE_FUNCTION();
+
+        if (s_Data.LineIndexCount >= s_Data.MaxLineIndices)
+            FlushLines();
+
+        s_Data.LineVertexBufferPtr->Position = p0;
+        s_Data.LineVertexBufferPtr->Color = color;
+        s_Data.LineVertexBufferPtr++;
+
+        s_Data.LineVertexBufferPtr->Position = p1;
+        s_Data.LineVertexBufferPtr->Color = color;
+        s_Data.LineVertexBufferPtr++;
+
+        s_Data.LineIndexCount += 2;
+        s_Data.Stats.LineCount++;
     }
 
     void Renderer2D::ResetStats()

@@ -63,44 +63,42 @@ void OpenGLRendererAPI::SetViewport(int x, int y, uint32_t width, uint32_t heigh
     glViewport(x, y, width, height);
 }
 
-void OpenGLRendererAPI::EnableBlending()
-{
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-void OpenGLRendererAPI::DisableBlending()
-{
-    glDisable(GL_BLEND);
-}
-
-void OpenGLRendererAPI::EnableDepthBuffer()
-{
-    glEnable(GL_DEPTH_TEST);
-}
-
-void OpenGLRendererAPI::DisableDepthBuffer()
-{
-    glDisable(GL_DEPTH_TEST);
-}
-
 void OpenGLRendererAPI::SetClearColor(const glm::vec4& color)
 {
     glClearColor(color.r, color.g, color.b, color.a);
 }
 
-void OpenGLRendererAPI::Clear(const glm::vec4& color)
+void OpenGLRendererAPI::Clear()
 {
-    glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRendererAPI::DrawIndexed(uint32_t indexCount, bool depthTest)
+void OpenGLRendererAPI::SetLineThickness(float thickness)
 {
+    glLineWidth(thickness);
+}
+
+void OpenGLRendererAPI::DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest)
+{
+    if (indexCount == 0)
+        return;
+
     if (!depthTest)
         glDisable(GL_DEPTH_TEST);
 
-    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
+    GLenum primitiveType = 0;
+    switch (type)
+    {
+        case PrimitiveType::Triangles: 
+            primitiveType = GL_TRIANGLES;
+            break;
+        case PrimitiveType::Lines:
+            primitiveType = GL_LINES;
+            break;
+    }
+    AB_CORE_ASSERT(primitiveType, "Unknown primitive type!");
+
+    glDrawElements(primitiveType, indexCount, GL_UNSIGNED_INT, nullptr);
 
     if (!depthTest)
         glEnable(GL_DEPTH_TEST);

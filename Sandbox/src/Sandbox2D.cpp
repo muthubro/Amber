@@ -12,9 +12,6 @@ void Sandbox2D::OnAttach()
     AB_PROFILE_FUNCTION();
 
     m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
-
-    Amber::RenderCommand::EnableBlending();
-    Amber::RenderCommand::EnableDepthBuffer();
 }
 
 void Sandbox2D::OnDetach() 
@@ -61,6 +58,9 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
             { 0.3f, 0.0f, 1.0f, 1.0f },
             { 0.0f, 1.0f, 0.6f, 1.0f },
         }, 20.0f);
+
+        Amber::Renderer2D::DrawLine({ 0.0f, 0.0f, 1.0f }, { 0.5f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f });
+
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
 

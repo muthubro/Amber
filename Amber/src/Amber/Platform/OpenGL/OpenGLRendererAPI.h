@@ -12,16 +12,12 @@ public:
 
     void SetViewport(int x, int y, uint32_t width, uint32_t height) override;
 
-    virtual void EnableBlending() override;
-    virtual void DisableBlending() override;
-
-    virtual void EnableDepthBuffer() override;
-    virtual void DisableDepthBuffer() override;
-
     void SetClearColor(const glm::vec4& color) override;
-    void Clear(const glm::vec4& color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
+    void Clear() override;
 
-    void DrawIndexed(uint32_t indexCount, bool depthTest = true) override;
+    void SetLineThickness(float thickness) override;
+
+    void DrawIndexed(uint32_t indexCount, PrimitiveType type = PrimitiveType::Triangles, bool depthTest = true) override;
 };
 
 }

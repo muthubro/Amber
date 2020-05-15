@@ -13,17 +13,12 @@ public:
 
     static void SetViewPort(int x, int y, uint32_t width, uint32_t height) { Submit([=]() { s_RendererAPI->SetViewport(x, y, width, height); }); }
 
-    static void EnableBlending() { Submit([=]() { s_RendererAPI->EnableBlending(); }); }
-    static void DisableBlending() { Submit([=]() { s_RendererAPI->DisableBlending(); }); }
-
-    static void EnableDepthBuffer() { Submit([=]() { s_RendererAPI->EnableDepthBuffer(); }); }
-    static void DisableDepthBuffer() { Submit([=]() { s_RendererAPI->DisableDepthBuffer(); }); }
-
     static void SetClearColor(const glm::vec4& color) { Submit([=]() { s_RendererAPI->SetClearColor(color); }); }
     static void Clear() { Submit([=]() { s_RendererAPI->Clear(); }); }
 
-    //static void DrawIndexed(uint32_t indexCount) { Submit([=]() { s_RendererAPI->DrawIndexed(indexCount); }); }
-    static void DrawIndexed(uint32_t indexCount);
+    static void SetLineThickness(float thickness) { Submit([=]() { s_RendererAPI->SetLineThickness(thickness); }); }
+
+    static void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) { Submit([=]() { s_RendererAPI->DrawIndexed(indexCount, type, depthTest); }); }
     
     template<typename FuncT>
     static void Submit(FuncT&& func) 
