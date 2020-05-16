@@ -8,7 +8,7 @@
 namespace Amber 
 {
 
-Ref<VertexBuffer> VertexBuffer::Create(uint32_t size, VertexBufferUsage usage)
+Ref<VertexBuffer> VertexBuffer::Create(size_t size, VertexBufferUsage usage)
 {
     switch (Renderer::GetAPI())
     {
@@ -24,7 +24,7 @@ Ref<VertexBuffer> VertexBuffer::Create(uint32_t size, VertexBufferUsage usage)
     return nullptr;
 }
 
-Ref<VertexBuffer> VertexBuffer::Create(void* data, uint32_t size, VertexBufferUsage usage)
+Ref<VertexBuffer> VertexBuffer::Create(void* data, size_t size, VertexBufferUsage usage)
 {
     switch (Renderer::GetAPI()) 
     {
@@ -40,7 +40,7 @@ Ref<VertexBuffer> VertexBuffer::Create(void* data, uint32_t size, VertexBufferUs
     return nullptr;
 }
 
-Ref<IndexBuffer> IndexBuffer::Create(void* data, uint32_t count) 
+Ref<IndexBuffer> IndexBuffer::Create(void* data, size_t size)
 {
     switch (Renderer::GetAPI()) 
     {
@@ -49,7 +49,7 @@ Ref<IndexBuffer> IndexBuffer::Create(void* data, uint32_t count)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLIndexBuffer>(data, count);
+            return CreateRef<OpenGLIndexBuffer>(data, size);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

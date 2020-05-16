@@ -11,7 +11,7 @@ class OpenGLTexture2D : public Texture2D
 {
 public:
     OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter);
-    OpenGLTexture2D(const std::string& path, TextureWrap wrap, TextureFilter filter);
+    OpenGLTexture2D(const std::string& path, bool srgb, TextureWrap wrap, TextureFilter filter);
     ~OpenGLTexture2D();
 
     void Bind(uint32_t slot = 0) const override;

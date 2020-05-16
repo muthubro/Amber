@@ -10,24 +10,24 @@ namespace Amber
 class OpenGLVertexBuffer : public VertexBuffer 
 {
 public:
-    OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
-    OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
+    OpenGLVertexBuffer(size_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
+    OpenGLVertexBuffer(void* data, size_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
     ~OpenGLVertexBuffer();
 
     void Bind() const override;
     void Unbind() const override;
 
-    void SetData(void* buffer, uint32_t size, uint32_t offset = 0) override;
+    void SetData(void* buffer, size_t size, uint32_t offset = 0) override;
 
     const BufferLayout& GetLayout() const override { return m_Layout; }
     void SetLayout(const BufferLayout& layout) override { m_Layout = layout; }
 
-    uint32_t GetSize() const override { return m_Size; }
+    size_t GetSize() const override { return m_Size; }
     uint32_t GetRendererID() const override { return m_RendererID; }
 
 private:
     uint32_t m_RendererID = 0;
-    uint32_t m_Size;
+    size_t m_Size;
     BufferLayout m_Layout;
 
     Buffer m_LocalData;
@@ -36,21 +36,21 @@ private:
 class OpenGLIndexBuffer : public IndexBuffer 
 {
 public:
-    OpenGLIndexBuffer(void* data, uint32_t count);
+    OpenGLIndexBuffer(void* data, size_t size);
     ~OpenGLIndexBuffer();
 
     void Bind() const override;
     void Unbind() const override;
 
-    void SetData(void* buffer, uint32_t size, uint32_t offset = 0) override;
+    void SetData(void* buffer, size_t size, uint32_t offset = 0) override;
     
-    uint32_t GetCount() const override { return m_Count; }
-    uint32_t GetSize() const override { return m_Count * sizeof(uint32_t); }
+    size_t GetCount() const override { return (size_t)(m_Size / sizeof(uint32_t)); }
+    size_t GetSize() const override { return m_Size; }
     uint32_t GetRendererID() const override { return m_RendererID; }
 
 private:
     uint32_t m_RendererID = 0;
-    uint32_t m_Count;
+    size_t m_Size;
 
     Buffer m_LocalData;
 };

@@ -24,7 +24,7 @@ static GLenum OpenGLUsage(VertexBufferUsage usage)
 ////////     VERTEX BUFFER     //////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage)
+OpenGLVertexBuffer::OpenGLVertexBuffer(size_t size, VertexBufferUsage usage)
     : m_Size(size)
 {
     AB_PROFILE_FUNCTION();
@@ -36,7 +36,7 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size, VertexBufferUsage usage)
     });
 }
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint32_t size, VertexBufferUsage usage)
+OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, size_t size, VertexBufferUsage usage)
     : m_Size(size)
 {
     AB_PROFILE_FUNCTION();
@@ -79,7 +79,7 @@ void OpenGLVertexBuffer::Unbind() const
     });
 }
 
-void OpenGLVertexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
+void OpenGLVertexBuffer::SetData(void* buffer, size_t size, uint32_t offset)
 {
     AB_PROFILE_FUNCTION();
 
@@ -95,16 +95,16 @@ void OpenGLVertexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
 ////////     INDEX BUFFER     ///////////////////////////////////
 /////////////////////////////////////////////////////////////////
 
-OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, uint32_t count)
-    : m_Count(count)
+OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, size_t size)
+    : m_Size(size)
 {
     AB_PROFILE_FUNCTION();
 
-    m_LocalData = Buffer::Copy(data, count * sizeof(uint32_t));
+    m_LocalData = Buffer::Copy(data, size);
     RenderCommand::Submit([this]()
     {
         glCreateBuffers(1, &m_RendererID);
-        glNamedBufferData(m_RendererID, m_Count * sizeof(uint32_t), m_LocalData.Data, GL_STATIC_DRAW);
+        glNamedBufferData(m_RendererID, m_Size, m_LocalData.Data, GL_STATIC_DRAW);
     });
 }
 
@@ -138,15 +138,15 @@ void OpenGLIndexBuffer::Unbind() const
     });
 }
 
-void OpenGLIndexBuffer::SetData(void* buffer, uint32_t size, uint32_t offset)
+void OpenGLIndexBuffer::SetData(void* buffer, size_t size, uint32_t offset)
 {
     AB_PROFILE_FUNCTION();
 
     m_LocalData = Buffer::Copy(buffer, size);
-    m_Count = (uint32_t)(size / sizeof(uint32_t));
-    RenderCommand::Submit([this, size, offset]()
+    m_Size = size;
+    RenderCommand::Submit([this, offset]()
     {
-        glNamedBufferSubData(m_RendererID, offset, size, m_LocalData.Data);
+        glNamedBufferSubData(m_RendererID, offset, m_Size, m_LocalData.Data);
     });
 }
 

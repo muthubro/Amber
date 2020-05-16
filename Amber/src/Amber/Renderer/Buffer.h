@@ -117,16 +117,16 @@ public:
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
 
-    virtual void SetData(void* buffer, uint32_t size, uint32_t offset = 0) = 0;
+    virtual void SetData(void* buffer, size_t size, uint32_t offset = 0) = 0;
 
     virtual const BufferLayout& GetLayout() const = 0;
     virtual void SetLayout(const BufferLayout& layout) = 0;
 
-    virtual uint32_t GetSize() const = 0;
+    virtual size_t GetSize() const = 0;
     virtual uint32_t GetRendererID() const = 0;
 
-    static Ref<VertexBuffer> Create(uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
-    static Ref<VertexBuffer> Create(void* data, uint32_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
+    static Ref<VertexBuffer> Create(size_t size, VertexBufferUsage usage = VertexBufferUsage::Dynamic);
+    static Ref<VertexBuffer> Create(void* data, size_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
 };
 
 class IndexBuffer 
@@ -137,13 +137,13 @@ public:
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
 
-    virtual void SetData(void* buffer, uint32_t size, uint32_t offset = 0) = 0;
+    virtual void SetData(void* buffer, size_t size, uint32_t offset = 0) = 0;
 
-    virtual uint32_t GetCount() const = 0;
-    virtual uint32_t GetSize() const = 0;
+    virtual size_t GetCount() const = 0;
+    virtual size_t GetSize() const = 0;
     virtual uint32_t GetRendererID() const = 0;
 
-    static Ref<IndexBuffer> Create(void* data, uint32_t count);
+    static Ref<IndexBuffer> Create(void* data, size_t size);
 };
 
 }

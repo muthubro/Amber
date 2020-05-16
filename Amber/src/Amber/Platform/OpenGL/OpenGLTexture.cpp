@@ -81,7 +81,7 @@ OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t 
     m_ImageData.Allocate(width * height * Texture::GetBPP(format));
 }
 
-OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureWrap wrap, TextureFilter filter)
+OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, TextureWrap wrap, TextureFilter filter)
     : m_Path(path), m_Wrap(wrap), m_Filter(filter)
 {
     AB_PROFILE_FUNCTION();
@@ -91,7 +91,7 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, TextureWrap wrap, Text
     int width, height, channels;
     {
         AB_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
-        m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, 0);
+        m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, srgb ? STBI_rgb : STBI_rgb_alpha);
     }
     AB_CORE_ASSERT(m_ImageData, "Failed to load image!");
 

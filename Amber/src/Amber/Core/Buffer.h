@@ -8,15 +8,15 @@ namespace Amber
 struct Buffer
 {
     byte* Data;
-    uint32_t Size;
+    size_t Size;
 
     Buffer()
         : Data(nullptr), Size(0) {}
 
-    Buffer(byte* data, uint32_t size)
+    Buffer(byte* data, size_t size)
         : Data(data), Size(size) {}
 
-    void Allocate(uint32_t size)
+    void Allocate(size_t size)
     {
         delete[] Data;
         Data = nullptr;
@@ -34,15 +34,15 @@ struct Buffer
             memset(Data, 0, Size);
     }
 
-    void Write(void* data, uint32_t size, uint32_t offset = 0)
+    void Write(void* data, size_t size, uint32_t offset = 0)
     {
         AB_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
         memcpy(Data + offset, data, size);
     }
 
-    uint32_t GetSize() const { return Size; }
+    size_t GetSize() const { return Size; }
 
-    static Buffer Copy(void* data, uint32_t size)
+    static Buffer Copy(void* data, size_t size)
     {
         Buffer buffer;
         buffer.Allocate(size);
