@@ -2,15 +2,25 @@
 #include "Renderer.h"
 
 #include "Amber/Renderer/Renderer2D.h"
+#include "Amber/Renderer/Shader.h"
 
 namespace Amber 
 {
 
-Scope<Renderer::SceneData> Renderer::s_SceneData = CreateScope<Renderer::SceneData>();
+struct RendererData
+{
+    Scope<ShaderLibrary> ShaderLibrary;
+};
+
+static RendererData s_Data;
 
 void Renderer::Init()
 {
     AB_PROFILE_FUNCTION();
+
+    s_Data.ShaderLibrary = CreateScope<ShaderLibrary>();
+
+    s_Data.ShaderLibrary->Load("assets/shaders/MeshShader.glsl");
 
     RenderCommand::Init();
     Renderer2D::Init();
@@ -21,16 +31,14 @@ void Renderer::Shutdown()
     Renderer2D::Shutdown();
 }
 
-void Renderer::BeginScene(OrthographicCamera& camera)
-{
-    s_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
-}
-
-void Renderer::EndScene() {}
-
 void Renderer::WaitAndRender()
 {
     RenderCommand::GetCommandQueue().Execute();
+}
+
+const Scope<ShaderLibrary>& Renderer::GetShaderLibrary()
+{
+    return s_Data.ShaderLibrary;
 }
 
 }

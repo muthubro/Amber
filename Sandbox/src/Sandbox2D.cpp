@@ -11,7 +11,7 @@ void Sandbox2D::OnAttach()
 {
     AB_PROFILE_FUNCTION();
 
-    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
+    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", true, Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
 }
 
 void Sandbox2D::OnDetach() 

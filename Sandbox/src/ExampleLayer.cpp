@@ -147,7 +147,7 @@ void ExampleLayer::OnUpdate(Amber::Timestep ts)
 
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 
-    Amber::Renderer::BeginScene(m_CameraController.GetCamera());
+    //Amber::Renderer::BeginScene(m_CameraController.GetCamera());
 
     for (int y = 0; y < m_SquareRows; y++)
     {
@@ -178,7 +178,7 @@ void ExampleLayer::OnUpdate(Amber::Timestep ts)
 
     //Amber::Renderer::Submit(m_TriangleShader, m_TriangleVA);
 
-    Amber::Renderer::EndScene();
+    //Amber::Renderer::EndScene();
 }
 
 void ExampleLayer::OnEvent(Amber::Event& e)

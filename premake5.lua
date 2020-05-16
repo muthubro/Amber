@@ -16,6 +16,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
+IncludeDir["Assimp"] = "Amber/vendor/Assimp/include"
 IncludeDir["Glad"] = "Amber/vendor/Glad/include"
 IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
 IncludeDir["glm"] = "Amber/vendor/glm"
@@ -55,6 +56,7 @@ project "Amber"
     includedirs
     {
         "%{prj.name}/src",
+        "%{IncludeDir.Assimp}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",

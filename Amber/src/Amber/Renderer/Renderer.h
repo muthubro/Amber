@@ -16,9 +16,6 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void BeginScene(OrthographicCamera& camera);
-    static void EndScene();
-
     template<typename FuncT>
     static void Submit(FuncT&& func) 
     { 
@@ -27,15 +24,8 @@ public:
 
     static void WaitAndRender();
 
+    static const Scope<ShaderLibrary>& GetShaderLibrary();
     static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
-
-private:
-    struct SceneData
-    {
-        glm::mat4 ViewProjectionMatrix;
-    };
-
-    static Scope<SceneData> s_SceneData;
 };
 
 }
