@@ -36,6 +36,7 @@
 #include "Amber/Renderer/Texture.h"
 #include "Amber/Renderer/VertexArray.h"
 
+#include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/OrthographicCamera.h"
 #include "Amber/Renderer/OrthographicCameraController.h"
 //------------------------------------------------//

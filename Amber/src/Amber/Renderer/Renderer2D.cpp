@@ -150,7 +150,7 @@ void Renderer2D::Shutdown()
     AB_PROFILE_FUNCTION();
 }
 
-void Renderer2D::BeginScene(const OrthographicCamera& camera)
+void Renderer2D::BeginScene(const glm::mat4& viewProjection)
 {
     AB_PROFILE_FUNCTION();
 
@@ -158,7 +158,7 @@ void Renderer2D::BeginScene(const OrthographicCamera& camera)
     auto textureShader = s_Data.ShaderLibrary->Get("Renderer2D");
 
     textureShader->Bind();
-    textureShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+    textureShader->SetMat4("u_ViewProjection", viewProjection);
 
     s_Data.QuadIndexCount = 0;
     s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
@@ -169,7 +169,7 @@ void Renderer2D::BeginScene(const OrthographicCamera& camera)
     auto lineShader = s_Data.ShaderLibrary->Get("Line");
 
     lineShader->Bind();
-    lineShader->SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+    lineShader->SetMat4("u_ViewProjection", viewProjection);
 
     s_Data.LineIndexCount = 0;
     s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;

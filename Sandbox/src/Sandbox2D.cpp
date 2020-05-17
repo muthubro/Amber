@@ -43,7 +43,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         static float rotation = 0.0f;
         rotation += ts * 50.0f;
 
-        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera());
+        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
         Amber::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, {
             { 0.0f, 0.0f, 0.0f, 1.0f },
             { 1.0f, 0.0f, 0.0f, 1.0f },
@@ -64,7 +64,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
 
-        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera());
+        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
         for (float y = -5.0f; y < 5.0f; y += 0.5f)
         {
             for (float x = -5.0f; x < 5.0f; x += 0.5f)
