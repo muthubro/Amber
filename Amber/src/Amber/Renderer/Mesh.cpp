@@ -48,7 +48,7 @@ static std::string GetTexturePath(const std::string& curPath, const aiString& te
 {
     std::filesystem::path path(curPath);
     auto parentPath = path.parent_path();
-    parentPath /= (const std::string&)texturePath;
+    parentPath /= std::string(texturePath.data);
     return parentPath.string();
 }
 
@@ -62,8 +62,11 @@ Mesh::Mesh(const std::string& filepath)
     m_Importer = CreateScope<Assimp::Importer>();
     m_Scene = m_Importer->ReadFile(filepath, s_MeshImportFlags);
 
-    if (!m_Scene || m_Scene->HasMeshes())
+    if (!m_Scene || !m_Scene->HasMeshes())
+    {
         AB_CORE_ASSERT(false, "Failed to load mesh!");
+        return;
+    }
 
     uint32_t vertexCount = 0, indexCount = 0;
     uint32_t numMeshes = m_Scene->mNumMeshes;
@@ -101,22 +104,22 @@ Mesh::Mesh(const std::string& filepath)
             Index index = { mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2] };
             m_Indices.push_back(index);
         }
-
-        m_VertexArray = VertexArray::Create();
-        
-        auto vertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
-        vertexBuffer->SetLayout({
-            { ShaderDataType::Float3, "a_Position" },
-            { ShaderDataType::Float3, "a_Normal" },
-            { ShaderDataType::Float3, "a_Tangent" },
-            { ShaderDataType::Float3, "a_Binormal" },
-            { ShaderDataType::Float2, "a_TexCoord" }
-        });
-        m_VertexArray->AddVertexBuffer(vertexBuffer);
-
-        auto indexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
-        m_VertexArray->SetIndexBuffer(indexBuffer);
     }
+
+    m_VertexArray = VertexArray::Create();
+
+    auto vertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
+    vertexBuffer->SetLayout({
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float3, "a_Normal" },
+        { ShaderDataType::Float3, "a_Tangent" },
+        { ShaderDataType::Float3, "a_Binormal" },
+        { ShaderDataType::Float2, "a_TexCoord" }
+        });
+    m_VertexArray->AddVertexBuffer(vertexBuffer);
+
+    auto indexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
+    m_VertexArray->SetIndexBuffer(indexBuffer);
 
     m_MeshShader = Renderer::GetShaderLibrary()->Get("MeshShader");
     m_BaseMaterial = CreateRef<Material>(m_MeshShader);
@@ -127,7 +130,8 @@ Mesh::Mesh(const std::string& filepath)
     for (uint32_t i = 0; i < materialCount; i++)
     {
         aiMaterial* material = m_Scene->mMaterials[i];
-        m_Materials[i] = CreateRef<MaterialInstance>(m_BaseMaterial);
+        auto materialInstance = CreateRef<MaterialInstance>(m_BaseMaterial);
+        m_Materials[i] = materialInstance;
 
         aiColor3D diffuseColor;
         float shininess, roughness, metalness;
@@ -136,8 +140,13 @@ Mesh::Mesh(const std::string& filepath)
         material->Get(AI_MATKEY_REFLECTIVITY, metalness);
         roughness = 1.0f - sqrt(shininess * 0.01f);
 
-        aiString texturePath;
+        uint32_t textureCount = material->GetTextureCount(aiTextureType_DIFFUSE);
+        AB_CORE_TRACE("{} diffuse textures found.", textureCount);
 
+        textureCount = material->GetTextureCount(aiTextureType_SPECULAR);
+        AB_CORE_TRACE("{} specular textures found.", textureCount);
+
+        aiString texturePath;
         if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
         {
             std::string path = GetTexturePath(filepath, texturePath);
@@ -146,14 +155,20 @@ Mesh::Mesh(const std::string& filepath)
             if (albedo->Loaded())
             {
                 m_Textures[i] = albedo;
+                materialInstance->Set("u_Texture", albedo);
             }
             else
             {
-                AB_CORE_ERROR("Could not load albedo texture {}", path);
+                AB_CORE_ERROR("Could not load albedo texture {}.", path);
             }
         }
         else
         {
+            AB_CORE_ERROR("No albedo textures found.");
+
+            // Temporary. Will be changed once PBR is implemented.
+            m_Textures[i] = Texture2D::Create("assets/models/backpack/diffuse.jpg", true);
+            materialInstance->Set("u_Texture", m_Textures[i]);
         }
 
         if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
@@ -166,7 +181,7 @@ Mesh::Mesh(const std::string& filepath)
             }
             else
             {
-                AB_CORE_ERROR("Could not load albedo texture {}", path);
+                AB_CORE_ERROR("Could not load normal map {}", path);
             }
         }
         else
@@ -183,7 +198,7 @@ Mesh::Mesh(const std::string& filepath)
             }
             else
             {
-                AB_CORE_ERROR("Could not load albedo texture {}", path);
+                AB_CORE_ERROR("Could not load roughness texture {}", path);
             }
         }
         else
@@ -192,6 +207,11 @@ Mesh::Mesh(const std::string& filepath)
 
         // TODO: Metalness map
     }
+}
+
+void Mesh::Bind()
+{
+    m_VertexArray->Bind();
 }
 
 void Mesh::OnUpdate(Timestep ts)

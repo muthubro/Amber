@@ -51,6 +51,7 @@ class Mesh
 public:
     Mesh(const std::string& filepath);
 
+    void Bind();
     void OnUpdate(Timestep ts);
 
     std::vector<Submesh>& GetSubmeshes() { return m_Submeshes; }

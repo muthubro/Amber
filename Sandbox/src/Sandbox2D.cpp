@@ -11,7 +11,7 @@ void Sandbox2D::OnAttach()
 {
     AB_PROFILE_FUNCTION();
 
-    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", true, Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
+    m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", true, true, Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
 }
 
 void Sandbox2D::OnDetach() 
@@ -43,6 +43,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         static float rotation = 0.0f;
         rotation += ts * 50.0f;
 
+#if 0
         Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
         Amber::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, {
             { 0.0f, 0.0f, 0.0f, 1.0f },
@@ -74,6 +75,9 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
             }
         }
         Amber::Renderer2D::EndScene();
+        Amber::Renderer::WaitAndRender();
+#endif
+
         Amber::Renderer::WaitAndRender();
     }
 }

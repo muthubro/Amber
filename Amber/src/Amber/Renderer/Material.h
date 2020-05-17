@@ -123,6 +123,11 @@ public:
         m_Textures[slot] = texture;
     }
 
+    void Set(const std::string& name, const Ref<Texture2D>& texture)
+    {
+        Set(name, (const Ref<Texture>&)texture);
+    }
+
 private:
     Ref<Material> m_Material;
 

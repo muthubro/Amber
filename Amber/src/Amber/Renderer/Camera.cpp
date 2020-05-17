@@ -30,9 +30,11 @@ void Camera::OnEvent(Event& e)
 
 void Camera::OnUpdate(Timestep ts)
 {
-    glm::vec2 mouse{ Input::GetMouseX(), Input::GetMouseY() };
+    const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
     auto delta = mouse - m_MousePosition;
     m_MousePosition = mouse;
+
+    delta *= ts;
 
     if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT))
     {
@@ -60,6 +62,7 @@ void Camera::CalculateViewMatrix()
 {
     m_ViewMatrix = glm::translate(glm::mat4(1.0f), m_Position) * glm::toMat4(m_Orientation);
     m_ViewMatrix = glm::inverse(m_ViewMatrix);
+    m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
 }
 
 void Camera::SetDirections()
@@ -72,9 +75,9 @@ void Camera::SetDirections()
 void Camera::UpdateCamera()
 {
     CalculateOrientation();
+    SetDirections();
     CalculatePosition();
     CalculateViewMatrix();
-    SetDirections();
 }
 
 bool Camera::OnMouseScroll(MouseScrolledEvent& e)
@@ -93,7 +96,7 @@ void Camera::MousePan(const glm::vec2& delta)
 
 void Camera::MouseRotate(const glm::vec2& delta)
 {
-    float speed = RotateSpeed();
+    float speed = RotationSpeed();
     float yawSign = m_UpDirection.y < 0.0f ? -1.0f : 1.0f;
     m_Pitch += delta.y * speed;
     m_Yaw += yawSign * delta.x * speed;
@@ -112,24 +115,24 @@ void Camera::MouseZoom(float delta)
 std::pair<float, float> Camera::PanSpeed() const
 {
     float x = std::min(m_ViewportWidth / 1000.0f, 2.4f);
-    float xFactor = 0.0366f * x * x - 0.1778f * x + 0.3021f;
+    float xFactor = 0.0732f * x * x - 0.3556f * x + 0.6042f;
 
     float y = std::min(m_ViewportHeight / 1000.0f, 2.4f);
-    float yFactor = 0.0366f * y * y - 0.1778f * y + 0.3021f;
+    float yFactor = 0.0732f * y * y - 0.3556f * y + 0.6042f;
 
     return { xFactor, yFactor };
 }
 
-float Camera::RotateSpeed() const
+float Camera::RotationSpeed() const
 {
-    return 0.8f;
+    return 1.0f;
 }
 
 float Camera::ZoomSpeed() const
 {
     float distance = m_Distance * 0.2f;
     distance = std::max(distance, 0.0f);
-    float speed = distance * distance;
+    float speed = distance;
     speed = std::min(speed, 100.0f);
     return speed;
 }

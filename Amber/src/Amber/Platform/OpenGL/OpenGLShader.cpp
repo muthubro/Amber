@@ -309,7 +309,8 @@ void OpenGLShader::ParseUniform(const std::string& statement, ShaderDomain domai
     std::string name = tokens[index++];
 
     uint32_t count = 1;
-    if (auto open = name.find("["))
+    auto open = name.find("[");
+    if (open != std::string::npos)
     {
         auto close = name.find("]");
         count = (uint32_t)atoi(name.substr(open + 1, close - open).c_str());
@@ -520,25 +521,25 @@ void OpenGLShader::ResolveAndSetUniform(OpenGLShaderUniform* uniform, Buffer buf
     switch (uniform->GetType())
     {
         case OpenGLShaderUniform::Type::Int32:
-            UploadUniformInt(uniform->GetLocation(), *(int32_t*)buffer.Data[offset]);
+            UploadUniformInt(uniform->GetLocation(), *(int32_t*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Float32:
-            UploadUniformFloat(uniform->GetLocation(), *(float*)buffer.Data[offset]);
+            UploadUniformFloat(uniform->GetLocation(), *(float*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec2:
-            UploadUniformFloat2(uniform->GetLocation(), *(glm::vec2*)buffer.Data[offset]);
+            UploadUniformFloat2(uniform->GetLocation(), *(glm::vec2*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec3:
-            UploadUniformFloat3(uniform->GetLocation(), *(glm::vec3*)buffer.Data[offset]);
+            UploadUniformFloat3(uniform->GetLocation(), *(glm::vec3*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec4:
-            UploadUniformFloat4(uniform->GetLocation(), *(glm::vec4*)buffer.Data[offset]);
+            UploadUniformFloat4(uniform->GetLocation(), *(glm::vec4*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Mat3:
-            UploadUniformMat3(uniform->GetLocation(), *(glm::mat3*)buffer.Data[offset]);
+            UploadUniformMat3(uniform->GetLocation(), *(glm::mat3*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Mat4:
-            UploadUniformMat4(uniform->GetLocation(), *(glm::mat4*)buffer.Data[offset]);
+            UploadUniformMat4(uniform->GetLocation(), *(glm::mat4*)&buffer.Data[offset]);
             break;
         case OpenGLShaderUniform::Type::Struct:
             UploadUniformStruct(uniform, buffer.Data, offset);
@@ -560,10 +561,10 @@ void OpenGLShader::ResolveAndSetUniformArray(OpenGLShaderUniform* uniform, Buffe
     switch (uniform->GetType())
     {
         case OpenGLShaderUniform::Type::Int32:
-            UploadUniformIntArray(uniform->GetLocation(), (int32_t*)buffer.Data[offset], uniform->GetCount());
+            UploadUniformIntArray(uniform->GetLocation(), (int32_t*)&buffer.Data[offset], uniform->GetCount());
             break;
         case OpenGLShaderUniform::Type::Mat4:
-            UploadUniformMat4Array(uniform->GetLocation(), *(glm::mat4*)buffer.Data[offset], uniform->GetCount());
+            UploadUniformMat4Array(uniform->GetLocation(), *(glm::mat4*)&buffer.Data[offset], uniform->GetCount());
             break;
         default:
             AB_CORE_ASSERT(false, "Unknown uniform type!");
@@ -581,25 +582,25 @@ void OpenGLShader::ResolveAndSetUniformField(const OpenGLShaderUniform& field, b
     switch (field.GetType())
     {
         case OpenGLShaderUniform::Type::Int32:
-            UploadUniformInt(field.GetLocation(), *(int32_t*)data[offset]);
+            UploadUniformInt(field.GetLocation(), *(int32_t*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Float32:
-            UploadUniformFloat(field.GetLocation(), *(float*)data[offset]);
+            UploadUniformFloat(field.GetLocation(), *(float*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec2:
-            UploadUniformFloat2(field.GetLocation(), *(glm::vec2*)data[offset]);
+            UploadUniformFloat2(field.GetLocation(), *(glm::vec2*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec3:
-            UploadUniformFloat3(field.GetLocation(), *(glm::vec3*)data[offset]);
+            UploadUniformFloat3(field.GetLocation(), *(glm::vec3*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Vec4:
-            UploadUniformFloat4(field.GetLocation(), *(glm::vec4*)data[offset]);
+            UploadUniformFloat4(field.GetLocation(), *(glm::vec4*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Mat3:
-            UploadUniformMat3(field.GetLocation(), *(glm::mat3*)data[offset]);
+            UploadUniformMat3(field.GetLocation(), *(glm::mat3*)&data[offset]);
             break;
         case OpenGLShaderUniform::Type::Mat4:
-            UploadUniformMat4(field.GetLocation(), *(glm::mat4*)data[offset]);
+            UploadUniformMat4(field.GetLocation(), *(glm::mat4*)&data[offset]);
             break;
         default:
             AB_CORE_ASSERT(false, "Unknown uniform type!");

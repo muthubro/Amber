@@ -24,7 +24,7 @@ Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t 
     return nullptr;
 }
 
-Ref<Texture2D> Texture2D::Create(const std::string& path, bool srgb, TextureWrap wrap, TextureFilter filter)
+Ref<Texture2D> Texture2D::Create(const std::string& path, bool srgb, bool flip, TextureWrap wrap, TextureFilter filter)
 {
     switch (Renderer::GetAPI())
     {
@@ -33,7 +33,7 @@ Ref<Texture2D> Texture2D::Create(const std::string& path, bool srgb, TextureWrap
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTexture2D>(path, srgb, wrap, filter);
+            return CreateRef<OpenGLTexture2D>(path, srgb, flip, wrap, filter);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

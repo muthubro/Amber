@@ -123,6 +123,11 @@ project "Sandbox"
         "Amber"
     }
 
+	postbuildcommands 
+	{
+		'{COPY} "../Sandbox/assets" "%{cfg.targetdir}/assets"'
+	}
+
     filter "system:windows"
         systemversion "latest"
 
@@ -130,13 +135,43 @@ project "Sandbox"
         defines "AB_DEBUG"
         runtime "Debug"
         symbols "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.dll" "%{cfg.targetdir}"'
+		}
 
     filter "configurations:Release"
         defines "AB_RELEASE"
         runtime "Release"
         optimize "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+		}
 
     filter "configurations:Dist"
         defines "AB_DIST"
         runtime "Release"
         optimize "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+		}

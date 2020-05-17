@@ -72,8 +72,6 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
             m_VertexBufferIndex++;
         }
     });
-
-    m_VertexBuffers.push_back(vertexBuffer);
 }
 
 void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
@@ -87,7 +85,7 @@ void OpenGLVertexArray::Bind() const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this]()
     {
         glBindVertexArray(m_RendererID);
     });

@@ -14,7 +14,6 @@ namespace Amber
 class Camera
 {
 public:
-    Camera() = default;
     Camera(const glm::mat4& projectionMatrix);
 
     void OnEvent(Event& e);
@@ -22,7 +21,7 @@ public:
 
     const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
-    const glm::mat4& GetViewProjection() const { return m_ProjectionMatrix * m_ViewMatrix; }
+    const glm::mat4& GetViewProjection() const { return m_ViewProjection; }
 
     const glm::vec3& GetPosition() const { return m_Position; }
     const glm::quat& GetOrientation() const { return m_Orientation; }
@@ -37,7 +36,7 @@ public:
     float GetDistance() const { return m_Distance; }
 
 private:
-    glm::mat4 m_ViewMatrix, m_ProjectionMatrix;
+    glm::mat4 m_ViewMatrix, m_ProjectionMatrix, m_ViewProjection;
     glm::vec3 m_Position, m_FocalPoint;
     glm::quat m_Orientation;
     glm::vec3 m_UpDirection, m_RightDirection, m_ForwardDirection;
@@ -63,7 +62,7 @@ private:
     void MouseZoom(float delta);
 
     std::pair<float, float> PanSpeed() const;
-    float RotateSpeed() const;
+    float RotationSpeed() const;
     float ZoomSpeed() const;
 };
 
