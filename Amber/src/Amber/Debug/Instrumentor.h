@@ -10,7 +10,8 @@
 
 #include "Amber/Core/Log.h"
 
-namespace Amber {
+namespace Amber 
+{
 
 using FloatingPointMicroseconds = std::chrono::duration<double, std::micro>;
 
@@ -66,14 +67,12 @@ public:
     {
         std::stringstream json;
 
-        std::string name = result.Name;
-        std::replace(name.begin(), name.end(), '"', '\'');
 
         json << std::setprecision(3) << std::fixed;
         json << ",{";
         json << "\"cat\":\"function\",";
         json << "\"dur\":" << (result.ElapsedTime.count()) << ',';
-        json << "\"name\":\"" << name << "\",";
+        json << "\"name\":\"" << result.Name << "\",";
         json << "\"ph\":\"X\",";
         json << "\"pid\":0,";
         json << "\"tid\":" << result.ThreadID << ",";
@@ -157,31 +156,65 @@ private:
     bool m_Stopped;
 };
 
+
+namespace InstrumentationUtils
+{
+
+template<size_t N>
+struct ChangeResult
+{
+    char Data[N];
+};
+
+template<size_t N, size_t K>
+constexpr auto CleanupOutputString(const char(&expr)[N], const char(&remove)[K])
+{
+    ChangeResult<N> result = {};
+
+    size_t srcIndex = 0;
+    size_t destIndex = 0;
+    while (srcIndex < N)
+    {
+        size_t matchIndex = 0;
+        while (matchIndex < K - 1 && srcIndex + matchIndex < N - 1 && expr[srcIndex + matchIndex] == remove[matchIndex])
+            matchIndex++;
+        if (matchIndex == K - 1)
+            srcIndex += matchIndex;
+
+        result.Data[destIndex++] = expr[srcIndex] == '"' ? '\'' : expr[srcIndex];
+        srcIndex++;
+    }
+
+    return result;
 }
 
-#define AB_PROFILE 0
+} // InstrumentationUtils
+} // Amber
+
+#define AB_PROFILE 1
 #if AB_PROFILE
     #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
-    #define AB_FUNC_SIG __PRETTY_FUNCTION__
+        #define AB_FUNC_SIG __PRETTY_FUNCTION__
     #elif defined(__DMC__) && (__DMC__ >= 0x810)
-    #define AB_FUNC_SIG __PRETTY_FUNCTION__
-    #elif defined(__FUNCSIG__)
-    #define AB_FUNC_SIG __FUNCSIG__
+        #define AB_FUNC_SIG __PRETTY_FUNCTION__
+    #elif (defined(__FUNCSIG__) || (_MSC_VER))
+        #define AB_FUNC_SIG __FUNCSIG__
     #elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
-    #define AB_FUNC_SIG __FUNCTION__
+        #define AB_FUNC_SIG __FUNCTION__
     #elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
-    #define AB_FUNC_SIG __FUNC__
+        #define AB_FUNC_SIG __FUNC__
     #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
-    #define AB_FUNC_SIG __func__
+        #define AB_FUNC_SIG __func__
     #elif defined(__cplusplus) && (__cplusplus >= 201103)
-    #define AB_FUNC_SIG __func__
+        #define AB_FUNC_SIG __func__
     #else
-    #define AB_FUNC_SIG "AB_FUNC_SIG unknown!"
+        #define AB_FUNC_SIG "AB_FUNC_SIG unknown!"
     #endif
 
     #define AB_PROFILE_BEGIN_SESSION(name, filepath) ::Amber::Instrumentor::Get().BeginSession(name, filepath)
     #define AB_PROFILE_END_SESSION() ::Amber::Instrumentor::Get().EndSession()
-    #define AB_PROFILE_SCOPE(name) ::Amber::InstrumentationTimer timer##__LINE__(name);
+    #define AB_PROFILE_SCOPE(name) constexpr auto fixedName = ::Amber::InstrumentationUtils::CleanupOutputString(name, "__cdecl ");\
+                                                                ::Amber::InstrumentationTimer timer##__LINE__(fixedName.Data);
     #define AB_PROFILE_FUNCTION() AB_PROFILE_SCOPE(AB_FUNC_SIG)
 
 #else

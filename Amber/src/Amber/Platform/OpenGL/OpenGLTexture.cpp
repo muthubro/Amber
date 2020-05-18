@@ -134,7 +134,7 @@ void OpenGLTexture2D::Bind(uint32_t slot) const
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
+    RenderCommand::Submit([this, slot]()
     {
         glBindTextureUnit(slot, m_RendererID);
     });

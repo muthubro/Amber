@@ -148,6 +148,9 @@ void Renderer2D::Init()
 void Renderer2D::Shutdown()
 {
     AB_PROFILE_FUNCTION();
+
+    delete[] s_Data.QuadVertexBufferBase;
+    delete[] s_Data.LineVertexBufferBase;
 }
 
 void Renderer2D::BeginScene(const glm::mat4& viewProjection)

@@ -52,6 +52,13 @@ void ImGuiLayer::OnDetach()
     ImGui::DestroyContext();
 }
 
+void ImGuiLayer::OnEvent(Event& e)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+    e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+}
+
 void ImGuiLayer::Begin() 
 {
     AB_PROFILE_FUNCTION();
