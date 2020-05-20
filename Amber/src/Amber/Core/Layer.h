@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 #include "Amber/Core/Timestep.h"
 
 #include "Amber/Core/Events/Event.h"

@@ -3,7 +3,7 @@
 #include <unordered_set>
 
 #include "Amber/Core/Buffer.h"
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/Texture.h"

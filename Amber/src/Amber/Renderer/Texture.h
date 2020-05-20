@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "Amber/Core/Buffer.h"
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 
 namespace Amber
 {

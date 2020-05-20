@@ -15,8 +15,8 @@ Camera::Camera(const glm::mat4& projectionMatrix)
     : m_ProjectionMatrix(projectionMatrix)
 {
     m_FocalPoint = { 0.0f, 0.0f, 0.0f };
-    m_Pitch = PI / 4.0f;
-    m_Yaw = 3.0f * PI / 4.0f;
+    m_Pitch = -PI / 4.0f;
+    m_Yaw = -3.0f * PI / 4.0f;
     m_Distance = 9.0f;
 
     UpdateCamera();
@@ -50,7 +50,7 @@ void Camera::OnUpdate(Timestep ts)
 
 void Camera::CalculateOrientation()
 {
-    m_Orientation = glm::quat(glm::vec3(-m_Pitch, -m_Yaw, 0.0f));
+    m_Orientation = glm::quat(glm::vec3(m_Pitch, m_Yaw, 0.0f));
 }
 
 void Camera::CalculatePosition()
@@ -98,8 +98,8 @@ void Camera::MouseRotate(const glm::vec2& delta)
 {
     float speed = RotationSpeed();
     float yawSign = m_UpDirection.y < 0.0f ? -1.0f : 1.0f;
-    m_Pitch += delta.y * speed;
-    m_Yaw += yawSign * delta.x * speed;
+    m_Pitch -= delta.y * speed;
+    m_Yaw -= yawSign * delta.x * speed;
 }
 
 void Camera::MouseZoom(float delta)

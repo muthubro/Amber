@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 
 namespace Amber
 {

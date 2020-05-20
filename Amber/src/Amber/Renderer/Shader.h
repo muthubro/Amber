@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 #include "Amber/Core/Buffer.h"
 
 #include "Amber/Renderer/ShaderUniform.h"

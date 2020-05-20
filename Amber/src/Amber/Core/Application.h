@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 #include "Amber/Core/Layer.h"
 #include "Amber/Core/LayerStack.h"
 #include "Amber/Core/Timestep.h"

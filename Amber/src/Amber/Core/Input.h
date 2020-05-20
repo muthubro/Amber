@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 #include "Amber/Core/KeyCodes.h"
 #include "Amber/Core/MouseCodes.h"
 

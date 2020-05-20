@@ -2,7 +2,7 @@
 
 // For use by CLIENT only
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 
 #include "Amber/Core/Application.h"
 #include "Amber/Core/Layer.h"

@@ -191,7 +191,7 @@ constexpr auto CleanupOutputString(const char(&expr)[N], const char(&remove)[K])
 } // InstrumentationUtils
 } // Amber
 
-#define AB_PROFILE 1
+#define AB_PROFILE 0
 #if AB_PROFILE
     #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
         #define AB_FUNC_SIG __PRETTY_FUNCTION__

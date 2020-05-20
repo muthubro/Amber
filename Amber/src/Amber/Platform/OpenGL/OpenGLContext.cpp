@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 
 namespace Amber
 {

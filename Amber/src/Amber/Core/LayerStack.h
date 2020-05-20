@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "Amber/Core/Core.h"
+#include "Amber/Core/Base.h"
 #include "Amber/Core/Layer.h"
 
 namespace Amber 

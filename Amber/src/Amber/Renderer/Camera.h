@@ -19,12 +19,19 @@ public:
     void OnEvent(Event& e);
     void OnUpdate(Timestep ts);
 
+    void UpdateCamera();
+
     const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
     const glm::mat4& GetViewProjection() const { return m_ViewProjection; }
 
     const glm::vec3& GetPosition() const { return m_Position; }
     const glm::quat& GetOrientation() const { return m_Orientation; }
+    const glm::vec3& GetFocalPoint() const { return m_FocalPoint; }
+
+    float GetDistance() const { return m_Distance; }
+    float GetPitch() const { return m_Pitch; }
+    float GetYaw() const { return m_Yaw; }
     
     const glm::vec3& GetUpDirection() const { return m_UpDirection; }
     const glm::vec3& GetRightDirection() const { return m_RightDirection; }
@@ -33,7 +40,11 @@ public:
     void SetProjectionMatrix(const glm::mat4& projectionMatrix) { m_ProjectionMatrix = projectionMatrix; }
     void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
 
-    float GetDistance() const { return m_Distance; }
+    void SetFocalPoint(const glm::vec3& focalPoint) { m_FocalPoint = focalPoint; }
+
+    void SetDistance(float distance) { m_Distance = distance; }
+    void SetPitch(float pitch) { m_Pitch = pitch; }
+    void SetYaw(float yaw) { m_Yaw = yaw; }
 
 private:
     glm::mat4 m_ViewMatrix, m_ProjectionMatrix, m_ViewProjection;
@@ -52,8 +63,6 @@ private:
     void CalculatePosition();
     void CalculateViewMatrix();
     void SetDirections();
-
-    void UpdateCamera();
 
     bool OnMouseScroll(MouseScrolledEvent& e);
 
