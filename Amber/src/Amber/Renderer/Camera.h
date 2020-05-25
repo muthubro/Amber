@@ -14,6 +14,7 @@ namespace Amber
 class Camera
 {
 public:
+    Camera() = default;
     Camera(const glm::mat4& projectionMatrix);
 
     void OnEvent(Event& e);
