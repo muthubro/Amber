@@ -10,7 +10,7 @@ workspace "Amber"
     {
         "MultiProcessorCompile"
     }
-    startproject "Sandbox"
+    startproject "Editor"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
@@ -21,8 +21,7 @@ IncludeDir["Glad"] = "Amber/vendor/Glad/include"
 IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
 IncludeDir["glm"] = "Amber/vendor/glm"
 IncludeDir["ImGui"] = "Amber/vendor/ImGui"
-IncludeDir["spdlog"] = "Amber/vendor/spdlog/include"
-IncludeDir["stb_image"] = "Amber/vendor/stb_image"
+IncludeDir["stb"] = "Amber/vendor/stb/include"
 
 group "Dependencies"
     include "Amber/vendor/GLFW"
@@ -47,22 +46,18 @@ project "Amber"
     files
     {
         "%{prj.name}/src/**.h",
-        "%{prj.name}/src/**.cpp",
-        "%{prj.name}/vendor/glm/glm/**.hpp",
-        "%{prj.name}/vendor/glm/glm/**.inl",
-        "%{prj.name}/vendor/stb_image/**.h",
-        "%{prj.name}/vendor/stb_image/**.cpp"
+        "%{prj.name}/src/**.cpp"
     }
     includedirs
     {
         "%{prj.name}/src",
+        "%{prj.name}/vendor",
         "%{IncludeDir.Assimp}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.ImGui}",
-        "%{IncludeDir.stb_image}",
-        "%{IncludeDir.spdlog}"
+        "%{IncludeDir.stb}"
     }
     links
     {
@@ -96,6 +91,87 @@ project "Amber"
         runtime "Release"
         optimize "on"
 
+project "Editor"
+    location "Editor"
+    kind "ConsoleApp"
+    language "C++"
+    cppdialect "C++17"
+    staticruntime "on"
+
+    targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+    files
+    {
+        "%{prj.name}/src/**.h",
+        "%{prj.name}/src/**.cpp"
+    }
+    includedirs
+    {
+        "%{prj.name}/src",
+        "Amber/src",
+        "Amber/vendor",
+        "%{IncludeDir.glm}"
+    }
+    links
+    {
+        "Amber"
+    }
+
+	postbuildcommands 
+	{
+		'{COPY} "../Editor/assets" "%{cfg.targetdir}/assets"'
+	}
+
+    filter "system:windows"
+        systemversion "latest"
+
+    filter "configurations:Debug"
+        defines "AB_DEBUG"
+        runtime "Debug"
+        symbols "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.dll" "%{cfg.targetdir}"'
+		}
+
+    filter "configurations:Release"
+        defines "AB_RELEASE"
+        runtime "Release"
+        optimize "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+		}
+
+    filter "configurations:Dist"
+        defines "AB_DIST"
+        runtime "Release"
+        optimize "on"
+        
+        links
+        {
+            "Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.lib"
+        }
+
+		postbuildcommands 
+		{
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+		}
+
+
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
@@ -113,10 +189,10 @@ project "Sandbox"
     }
     includedirs
     {
+        "%{prj.name}/src",
         "Amber/src",
         "Amber/vendor",
-        "%{IncludeDir.glm}",
-        "%{IncludeDir.spdlog}"
+        "%{IncludeDir.glm}"
     }
     links
     {

@@ -16,14 +16,14 @@ namespace Amber
 
 Application* Application::s_Instance = nullptr;
 
-Application::Application()
+Application::Application(const ApplicationProps& props)
 {
     AB_PROFILE_FUNCTION();
 
     AB_CORE_ASSERT(!s_Instance, "Application already exists!");
     s_Instance = this;
 
-    m_Window = Window::Create();
+    m_Window = Window::Create(WindowProps(props.Name, props.WindowWidth, props.WindowHeight));
     m_Window->SetEventCallback(AB_BIND_EVENT_FN(Application::OnEvent));
     m_Window->SetVSync(false);
 
