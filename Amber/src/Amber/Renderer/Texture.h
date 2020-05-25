@@ -34,8 +34,10 @@ namespace Amber
         virtual uint32_t GetWidth() const = 0;
         virtual uint32_t GetHeight() const = 0;
         virtual TextureFormat GetFormat() const = 0;
+        virtual uint32_t GetMipLevelCount() const = 0;
 
         static uint32_t GetBPP(TextureFormat format);
+        static uint32_t CalculateMipMapCount(uint32_t width, uint32_t height);
 
         virtual bool operator==(const Texture& other) const = 0;
     };
@@ -62,6 +64,15 @@ namespace Amber
         static Ref<Texture2D> Create(const std::string& path, bool srgb = false, bool flip = false, TextureWrap wrap = TextureWrap::Clamp, TextureFilter filter = TextureFilter::Linear);
 
         static Texture2DBounds GetBounds(const glm::vec2& position, const glm::vec2& cellSize, const glm::vec2& cellCount = glm::vec2(1.0f));
+    };
+
+    class TextureCube : public Texture
+    {
+    public:
+        virtual const std::string& GetPath() const = 0;
+
+        static Ref<TextureCube> Create(TextureFormat format, uint32_t width, uint32_t height);
+        static Ref<TextureCube> Create(const std::string& path);
     };
 
 }

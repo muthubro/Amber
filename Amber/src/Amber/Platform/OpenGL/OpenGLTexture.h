@@ -28,6 +28,7 @@ public:
     uint32_t GetWidth() const override { return m_Width; }
     uint32_t GetHeight() const override { return m_Height; }
     TextureFormat GetFormat() const override { return m_Format; }
+    uint32_t GetMipLevelCount() const override { return Texture::CalculateMipMapCount(m_Width, m_Height); }
     Buffer& GetWritableBuffer() override;
 
     bool operator==(const Texture& other) const override 
@@ -48,6 +49,37 @@ private:
 
     bool m_Locked = false;
     bool m_Loaded = false;
+};
+
+class OpenGLTextureCube : public TextureCube
+{
+public:
+    OpenGLTextureCube(TextureFormat format, uint32_t width, uint32_t height);
+    OpenGLTextureCube(const std::string& path);
+    ~OpenGLTextureCube();
+
+    void Bind(uint32_t slot) const override;
+
+    uint32_t GetRendererID() const override { return m_RendererID; }
+    uint32_t GetWidth() const override { return m_Width; }
+    uint32_t GetHeight() const override { return m_Height; }
+    TextureFormat GetFormat() const override { return m_Format; }
+    uint32_t GetMipLevelCount() const override { return Texture::CalculateMipMapCount(m_Width, m_Height); }
+
+    const std::string& GetPath() const override { return m_Path; }
+
+    bool operator==(const Texture& other) const override
+    {
+        return m_RendererID == ((OpenGLTextureCube&)other).m_RendererID;
+    }
+
+private:
+    uint32_t m_RendererID = 0;
+
+    std::string m_Path;
+    uint32_t m_Width, m_Height;
+    TextureFormat m_Format;
+    byte* m_ImageData;
 };
 
 }
