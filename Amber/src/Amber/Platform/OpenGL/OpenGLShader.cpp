@@ -358,13 +358,13 @@ void OpenGLShader::CompileAndUploadShader()
 {
     AB_PROFILE_FUNCTION();
 
-    std::vector<uint32_t> shaderIDs;
+    std::vector<RendererID> shaderIDs;
 
-    uint32_t program = glCreateProgram();
+    RendererID program = glCreateProgram();
     for (auto& [type, source] : m_ShaderSource)
     {
         const char* src = source.c_str();
-        uint32_t shader = glCreateShader(type);
+        RendererID shader = glCreateShader(type);
         glShaderSource(shader, 1, &src, nullptr);
 
         glCompileShader(shader);
