@@ -23,10 +23,10 @@ public:
     void SetLayout(const BufferLayout& layout) override { m_Layout = layout; }
 
     size_t GetSize() const override { return m_Size; }
-    uint32_t GetRendererID() const override { return m_RendererID; }
+    RendererID GetRendererID() const override { return m_RendererID; }
 
 private:
-    uint32_t m_RendererID = 0;
+    RendererID m_RendererID = 0;
     size_t m_Size;
     BufferLayout m_Layout;
 
@@ -46,10 +46,10 @@ public:
     
     size_t GetCount() const override { return (size_t)(m_Size / sizeof(uint32_t)); }
     size_t GetSize() const override { return m_Size; }
-    uint32_t GetRendererID() const override { return m_RendererID; }
+    RendererID GetRendererID() const override { return m_RendererID; }
 
 private:
-    uint32_t m_RendererID = 0;
+    RendererID m_RendererID = 0;
     size_t m_Size;
 
     Buffer m_LocalData;

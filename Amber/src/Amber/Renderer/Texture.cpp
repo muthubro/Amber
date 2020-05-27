@@ -8,7 +8,7 @@
 namespace Amber
 {
 
-Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter)
+Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter, uint32_t samples)
 {
     switch (Renderer::GetAPI())
     {
@@ -17,7 +17,7 @@ Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t 
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTexture2D>(format, width, height, wrap, filter);
+            return CreateRef<OpenGLTexture2D>(format, width, height, wrap, filter, samples);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

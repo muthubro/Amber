@@ -12,9 +12,10 @@ static GLenum AmberToOpenGLTextureFormat(TextureFormat format)
 {
     switch (format)
     {
-        case TextureFormat::RGB:     return GL_RGB;
-        case TextureFormat::RGBA:    return GL_RGBA;
-        case TextureFormat::Float16: return GL_RGBA16F;
+        case TextureFormat::RGB:            return GL_RGB;
+        case TextureFormat::RGBA:           return GL_RGBA;
+        case TextureFormat::Float16:        return GL_RGBA16F;
+        case TextureFormat::DepthStencil:   return GL_DEPTH_STENCIL;
     }
 
     AB_CORE_ASSERT(false, "Unknown texture format!");
@@ -25,9 +26,10 @@ static GLint AmberToOpenGLInternalTextureFormat(TextureFormat format)
 {
     switch (format)
     {
-        case TextureFormat::RGB:     return GL_RGB8;
-        case TextureFormat::RGBA:    return GL_RGBA8;
-        case TextureFormat::Float16: return GL_RGBA16F;
+        case TextureFormat::RGB:            return GL_RGB8;
+        case TextureFormat::RGBA:           return GL_RGBA8;
+        case TextureFormat::Float16:        return GL_RGBA16F;
+        case TextureFormat::DepthStencil:   return GL_DEPTH24_STENCIL8;
     }
 
     AB_CORE_ASSERT(false, "Unknown texture format!");
@@ -58,12 +60,12 @@ static GLenum AmberToOpenGLTextureWrap(TextureWrap wrap)
     return 0;
 }
 
-OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter)
+OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter, uint32_t samples)
     : m_Width(width), m_Height(height), m_Format(format), m_Wrap(wrap), m_Filter(filter)
 {
     AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
+    RenderCommand::Submit([this, samples]()
     {
         glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
         glBindTexture(GL_TEXTURE_2D, m_RendererID);
@@ -75,8 +77,10 @@ OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t 
         glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(m_Wrap));
         glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(m_Wrap));
 
-        GLenum type = m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
-        glTextureStorage2D(m_RendererID, levels, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height);
+        if (samples > 1)
+            glTextureStorage2DMultisample(m_RendererID, samples, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height, GL_TRUE);
+        else
+            glTextureStorage2D(m_RendererID, levels, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height);
     });
 
     m_ImageData.Allocate(width * height * Texture::GetBPP(format));
@@ -153,7 +157,12 @@ void OpenGLTexture2D::Unlock()
     m_Locked = false;
     RenderCommand::Submit([this]()
     {
-        GLenum type = m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        GLenum type =
+            m_Format == TextureFormat::Float16 ?
+                GL_FLOAT :
+                m_Format == TextureFormat::DepthStencil ?
+                    GL_UNSIGNED_INT_24_8 :
+                    GL_UNSIGNED_BYTE;
         glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, AmberToOpenGLTextureFormat(m_Format), type, m_ImageData.Data);
     });
 }

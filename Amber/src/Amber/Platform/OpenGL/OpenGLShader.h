@@ -41,7 +41,7 @@ public:
     void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 
     const std::string& GetName() const override { return m_Name; }
-    uint32_t GetRendererID() const override { return m_RendererID; }
+    RendererID GetRendererID() const override { return m_RendererID; }
 
     bool HasVSMaterialUniformBuffer() const override { return (bool)m_VSMaterialUniformBuffer; }
     bool HasPSMaterialUniformBuffer() const override { return (bool)m_PSMaterialUniformBuffer; }
@@ -56,7 +56,7 @@ public:
 
 private:
     std::unordered_map<std::string, int32_t> m_LocationMap;
-    uint32_t m_RendererID = 0;
+    RendererID m_RendererID = 0;
     std::string m_Name, m_AssetPath;
     bool m_IsCompute = false;
 
