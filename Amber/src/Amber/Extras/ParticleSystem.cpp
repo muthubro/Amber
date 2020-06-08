@@ -105,7 +105,7 @@ void ParticleSystem::OnUpdate(Timestep ts)
         float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
         glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
 
-        Renderer2D::DrawQuad(particle.Position, { size, size }, particle.Rotation, m_ParticleTexture, color);
+        Renderer2D::SubmitQuad(particle.Position, { size, size }, particle.Rotation, m_ParticleTexture, color);
     }
 }
 

@@ -14,6 +14,7 @@ public:
     void Resize(uint32_t width, uint32_t height, bool forceRecreate = false) override;
 
     void Bind() const override;
+    void Unbind() const override;
     void BindTexture(uint32_t slot = 0) const override;
     
     RendererID GetRendererID() const override { return m_RendererID; }

@@ -30,20 +30,19 @@ void Camera::OnEvent(Event& e)
 
 void Camera::OnUpdate(Timestep ts)
 {
-    const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
-    auto delta = mouse - m_MousePosition;
-    m_MousePosition = mouse;
-
-    delta *= ts;
-
-    if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT))
+    if (Input::IsKeyPressed(AB_KEY_LEFT_ALT))
     {
-        if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_LEFT))
-            MousePan(delta);
-    }
+        const glm::vec2& mouse{ Input::GetMouseX(), Input::GetMouseY() };
+        glm::vec2 delta = (mouse - m_MousePosition) * 0.003f;
+        m_MousePosition = mouse;
 
-    if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_MIDDLE))
-        MouseRotate(delta);
+        if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_MIDDLE))
+            MousePan(delta);
+        else if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_LEFT))
+            MouseRotate(delta);
+        else if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_RIGHT))
+            MouseZoom(delta.y);
+    }
 
     UpdateCamera();
 }
@@ -115,10 +114,10 @@ void Camera::MouseZoom(float delta)
 std::pair<float, float> Camera::PanSpeed() const
 {
     float x = std::min(m_ViewportWidth / 1000.0f, 2.4f);
-    float xFactor = 0.0732f * x * x - 0.3556f * x + 0.6042f;
+    float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
 
     float y = std::min(m_ViewportHeight / 1000.0f, 2.4f);
-    float yFactor = 0.0732f * y * y - 0.3556f * y + 0.6042f;
+    float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
 
     return { xFactor, yFactor };
 }

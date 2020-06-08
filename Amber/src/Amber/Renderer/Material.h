@@ -30,7 +30,7 @@ public:
     Ref<Shader> GetShader() { return m_Shader; }
 
     uint32_t GetFlags() const { return m_Flags; }
-    void SetFlag(MaterialFlag flag) { m_Flags |= (uint32_t)flag; }
+    void SetFlag(MaterialFlag flag, bool value = true) { value ? m_Flags |= (uint32_t)flag : m_Flags &= ~(uint32_t)flag; }
 
     template<typename T>
     void Set(const std::string& name, const T& value)
@@ -57,6 +57,11 @@ public:
     }
 
     void Set(const std::string& name, const Ref<Texture2D>& texture)
+    {
+        Set(name, (const Ref<Texture>&)texture);
+    }
+
+    void Set(const std::string& name, const Ref<TextureCube>& texture)
     {
         Set(name, (const Ref<Texture>&)texture);
     }
@@ -98,7 +103,7 @@ public:
 
     uint32_t GetFlags() const { return m_Material->GetFlags(); }
     bool GetFlag(MaterialFlag flag) const { return m_Material->GetFlags() & (uint32_t)flag; }
-    void SetFlag(MaterialFlag flag) { m_Material->SetFlag(flag); }
+    void SetFlag(MaterialFlag flag, bool value = true) { m_Material->SetFlag(flag, value); }
 
     template<typename T>
     void Set(const std::string& name, const T& value)
@@ -124,6 +129,11 @@ public:
     }
 
     void Set(const std::string& name, const Ref<Texture2D>& texture)
+    {
+        Set(name, (const Ref<Texture>&)texture);
+    }
+
+    void Set(const std::string& name, const Ref<TextureCube>& texture)
     {
         Set(name, (const Ref<Texture>&)texture);
     }

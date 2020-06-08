@@ -14,7 +14,7 @@ static GLenum AmberToOpenGLTextureFormat(TextureFormat format)
     {
         case TextureFormat::RGB:            return GL_RGB;
         case TextureFormat::RGBA:           return GL_RGBA;
-        case TextureFormat::Float16:        return GL_RGBA16F;
+        case TextureFormat::Float16:        return GL_RGB;
         case TextureFormat::DepthStencil:   return GL_DEPTH_STENCIL;
     }
 
@@ -96,13 +96,27 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
     int width, height, channels;
     {
         AB_PROFILE_SCOPE("stbi_load - OpenGLTexture2D::OpenGLTexture2D(const std:string&)");
-        m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, srgb ? STBI_rgb : STBI_rgb_alpha);
+
+        if (stbi_is_hdr(path.c_str()))
+        {
+            AB_CORE_TRACE("Loading HDR texture {0}, srgb = {1}", path, srgb);
+
+            m_ImageData.Data = (byte*)stbi_loadf(path.c_str(), &width, &height, &channels, 0);
+            m_IsHDR = true;
+            m_Format = TextureFormat::Float16;
+        }
+        else
+        {
+            AB_CORE_TRACE("Loading texture {0}, srgb = {1}", path, srgb);
+
+            m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, srgb ? STBI_rgb : STBI_rgb_alpha);
+            m_Format = srgb ? TextureFormat::RGB : TextureFormat::RGBA;
+        }
     }
     AB_CORE_ASSERT(m_ImageData, "Failed to load image!");
 
     m_Width = width;
     m_Height = height;
-    m_Format = channels == 3 ? TextureFormat::RGB : TextureFormat::RGBA;
 
     m_Loaded = true;
 

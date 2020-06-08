@@ -1,13 +1,15 @@
 #include "abpch.h"
 #include "Scene.h"
 
+#include "Amber/Renderer/SceneRenderer.h"
+
 namespace Amber
 {
 
 Environment Environment::Load(const std::string& filepath)
 {
-    // TODO: Load environment using SceneRenderer
-    return Environment();
+    auto [irradiance, radiance] = SceneRenderer::CreateEnvironmentMap(filepath);
+    return { irradiance, radiance };
 }
 
 Scene::Scene(const std::string& debugName)
@@ -24,12 +26,14 @@ Scene::~Scene()
 
 void Scene::Init()
 {
-    // TODO: Set skybox shader and material
+    auto skyboxShader = Shader::Create("assets/shaders/Skybox.glsl");
+    m_SkyboxMaterial = CreateRef<MaterialInstance>(CreateRef<Material>(skyboxShader));
+    m_SkyboxMaterial->SetFlag(MaterialFlag::DepthTest, false);
 }
 
 void Scene::OnUpdate(Timestep ts)
 {
-    m_SkyboxMaterial->Set("u_TextureLOD", m_SkyboxLOD);
+    m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLOD);
 
     for (auto entity : m_Entities)
     {
@@ -38,7 +42,12 @@ void Scene::OnUpdate(Timestep ts)
             mesh->OnUpdate(ts);
     }
 
-    // TODO: Submit for rendering
+    SceneRenderer::BeginScene(this);
+
+    for (auto entity : m_Entities)
+        SceneRenderer::SubmitEntity(entity);
+
+    SceneRenderer::EndScene();
 }
 
 void Scene::OnEvent(Event& e)

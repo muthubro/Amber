@@ -17,6 +17,13 @@
 namespace Amber
 {
 
+#define MESH_DEBUG_LOG 1
+#if MESH_DEBUG_LOG
+#define AB_MESH_LOG(...) AB_CORE_TRACE(__VA_ARGS__)
+#else
+#define AB_MESH_LOG(...)
+#endif
+
 static const uint32_t s_MeshImportFlags =
     aiProcess_CalcTangentSpace |
     aiProcess_Triangulate |
@@ -26,6 +33,19 @@ static const uint32_t s_MeshImportFlags =
     aiProcess_SortByPType |
     aiProcess_GenUVCoords |
     aiProcess_OptimizeMeshes;
+
+glm::mat4 AssimpMat4ToMat4(const aiMatrix4x4& matrix)
+{
+    glm::mat4 result;
+
+    // a - d : Rows; 1 - 4: Columns
+    result[0][0] = matrix.a1; result[0][1] = matrix.b1; result[0][2] = matrix.c1; result[0][3] = matrix.d1;
+    result[1][0] = matrix.a2; result[1][1] = matrix.b2; result[1][2] = matrix.c2; result[1][3] = matrix.d2;
+    result[2][0] = matrix.a3; result[2][1] = matrix.b3; result[2][2] = matrix.c3; result[2][3] = matrix.d3;
+    result[3][0] = matrix.a4; result[3][1] = matrix.b4; result[3][2] = matrix.c4; result[3][3] = matrix.d4;
+
+    return result;
+}
 
 struct LogStream : public Assimp::LogStream
 {
@@ -106,6 +126,8 @@ Mesh::Mesh(const std::string& filepath)
         }
     }
 
+    TraverseNodes(m_Scene->mRootNode);
+
     m_VertexArray = VertexArray::Create();
 
     auto vertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(Vertex));
@@ -121,8 +143,10 @@ Mesh::Mesh(const std::string& filepath)
     auto indexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
     m_VertexArray->SetIndexBuffer(indexBuffer);
 
-    m_MeshShader = Renderer::GetShaderLibrary()->Get("MeshShader");
+    m_MeshShader = Renderer::GetShaderLibrary()->Get("Static_Lighting");
     m_BaseMaterial = CreateRef<Material>(m_MeshShader);
+
+    AB_MESH_LOG("------------------ Materials ------------------");
 
     uint32_t materialCount = m_Scene->mNumMaterials;
     m_Materials.resize(materialCount);
@@ -133,6 +157,8 @@ Mesh::Mesh(const std::string& filepath)
         auto materialInstance = CreateRef<MaterialInstance>(m_BaseMaterial);
         m_Materials[i] = materialInstance;
 
+        AB_MESH_LOG("  {0} (Index = {1})", material->GetName().data, i);
+
         aiColor3D diffuseColor;
         float shininess, roughness, metalness;
         material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
@@ -140,44 +166,54 @@ Mesh::Mesh(const std::string& filepath)
         material->Get(AI_MATKEY_REFLECTIVITY, metalness);
         roughness = 1.0f - sqrt(shininess * 0.01f);
 
+        AB_MESH_LOG("    COLOR     = {0}, {1}, {2}", diffuseColor.r, diffuseColor.g, diffuseColor.b);
+        AB_MESH_LOG("    ROUGHNESS = {0}", roughness);
+        AB_MESH_LOG("    METALNESS = {0}", metalness);
+
         uint32_t textureCount = material->GetTextureCount(aiTextureType_DIFFUSE);
-        AB_CORE_TRACE("{} diffuse textures found.", textureCount);
+        AB_MESH_LOG("    {} diffuse textures found.", textureCount);
 
         textureCount = material->GetTextureCount(aiTextureType_SPECULAR);
-        AB_CORE_TRACE("{} specular textures found.", textureCount);
+        AB_MESH_LOG("    {} specular textures found.", textureCount);
 
         aiString texturePath;
         if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
         {
             std::string path = GetTexturePath(filepath, texturePath);
-            auto albedo = Texture2D::Create(path, true);
+            AB_MESH_LOG("    Albedo map path = {0}", path);
 
+            auto albedo = Texture2D::Create(path, true);
             if (albedo->Loaded())
             {
                 m_Textures[i] = albedo;
-                materialInstance->Set("u_Texture", albedo);
+                materialInstance->Set("u_AlbedoTexture", albedo);
+                materialInstance->Set("u_AlbedoTexToggle", 1);
             }
             else
             {
                 AB_CORE_ERROR("Could not load albedo texture {}.", path);
+                materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
             }
         }
         else
         {
-            AB_CORE_ERROR("No albedo textures found.");
+            AB_MESH_LOG("    No albedo textures found.");
 
-            // Temporary. Will be changed once PBR is implemented.
-            m_Textures[i] = Texture2D::Create("assets/models/backpack/diffuse.jpg", true);
-            materialInstance->Set("u_Texture", m_Textures[i]);
+            materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
+            //m_Textures[i] = Texture2D::Create("assets/models/backpack/diffuse.jpg", true);
+            //materialInstance->Set("u_Texture", m_Textures[i]);
         }
 
         if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
         {
             std::string path = GetTexturePath(filepath, texturePath);
-            auto normal = Texture2D::Create(path, true);
+            AB_MESH_LOG("    Normal map path = {0}", path);
 
-            if (normal->Loaded())
+            auto normalMap = Texture2D::Create(path, true);
+            if (normalMap->Loaded())
             {
+                materialInstance->Set("u_NormalTexture", normalMap);
+                materialInstance->Set("u_NormalTexToggle", 1);
             }
             else
             {
@@ -186,15 +222,19 @@ Mesh::Mesh(const std::string& filepath)
         }
         else
         {
+            AB_MESH_LOG("    No normal textures found.");
         }
 
         if (material->GetTexture(aiTextureType_SHININESS, 0, &texturePath) == AI_SUCCESS)
         {
             std::string path = GetTexturePath(filepath, texturePath);
-            auto roughness = Texture2D::Create(path, true);
+            AB_MESH_LOG("    Roughness(shininess) map path = {0}", path);
 
-            if (roughness->Loaded())
+            auto roughnessMap = Texture2D::Create(path, true);
+            if (roughnessMap->Loaded())
             {
+                materialInstance->Set("u_RoughnessTexture", roughnessMap);
+                materialInstance->Set("u_RoughnessTexToggle", 1);
             }
             else
             {
@@ -203,10 +243,21 @@ Mesh::Mesh(const std::string& filepath)
         }
         else
         {
+            AB_MESH_LOG("    No roughness textures found.");
+            materialInstance->Set("u_Roughness", roughness);
         }
 
         // TODO: Metalness map
+        materialInstance->Set("u_Metalness", metalness);
+
+        AB_MESH_LOG("");
     }
+
+    AB_MESH_LOG("-----------------------------------------------");
+}
+
+Mesh::~Mesh()
+{
 }
 
 void Mesh::Bind()
@@ -216,6 +267,19 @@ void Mesh::Bind()
 
 void Mesh::OnUpdate(Timestep ts)
 {
+}
+
+void Mesh::TraverseNodes(aiNode* node, const glm::mat4& parentTransform)
+{
+    glm::mat4 transform = parentTransform * AssimpMat4ToMat4(node->mTransformation);
+    for (uint32_t i = 0; i < node->mNumMeshes; i++)
+    {
+        Submesh& submesh = m_Submeshes[node->mMeshes[i]];
+        submesh.Transform = transform;
+    }
+
+    for (uint32_t i = 0; i < node->mNumChildren; i++)
+        TraverseNodes(node->mChildren[i], transform);
 }
 
 }

@@ -191,12 +191,12 @@ static std::vector<std::string> SplitString(const std::string& str, const char d
 
 static std::vector<std::string> Tokenize(const std::string& str)
 {
-    return SplitString(str, " \t\n");
+    return SplitString(str, " \t\r\n");
 }
 
 static std::vector<std::string> GetLines(const std::string& str)
 {
-    return SplitString(str, "\n");
+    return SplitString(str, "\r\n");
 }
 
 static std::string GetBlock(const char* str, const char** outPosition)
@@ -230,7 +230,7 @@ static bool StartsWith(const std::string& str, const std::string& start)
 
 static bool IsTypeStringResource(const std::string& type)
 {
-    if (type == "sampler2D") return true;
+    if (type == "sampler2D" || type == "samplerCube") return true;
     return false;
 }
 
@@ -279,6 +279,9 @@ void OpenGLShader::ParseUniformStruct(const std::string& block, ShaderDomain dom
     ShaderUniformStruct* uniformStruct = new ShaderUniformStruct(name);
     while (index < tokens.size())
     {
+        if (tokens[index] == "}")
+            break;
+
         std::string typeString = tokens[index++];
         std::string fieldName = tokens[index++];
 

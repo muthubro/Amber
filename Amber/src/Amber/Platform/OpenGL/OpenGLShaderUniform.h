@@ -87,7 +87,7 @@ class OpenGLShaderResource : public ShaderResource
 public:
     enum class Type
     {
-        None, Texture2D
+        None, Texture2D, TextureCube
     };
 
     OpenGLShaderResource(Type type, const std::string& name, uint32_t count = 1);

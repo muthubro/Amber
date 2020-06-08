@@ -33,6 +33,7 @@ uint32_t OpenGLShaderUniform::SizeOfUniformType(OpenGLShaderUniform::Type type)
 
 OpenGLShaderUniform::Type OpenGLShaderUniform::StringToType(const std::string& type)
 {
+    if (type == "bool")     return OpenGLShaderUniform::Type::Int32;
     if (type == "int")      return OpenGLShaderUniform::Type::Int32;
     if (type == "float")    return OpenGLShaderUniform::Type::Float32;
     if (type == "vec2")     return OpenGLShaderUniform::Type::Vec2;
@@ -106,6 +107,7 @@ OpenGLShaderResource::OpenGLShaderResource(OpenGLShaderResource::Type type, cons
 OpenGLShaderResource::Type OpenGLShaderResource::StringToType(const std::string& type)
 {
     if (type == "sampler2D") return OpenGLShaderResource::Type::Texture2D;
+    if (type == "samplerCube") return OpenGLShaderResource::Type::TextureCube;
 
     return OpenGLShaderResource::Type::None;
 }
@@ -115,6 +117,7 @@ std::string OpenGLShaderResource::TypeToString(OpenGLShaderResource::Type type)
     switch (type)
     {
         case OpenGLShaderResource::Type::Texture2D: return "sampler2D";
+        case OpenGLShaderResource::Type::TextureCube: return "samplerCube";
     }
 
     return "Invalid Type!";

@@ -44,22 +44,22 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         rotation += ts * 50.0f;
 
         Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
-        Amber::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, {
+        Amber::Renderer2D::SubmitQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, 0.0f, {
             { 0.0f, 0.0f, 0.0f, 1.0f },
             { 1.0f, 0.0f, 0.0f, 1.0f },
             { 1.0f, 1.0f, 0.0f, 1.0f },
             { 0.0f, 1.0f, 0.0f, 1.0f },
         });
-        Amber::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, glm::radians(30.0f), { 0.2f, 0.3f, 0.8f, 1.0f });
-        Amber::Renderer2D::DrawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, 0.0f, m_CheckerboardTexture, 10.0f);
-        Amber::Renderer2D::DrawQuad({ -0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f }, glm::radians(rotation), m_CheckerboardTexture, {
+        Amber::Renderer2D::SubmitQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, glm::radians(30.0f), { 0.2f, 0.3f, 0.8f, 1.0f });
+        Amber::Renderer2D::SubmitQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, 0.0f, m_CheckerboardTexture, 10.0f);
+        Amber::Renderer2D::SubmitQuad({ -0.5f, -0.5f, 0.0f }, { 1.0f, 1.0f }, glm::radians(rotation), m_CheckerboardTexture, {
             { 1.0f, 0.6f, 0.3f, 1.0f },
             { 0.6f, 0.3f, 0.0f, 1.0f },
             { 0.3f, 0.0f, 1.0f, 1.0f },
             { 0.0f, 1.0f, 0.6f, 1.0f },
         }, 20.0f);
 
-        Amber::Renderer2D::DrawLine({ 0.0f, 0.0f, 1.0f }, { 0.5f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f });
+        Amber::Renderer2D::SubmitLine({ 0.0f, 0.0f, 1.0f }, { 0.5f, 1.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f });
 
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
@@ -70,7 +70,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
             for (float x = -5.0f; x < 5.0f; x += 0.5f)
             {
                 glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-                Amber::Renderer2D::DrawQuad({ x, y }, { 0.45f, 0.45f }, 0.0f, color);
+                Amber::Renderer2D::SubmitQuad({ x, y }, { 0.45f, 0.45f }, 0.0f, color);
             }
         }
         Amber::Renderer2D::EndScene();

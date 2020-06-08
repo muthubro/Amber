@@ -34,6 +34,7 @@ public:
     virtual void Resize(uint32_t width, uint32_t height, bool forceRecreate = false) = 0;
 
     virtual void Bind() const = 0;
+    virtual void Unbind() const = 0;
     virtual void BindTexture(uint32_t slot = 0) const = 0;
 
     virtual RendererID GetRendererID() const = 0;

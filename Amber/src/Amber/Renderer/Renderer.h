@@ -5,6 +5,7 @@
 #include "Amber/Renderer/Mesh.h"
 #include "Amber/Renderer/OrthographicCamera.h"
 #include "Amber/Renderer/RenderCommand.h"
+#include "Amber/Renderer/RenderPass.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/VertexArray.h"
 
@@ -17,8 +18,6 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void DrawMesh(const std::string& filename, const glm::mat4& MVP);
-
     template<typename FuncT>
     static void Submit(FuncT&& func) 
     { 
@@ -26,6 +25,13 @@ public:
     }
 
     static void WaitAndRender();
+
+    static void BeginRenderPass(const Ref<RenderPass>& renderpass, bool clear = true);
+    static void EndRenderPass();
+
+    static void SubmitFullscreenQuad(const Ref<MaterialInstance>& material);
+    static void SubmitMesh(const Ref<Mesh>& mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
+    static void SubmitMesh(const std::string& filename, const glm::mat4& MVP);
 
     static const Scope<ShaderLibrary>& GetShaderLibrary();
     static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }

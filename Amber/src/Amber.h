@@ -26,12 +26,15 @@
 
 #include "Amber/Utils/Random.h"
 
+#include "Amber/Scene/Scene.h"
+
 //------------------Renderer----------------------//
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Renderer2D.h"
 
 #include "Amber/Renderer/Buffer.h"
+#include "Amber/Renderer/Mesh.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/Texture.h"
 #include "Amber/Renderer/VertexArray.h"

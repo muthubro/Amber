@@ -46,6 +46,8 @@ project "Amber"
     files
     {
         "%{prj.name}/src/**.h",
+        "%{prj.name}/src/**.c",
+        "%{prj.name}/src/**.hpp",
         "%{prj.name}/src/**.cpp"
     }
     includedirs
@@ -104,6 +106,8 @@ project "Editor"
     files
     {
         "%{prj.name}/src/**.h",
+        "%{prj.name}/src/**.c",
+        "%{prj.name}/src/**.hpp",
         "%{prj.name}/src/**.cpp"
     }
     includedirs
@@ -185,6 +189,8 @@ project "Sandbox"
     files
     {
         "%{prj.name}/src/**.h",
+        "%{prj.name}/src/**.c",
+        "%{prj.name}/src/**.hpp",
         "%{prj.name}/src/**.cpp"
     }
     includedirs

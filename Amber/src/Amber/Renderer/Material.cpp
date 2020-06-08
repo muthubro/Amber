@@ -20,7 +20,7 @@ namespace Amber
             m_Shader->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
 
         if (m_PSUniformStorageBuffer)
-            m_Shader->SetVSMaterialUniformBuffer(m_PSUniformStorageBuffer);
+            m_Shader->SetPSMaterialUniformBuffer(m_PSUniformStorageBuffer);
 
         BindTextures();
     }
@@ -125,7 +125,7 @@ namespace Amber
             m_Material->GetShader()->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
 
         if (m_PSUniformStorageBuffer)
-            m_Material->GetShader()->SetVSMaterialUniformBuffer(m_PSUniformStorageBuffer);
+            m_Material->GetShader()->SetPSMaterialUniformBuffer(m_PSUniformStorageBuffer);
 
         m_Material->BindTextures();
         BindTextures();

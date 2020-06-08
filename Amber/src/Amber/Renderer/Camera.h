@@ -33,7 +33,8 @@ public:
     float GetDistance() const { return m_Distance; }
     float GetPitch() const { return m_Pitch; }
     float GetYaw() const { return m_Yaw; }
-    
+    float GetExposure() const { return m_Exposure; }
+
     const glm::vec3& GetUpDirection() const { return m_UpDirection; }
     const glm::vec3& GetRightDirection() const { return m_RightDirection; }
     const glm::vec3& GetForwardDirection() const { return m_ForwardDirection; }
@@ -46,6 +47,7 @@ public:
     void SetDistance(float distance) { m_Distance = distance; }
     void SetPitch(float pitch) { m_Pitch = pitch; }
     void SetYaw(float yaw) { m_Yaw = yaw; }
+    void SetExposure(float exposure) { m_Exposure = exposure; }
 
 private:
     glm::mat4 m_ViewMatrix, m_ProjectionMatrix, m_ViewProjection;
@@ -58,6 +60,7 @@ private:
 
     uint32_t m_ViewportWidth, m_ViewportHeight;
 
+    float m_Exposure = 1.0f;
     glm::vec2 m_MousePosition = glm::vec2(0.0f);
 
     void CalculateOrientation();

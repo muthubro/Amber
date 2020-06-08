@@ -47,6 +47,7 @@ private:
 
     Buffer m_ImageData;
 
+    bool m_IsHDR = false;
     bool m_Locked = false;
     bool m_Loaded = false;
 };

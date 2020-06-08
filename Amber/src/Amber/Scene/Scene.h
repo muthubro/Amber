@@ -11,8 +11,8 @@ namespace Amber
 
 struct Environment
 {
-    Ref<TextureCube> RadianceMap;
     Ref<TextureCube> IrradianceMap;
+    Ref<TextureCube> RadianceMap;
 
     static Environment Load(const std::string& filepath);
 };
@@ -42,7 +42,10 @@ public:
     Light& GetLight() { return m_Light; }
     float GetSkyboxLOD() { return m_SkyboxLOD; }
 
+    const Environment& GetEnvironment() { return m_Environment; }
     void SetEnvironment(const Environment& environment);
+
+    Ref<MaterialInstance> GetSkyboxMaterial() { return m_SkyboxMaterial; }
     void SetSkybox(const Ref<TextureCube>& skybox);
 
     void AddEntity(Entity* entity);
@@ -58,7 +61,7 @@ private:
 
     Ref<TextureCube> m_Skybox;
     Ref<MaterialInstance> m_SkyboxMaterial;
-    float m_SkyboxLOD = 1.0f;
+    float m_SkyboxLOD = 0.0f;
 };
 
 }

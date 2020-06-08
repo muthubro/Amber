@@ -4,22 +4,45 @@
 #include <ImGui/imgui.h>
 
 Sandbox3D::Sandbox3D()
-    : m_Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f))
 {
+}
+
+void Sandbox3D::OnAttach()
+{
+    using namespace Amber;
+
+    auto environment = Environment::Load("assets/env/birchwood_4k.hdr");
+
+    m_Scene = CreateRef<Scene>("Model Scene");
+    m_Scene->SetCamera(Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
+    m_Scene->SetEnvironment(environment);
+
+    m_MeshEntity = m_Scene->CreateEntity("Test entity");
+
+    auto mesh = CreateRef<Mesh>("assets/meshes/TestScene.fbx");
+    m_MeshEntity->SetMesh(mesh);
+
+    m_MeshMaterial = mesh->GetMaterial();
+
+    auto& light = m_Scene->GetLight();
+    light.Direction = { -0.5f, 0.5f, 1.0f };
+    light.Radiance = { 1.0f, 1.0f, 1.0f };
 }
 
 void Sandbox3D::OnEvent(Amber::Event& e)
 {
-    m_Camera.OnEvent(e);
+    m_Scene->GetCamera().OnEvent(e);
 }
 
 void Sandbox3D::OnUpdate(Amber::Timestep ts)
 {
+    Amber::RenderCommand::SetClearColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
     Amber::RenderCommand::Clear();
 
-    Amber::Renderer::DrawMesh("assets/models/backpack/backpack.obj", m_Camera.GetViewProjection());
+    //Amber::Renderer::SubmitMesh("assets/models/backpack/backpack.obj", m_Camera.GetViewProjection());
+    m_Scene->OnUpdate(ts);
 
-    m_Camera.OnUpdate(ts);
+    m_Scene->GetCamera().OnUpdate(ts);
 }
 
 void Sandbox3D::OnImGuiRender()

@@ -27,10 +27,10 @@ Application::Application(const ApplicationProps& props)
     m_Window->SetEventCallback(AB_BIND_EVENT_FN(Application::OnEvent));
     m_Window->SetVSync(false);
 
+    Random::Init();
+
     Renderer::Init();
     Renderer::WaitAndRender();
-
-    Random::Init();
 
     m_ImGuiLayer = new ImGuiLayer();
     PushOverlay(m_ImGuiLayer);

@@ -20,17 +20,17 @@ public:
     const glm::mat4& GetTransform() const { return m_Transform; }
     glm::mat4& Transform() { return m_Transform; }
 
-    Ref<Material> GetMaterial() { return m_Material; }
-    void SetMaterial(const Ref<Material>& material) { m_Material = material; }
+    Ref<MaterialInstance> GetMaterial() { return m_Material; }
+    void SetMaterial(const Ref<MaterialInstance>& material) { m_Material = material; }
 
     Ref<Mesh> GetMesh() { return m_Mesh; }
-    void SetMaterial(const Ref<Mesh>& mesh) { m_Mesh = mesh; }
+    void SetMesh(const Ref<Mesh>& mesh) { m_Mesh = mesh; }
 
 private:
     std::string m_Name;
     glm::mat4 m_Transform;
 
-    Ref<Material> m_Material;
+    Ref<MaterialInstance> m_Material;
     Ref<Mesh> m_Mesh;
 };
 

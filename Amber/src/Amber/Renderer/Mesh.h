@@ -9,6 +9,7 @@
 #include "Amber/Renderer/Texture.h"
 #include "Amber/Renderer/VertexArray.h"
 
+struct aiNode;
 struct aiScene;
 
 namespace Assimp
@@ -50,6 +51,7 @@ class Mesh
 {
 public:
     Mesh(const std::string& filepath);
+    ~Mesh();
 
     void Bind();
     void OnUpdate(Timestep ts);
@@ -66,7 +68,7 @@ public:
 private:
     std::string m_FilePath;
 
-    Scope<Assimp::Importer> m_Importer;
+    Scope<Assimp::Importer> m_Importer = nullptr;
     const aiScene* m_Scene;
 
     std::vector<Submesh> m_Submeshes;
@@ -80,6 +82,8 @@ private:
     std::vector<Ref<MaterialInstance>> m_Materials;
     std::vector<Ref<Texture2D>> m_Textures;
     std::vector<Ref<Texture2D>> m_NormalMaps;
+
+    void TraverseNodes(aiNode* node, const glm::mat4& parentTransform = glm::mat4(1.0f));
 };
 
 }

@@ -52,6 +52,8 @@ struct Renderer2DData
     glm::mat4 QuadVertexPositions;
     glm::vec2 QuadTextureCoordinates[4];
 
+    Ref<VertexArray> FullscreenQuadVertexArray;
+
     // Lines
     static const uint32_t MaxLines = 100000;
     static const uint32_t MaxLineVertices = MaxLines * 2;
@@ -123,6 +125,26 @@ void Renderer2D::Init()
     s_Data.QuadTextureCoordinates[1] = { 1.0f, 0.0f };
     s_Data.QuadTextureCoordinates[2] = { 1.0f, 1.0f };
     s_Data.QuadTextureCoordinates[3] = { 0.0f, 1.0f };
+
+    s_Data.FullscreenQuadVertexArray = VertexArray::Create();
+    s_Data.FullscreenQuadVertexArray->Bind();
+
+    float fsQuadData[] = {
+        -1.0f, -1.0f, 0.0f, 0.0f,
+         1.0f, -1.0f, 1.0f, 0.0f,
+         1.0f,  1.0f, 1.0f, 1.0f,
+        -1.0f,  1.0f, 0.0f, 1.0f
+    };
+    Ref<VertexBuffer> fullscreenVBO = VertexBuffer::Create(fsQuadData, sizeof(fsQuadData));
+    fullscreenVBO->SetLayout({
+        { ShaderDataType::Float2, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoords" }
+    });
+    s_Data.FullscreenQuadVertexArray->AddVertexBuffer(fullscreenVBO);
+
+    uint32_t fsQuadIndices[] = { 0, 1, 2, 2, 3, 0 };
+    Ref<IndexBuffer> fullscreenIBO = IndexBuffer::Create(fsQuadIndices, sizeof(fsQuadIndices));
+    s_Data.FullscreenQuadVertexArray->SetIndexBuffer(fullscreenIBO);
 
     // Lines
     s_Data.LineVertexArray = VertexArray::Create();
@@ -269,81 +291,42 @@ float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
     return textureIndex;
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 {
-    DrawQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
+    SubmitQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::mat4& color)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::mat4& color)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::mat4& color)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::mat4& color)
 {
-    DrawQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
+    SubmitQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
 {
-    DrawQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
+    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, glm::vec4(1.0f), tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, glm::vec4(1.0f), tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
-{
-    uint32_t width = texture->GetWidth();
-    uint32_t height = texture->GetHeight();
-
-    glm::vec2 texCoords[4] = {
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
-    };
-    DrawQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
-{
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
-{
-    DrawQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
-{
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
-{
-    DrawQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
-{
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
-}
-
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
 {
     uint32_t width = texture->GetWidth();
     uint32_t height = texture->GetHeight();
@@ -354,15 +337,54 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
         { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
         { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
     };
-    DrawQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
+    SubmitQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
+{
+    SubmitQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
+{
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
+{
+    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
+{
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
+{
+    uint32_t width = texture->GetWidth();
+    uint32_t height = texture->GetHeight();
+
+    glm::vec2 texCoords[4] = {
+        { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
+        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
+        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
+        { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
+    };
+    SubmitQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
+{
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
+}
+
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
 {
     AB_PROFILE_FUNCTION();
 
@@ -374,7 +396,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
     glm::mat4 actualPosition;
     if (rotation)
     {
-        AB_PROFILE_SCOPE("DrawQuad Transform");
+        AB_PROFILE_SCOPE("SubmitQuad Transform");
 
         glm::mat4 transform(1.0f);
         transform = glm::translate(transform, position);
@@ -394,7 +416,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
     const uint32_t quadVertexCount = 4;
     for (uint32_t i = 0; i < quadVertexCount; i++)
     {
-        AB_PROFILE_SCOPE("DrawQuad SetQuadVertexData loop");
+        AB_PROFILE_SCOPE("SubmitQuad SetQuadVertexData loop");
 
         Renderer2D::SetQuadVertexData(actualPosition[i], color, texCoords[i], textureIndex, tilingFactor);
         s_Data.QuadVertexBufferPtr++;
@@ -405,22 +427,22 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
 {
-    DrawQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
+    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
 {
     uint32_t width = texture->GetWidth();
     uint32_t height = texture->GetHeight();
@@ -431,15 +453,15 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
         { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
         { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
     };
-    DrawQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
+    SubmitQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
 {
-    DrawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
+    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
 }
 
-void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
 {
     AB_PROFILE_FUNCTION();
 
@@ -451,7 +473,7 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
     glm::mat4 actualPosition;
     if (rotation)
     {
-        AB_PROFILE_SCOPE("DrawQuad Transform");
+        AB_PROFILE_SCOPE("SubmitQuad Transform");
 
         glm::mat4 transform(1.0f);
         transform = glm::translate(transform, position);
@@ -479,7 +501,20 @@ void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, floa
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
+void Renderer2D::SubmitFullscreenQuad(const Ref<MaterialInstance>& material)
+{
+    bool depthTest = false;
+    if (material)
+    {
+        material->Bind();
+        bool depthTest = material->GetFlag(MaterialFlag::DepthTest);
+    }
+
+    s_Data.FullscreenQuadVertexArray->Bind();
+    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+}
+
+void Renderer2D::SubmitLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
 {
     AB_PROFILE_FUNCTION();
 
