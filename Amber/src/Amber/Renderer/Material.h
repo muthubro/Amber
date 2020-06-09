@@ -18,14 +18,14 @@ enum class MaterialFlag
     Blend       = BIT(2)
 };
 
-class Material
+class Material : public RefCounted
 {
     friend class MaterialInstance;
 
 public:
     Material(const Ref<Shader>& shader);
 
-    void Bind() const;
+    void Bind();
 
     Ref<Shader> GetShader() { return m_Shader; }
 
@@ -91,13 +91,13 @@ private:
     void RemoveMaterialInstance(MaterialInstance* materialInstance) { m_MaterialInstances.erase(materialInstance); }
 };
 
-class MaterialInstance
+class MaterialInstance : public RefCounted
 {
 public:
     MaterialInstance(const Ref<Material>& material);
     ~MaterialInstance();
 
-    void Bind() const;
+    void Bind();
 
     Ref<Shader> GetShader() { return m_Material->GetShader(); }
 

@@ -10,7 +10,7 @@ enum class ShaderDomain
 {
     Vertex, Pixel
 };
-class ShaderUniform
+class ShaderUniform : public RefCounted
 {
 public:
     virtual const std::string& GetName() const = 0;
@@ -28,7 +28,7 @@ private:
 
 typedef std::vector<ShaderUniform*> ShaderUniformList;
 
-class ShaderUniformStruct
+class ShaderUniformStruct : public RefCounted
 {
 public:
     ShaderUniformStruct(const std::string& name)
@@ -65,7 +65,7 @@ private:
 typedef std::vector<ShaderUniformStruct*> ShaderUniformStructList;
 
 
-class ShaderUniformBuffer
+class ShaderUniformBuffer : public RefCounted
 {
 public:
     virtual ShaderUniform* FindUniform(const std::string& name) = 0;
@@ -80,7 +80,7 @@ public:
 
 typedef std::vector<ShaderUniformBuffer*> ShaderUniformBufferList;
 
-class ShaderResource
+class ShaderResource : public RefCounted
 {
 public:
     virtual const std::string& GetName() const = 0;

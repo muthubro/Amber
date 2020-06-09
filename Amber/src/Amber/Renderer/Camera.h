@@ -11,7 +11,7 @@
 namespace Amber
 {
 
-class Camera
+class Camera : public RefCounted
 {
 public:
     Camera() = default;
@@ -72,7 +72,7 @@ private:
 
     void MousePan(const glm::vec2& delta);
     void MouseRotate(const glm::vec2& delta);
-    void MouseZoom(float delta);
+    void MouseZoom(float delta, bool linear = true);
 
     std::pair<float, float> PanSpeed() const;
     float RotationSpeed() const;

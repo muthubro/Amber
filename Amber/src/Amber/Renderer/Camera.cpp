@@ -41,7 +41,7 @@ void Camera::OnUpdate(Timestep ts)
         else if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_LEFT))
             MouseRotate(delta);
         else if (Input::IsMouseButtonPressed(AB_MOUSE_BUTTON_RIGHT))
-            MouseZoom(delta.y);
+            MouseZoom(delta.y, false);
     }
 
     UpdateCamera();
@@ -101,9 +101,11 @@ void Camera::MouseRotate(const glm::vec2& delta)
     m_Yaw -= yawSign * delta.x * speed;
 }
 
-void Camera::MouseZoom(float delta)
+void Camera::MouseZoom(float delta, bool linear)
 {
-    m_Distance -= delta * ZoomSpeed();
+    float speed = ZoomSpeed();
+    if (!linear) speed *= speed;
+    m_Distance -= delta * speed;
     if (m_Distance < 1.0f)
     {
         m_FocalPoint += m_ForwardDirection;

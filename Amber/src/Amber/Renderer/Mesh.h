@@ -34,7 +34,7 @@ struct Index
     uint32_t V0, V1, V2;
 };
 
-struct Submesh
+struct Submesh : public RefCounted
 {
     uint32_t BaseVertex;
     uint32_t BaseIndex;
@@ -47,7 +47,7 @@ struct Submesh
         : BaseVertex(baseVertex), BaseIndex(baseIndex), IndexCount(indexCount), MaterialIndex(materialIndex) {}
 };
 
-class Mesh
+class Mesh : public RefCounted
 {
 public:
     Mesh(const std::string& filepath);

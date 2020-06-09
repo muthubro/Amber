@@ -27,7 +27,7 @@ Scene::~Scene()
 void Scene::Init()
 {
     auto skyboxShader = Shader::Create("assets/shaders/Skybox.glsl");
-    m_SkyboxMaterial = CreateRef<MaterialInstance>(CreateRef<Material>(skyboxShader));
+    m_SkyboxMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(skyboxShader));
     m_SkyboxMaterial->SetFlag(MaterialFlag::DepthTest, false);
 }
 

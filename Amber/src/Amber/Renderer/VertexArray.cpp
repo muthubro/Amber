@@ -17,7 +17,7 @@ Ref<VertexArray> VertexArray::Create()
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLVertexArray>();
+            return Ref<OpenGLVertexArray>::Create();
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

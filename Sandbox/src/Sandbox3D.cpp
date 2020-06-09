@@ -13,13 +13,13 @@ void Sandbox3D::OnAttach()
 
     auto environment = Environment::Load("assets/env/birchwood_4k.hdr");
 
-    m_Scene = CreateRef<Scene>("Model Scene");
+    m_Scene = Ref<Scene>::Create("Model Scene");
     m_Scene->SetCamera(Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
     m_Scene->SetEnvironment(environment);
 
     m_MeshEntity = m_Scene->CreateEntity("Test entity");
 
-    auto mesh = CreateRef<Mesh>("assets/meshes/TestScene.fbx");
+    auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
     m_MeshEntity->SetMesh(mesh);
 
     m_MeshMaterial = mesh->GetMaterial();

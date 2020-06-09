@@ -272,7 +272,7 @@ float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
     float textureIndex = -1.0f;
     for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
     {
-        if (*s_Data.TextureSlots[i].get() == *texture.get())
+        if (*s_Data.TextureSlots[i] == *texture)
         {
             textureIndex = (float)i;
             break;
@@ -501,7 +501,7 @@ void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, fl
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::SubmitFullscreenQuad(const Ref<MaterialInstance>& material)
+void Renderer2D::SubmitFullscreenQuad(Ref<MaterialInstance> material)
 {
     bool depthTest = false;
     if (material)

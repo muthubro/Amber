@@ -19,7 +19,7 @@ namespace Amber
         float GetHeight() { return Top - Bottom; }
     };
 
-class OrthographicCameraController
+class OrthographicCameraController : public RefCounted
 {
 public:
     OrthographicCameraController(float aspectRatio, bool enableRotation = false);

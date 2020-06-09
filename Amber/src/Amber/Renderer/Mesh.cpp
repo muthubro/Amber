@@ -144,7 +144,7 @@ Mesh::Mesh(const std::string& filepath)
     m_VertexArray->SetIndexBuffer(indexBuffer);
 
     m_MeshShader = Renderer::GetShaderLibrary()->Get("Static_Lighting");
-    m_BaseMaterial = CreateRef<Material>(m_MeshShader);
+    m_BaseMaterial = Ref<Material>::Create(m_MeshShader);
 
     AB_MESH_LOG("------------------ Materials ------------------");
 
@@ -154,7 +154,7 @@ Mesh::Mesh(const std::string& filepath)
     for (uint32_t i = 0; i < materialCount; i++)
     {
         aiMaterial* material = m_Scene->mMaterials[i];
-        auto materialInstance = CreateRef<MaterialInstance>(m_BaseMaterial);
+        auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
         m_Materials[i] = materialInstance;
 
         AB_MESH_LOG("  {0} (Index = {1})", material->GetName().data, i);

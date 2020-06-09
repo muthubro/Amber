@@ -12,7 +12,7 @@ namespace Amber
         SetFlag(MaterialFlag::Blend);
     }
 
-    void Material::Bind() const
+    void Material::Bind()
     {
         m_Shader->Bind();
 
@@ -108,7 +108,7 @@ namespace Amber
     MaterialInstance::MaterialInstance(const Ref<Material>& material)
         : m_Material(material)
     {
-        material->AddMaterialInstance(this);
+        m_Material->AddMaterialInstance(this);
         AllocateStorage();
     }
 
@@ -117,7 +117,7 @@ namespace Amber
         m_Material->RemoveMaterialInstance(this);
     }
 
-    void MaterialInstance::Bind() const
+    void MaterialInstance::Bind()
     {
         m_Material->GetShader()->Bind();
 

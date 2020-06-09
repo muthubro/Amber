@@ -30,7 +30,7 @@ public:
     static void EndRenderPass();
 
     static void SubmitFullscreenQuad(const Ref<MaterialInstance>& material);
-    static void SubmitMesh(const Ref<Mesh>& mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
+    static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
     static void SubmitMesh(const std::string& filename, const glm::mat4& MVP);
 
     static const Scope<ShaderLibrary>& GetShaderLibrary();

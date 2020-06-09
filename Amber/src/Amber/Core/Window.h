@@ -21,7 +21,7 @@ struct WindowProps
         : Title(title), Width(width), Height(height) {}
 };
 
-class Window 
+class Window : public RefCounted
 {
 public:
     using EventCallbackFn = std::function<void(Event&)>;

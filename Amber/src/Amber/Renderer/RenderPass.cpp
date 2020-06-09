@@ -17,7 +17,7 @@ Ref<RenderPass> RenderPass::Create(const RenderPassSpecification& spec)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLRenderPass>(spec);
+            return Ref<OpenGLRenderPass>::Create(spec);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

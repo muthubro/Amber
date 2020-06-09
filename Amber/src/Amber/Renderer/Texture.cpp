@@ -17,7 +17,7 @@ Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t 
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTexture2D>(format, width, height, wrap, filter, samples);
+            return Ref<OpenGLTexture2D>::Create(format, width, height, wrap, filter, samples);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -33,7 +33,7 @@ Ref<Texture2D> Texture2D::Create(const std::string& path, bool srgb, bool flip, 
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTexture2D>(path, srgb, flip, wrap, filter);
+            return Ref<OpenGLTexture2D>::Create(path, srgb, flip, wrap, filter);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -49,7 +49,7 @@ Ref<TextureCube> TextureCube::Create(TextureFormat format, uint32_t width, uint3
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTextureCube>(format, width, height);
+            return Ref<OpenGLTextureCube>::Create(format, width, height);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -65,7 +65,7 @@ Ref<TextureCube> TextureCube::Create(const std::string& path)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLTextureCube>(path);
+            return Ref<OpenGLTextureCube>::Create(path);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

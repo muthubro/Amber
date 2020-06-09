@@ -30,8 +30,8 @@ OpenGLFramebuffer::~OpenGLFramebuffer()
 {
     RenderCommand::Submit([this]() {
         glDeleteFramebuffers(1, &m_RendererID);
-        m_ColorAttachment.reset();
-        m_DepthAttachment.reset();
+        m_ColorAttachment.Reset();
+        m_DepthAttachment.Reset();
     });
 }
 

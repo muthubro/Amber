@@ -65,7 +65,7 @@ public:
     static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor = 1.0f);
     static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor = 1.0f);
 
-    static void SubmitFullscreenQuad(const Ref<MaterialInstance>& material);
+    static void SubmitFullscreenQuad(Ref<MaterialInstance> material);
 
     static void SubmitLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f));
 

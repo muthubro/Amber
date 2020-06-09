@@ -109,7 +109,7 @@ enum class VertexBufferUsage
     None, Static, Dynamic
 };
 
-class VertexBuffer 
+class VertexBuffer : public RefCounted
 {
 public:
     virtual ~VertexBuffer() = default;
@@ -129,7 +129,7 @@ public:
     static Ref<VertexBuffer> Create(void* data, size_t size, VertexBufferUsage usage = VertexBufferUsage::Static);
 };
 
-class IndexBuffer 
+class IndexBuffer : public RefCounted
 {
 public:
     virtual ~IndexBuffer() = default;

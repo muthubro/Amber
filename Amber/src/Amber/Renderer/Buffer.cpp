@@ -17,7 +17,7 @@ Ref<VertexBuffer> VertexBuffer::Create(size_t size, VertexBufferUsage usage)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLVertexBuffer>(size, usage);
+            return Ref<OpenGLVertexBuffer>::Create(size, usage);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -33,7 +33,7 @@ Ref<VertexBuffer> VertexBuffer::Create(void* data, size_t size, VertexBufferUsag
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLVertexBuffer>(data, size, usage);
+            return Ref<OpenGLVertexBuffer>::Create(data, size, usage);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -49,7 +49,7 @@ Ref<IndexBuffer> IndexBuffer::Create(void* data, size_t size)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLIndexBuffer>(data, size);
+            return Ref<OpenGLIndexBuffer>::Create(data, size);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

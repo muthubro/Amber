@@ -18,7 +18,7 @@ Ref<Shader> Shader::Create(const std::string& filepath)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLShader>(filepath);
+            return Ref<OpenGLShader>::Create(filepath);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -34,7 +34,7 @@ Ref<Shader> Shader::CreateFromString(const std::string& name, const std::string&
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLShader>(name, source);
+            return Ref<OpenGLShader>::Create(name, source);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

@@ -14,10 +14,10 @@
 namespace Amber 
 {
 
-    struct ApplicationProps
-    {
-        std::string Name;
-        uint32_t WindowWidth, WindowHeight;
+struct ApplicationProps
+{
+    std::string Name;
+    uint32_t WindowWidth, WindowHeight;
 };
 
 class Application

@@ -5,7 +5,7 @@
 namespace Amber 
 {
 
-class OrthographicCamera
+class OrthographicCamera : public RefCounted
 {
 public:
     OrthographicCamera(float left, float right, float bottom, float top, float zNear = -1.0f, float zFar = 1.0f);

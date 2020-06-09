@@ -10,7 +10,7 @@
 namespace Amber
 {
 
-class Entity
+class Entity : public RefCounted
 {
 public:
     Entity(const std::string& name) : m_Name(name), m_Transform(1.0f) {}

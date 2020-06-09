@@ -17,7 +17,7 @@ Ref<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return CreateRef<OpenGLFramebuffer>(spec);
+            return Ref<OpenGLFramebuffer>::Create(spec);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

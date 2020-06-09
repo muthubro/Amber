@@ -27,7 +27,7 @@ enum class TextureFilter
     Linear, Nearest
 };
 
-class Texture
+class Texture : public RefCounted
 {
 public:
     virtual ~Texture() = default;

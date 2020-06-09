@@ -12,7 +12,7 @@
 namespace Amber 
 {
 
-class Shader 
+class Shader : public RefCounted
 {
 public:
     virtual ~Shader() = default;
@@ -48,7 +48,7 @@ protected:
 
 };
 
-class ShaderLibrary
+class ShaderLibrary : public RefCounted
 {
 public:
     void Add(const std::string& name, const Ref<Shader>& shader);

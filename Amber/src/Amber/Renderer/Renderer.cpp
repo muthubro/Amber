@@ -42,7 +42,7 @@ void Renderer::Shutdown()
 // TODO: Improve this API and move the OpenGL part out
 void Renderer::SubmitMesh(const std::string& filename, const glm::mat4& MVP)
 {
-    static auto mesh = CreateRef<Mesh>(filename);
+    static auto mesh = Ref<Mesh>::Create(filename);
     mesh->Bind();
 
     for (auto& submesh : mesh->GetSubmeshes())
@@ -98,7 +98,7 @@ void Renderer::SubmitFullscreenQuad(const Ref<MaterialInstance>& material)
     Renderer2D::SubmitFullscreenQuad(material);
 }
 
-void Renderer::SubmitMesh(const Ref<Mesh>& mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
+void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
 {
     mesh->Bind();
 
