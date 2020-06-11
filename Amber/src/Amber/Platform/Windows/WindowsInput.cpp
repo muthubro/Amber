@@ -1,8 +1,9 @@
 #include "abpch.h"
 #include "WindowsInput.h"
 
-#include "Amber/Core/Application.h"
 #include <GLFW/glfw3.h>
+
+#include "Amber/Core/Application.h"
 
 namespace Amber
 {

@@ -29,6 +29,8 @@ struct SceneRendererData
     Ref<RenderPass> GeometryPass;
     Ref<RenderPass> CompositePass;
 
+    Ref<Material> CompositeBaseMaterial;
+
     Ref<Texture2D> BRDFLUT;
 
     struct DrawCommand
@@ -56,6 +58,7 @@ void SceneRenderer::Init()
     geoFramebufferSpec.Height = 720;
     geoFramebufferSpec.Format = FramebufferFormat::RGBA16F;
     geoFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 0.1f };
+    geoFramebufferSpec.Samples = 8;
 
     RenderPassSpecification geoRenderPassSpec;
     geoRenderPassSpec.TargetFramebuffer = Framebuffer::Create(geoFramebufferSpec);
@@ -71,13 +74,22 @@ void SceneRenderer::Init()
     compRenderPassSpec.TargetFramebuffer = Framebuffer::Create(compFramebufferSpec);
     s_Data.CompositePass = RenderPass::Create(compRenderPassSpec);
 
+    s_Data.CompositeBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("SceneComposite"));
+
     s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 }
 
 void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
 {
-    s_Data.GeometryPass->GetSpecification().TargetFramebuffer->Resize(width, height);
-    s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
+    auto& geoBufferSpec = s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetSpecification();
+    geoBufferSpec.Width = width;
+    geoBufferSpec.Height = height;
+    s_Data.GeometryPass->GetSpecification().TargetFramebuffer->Reset();
+
+    auto& compBufferSpec = s_Data.CompositePass->GetSpecification().TargetFramebuffer->GetSpecification();
+    compBufferSpec.Width = width;
+    compBufferSpec.Height = height;
+    s_Data.CompositePass->GetSpecification().TargetFramebuffer->Reset();
 }
 
 void SceneRenderer::BeginScene(Scene* scene)
@@ -152,17 +164,19 @@ void SceneRenderer::CompositePass()
 {
     Renderer::BeginRenderPass(s_Data.CompositePass);
 
-    auto compositeShader = s_Data.ShaderLibrary->Get("SceneComposite");
-    compositeShader->Bind();
-    compositeShader->SetFloat("u_Exposure", s_Data.SceneData.SceneCamera.GetExposure());
-    compositeShader->SetInt("u_Texture", 0);
-    s_Data.GeometryPass->GetSpecification().TargetFramebuffer->BindTexture();
-    Renderer::SubmitFullscreenQuad(nullptr);
+    auto material = Ref<MaterialInstance>::Create(s_Data.CompositeBaseMaterial);
+    material->Set("u_Exposure", s_Data.SceneData.SceneCamera.GetExposure());
+    material->Set("u_Texture", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetColorAttachments()[0]);
+    material->Set("u_TextureSamples", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetSpecification().Samples);
+
+    Renderer::SubmitFullscreenQuad(material);
 
     auto fbo = s_Data.CompositePass->GetSpecification().TargetFramebuffer;
     RenderCommand::Submit([fbo]() {
-        glBlitNamedFramebuffer(fbo->GetRendererID(), 0,
-            0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->GetRendererID());
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBlitFramebuffer(
+            0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height, 
             0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
             GL_COLOR_BUFFER_BIT, GL_NEAREST);
     });
@@ -243,7 +257,7 @@ Ref<RenderPass> SceneRenderer::GetFinalRenderPass()
 
 Ref<Texture2D> SceneRenderer::GetFinalColorBuffer()
 {
-    return s_Data.CompositePass->GetSpecification().TargetFramebuffer->GetColorAttachment();
+    return s_Data.CompositePass->GetSpecification().TargetFramebuffer->GetColorAttachments()[0];
 }
 
 }

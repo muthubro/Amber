@@ -63,24 +63,34 @@ static GLenum AmberToOpenGLTextureWrap(TextureWrap wrap)
 OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap, TextureFilter filter, uint32_t samples)
     : m_Width(width), m_Height(height), m_Format(format), m_Wrap(wrap), m_Filter(filter)
 {
-    AB_PROFILE_FUNCTION();
-
-    RenderCommand::Submit([this, samples]()
-    {
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-        glBindTexture(GL_TEXTURE_2D, m_RendererID);
-
-        uint32_t levels = GetMipLevelCount();
-
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(m_Filter, levels > 1));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, AmberToOpenGLTextureFilter(m_Filter));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(m_Wrap));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(m_Wrap));
+    Ref<OpenGLTexture2D> instance = this;
+    RenderCommand::Submit([instance, samples]() mutable {
+        AB_PROFILE_FUNCTION();
 
         if (samples > 1)
-            glTextureStorage2DMultisample(m_RendererID, samples, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height, GL_TRUE);
+        {
+            glCreateTextures(GL_TEXTURE_2D_MULTISAMPLE, 1, &instance->m_RendererID);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, instance->m_RendererID);
+            glTextureStorage2DMultisample(
+                instance->m_RendererID, samples, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+                instance->m_Width, instance->m_Height, GL_FALSE);
+        }
         else
-            glTextureStorage2D(m_RendererID, levels, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height);
+        {
+            glCreateTextures(GL_TEXTURE_2D, 1, &instance->m_RendererID);
+            glBindTexture(GL_TEXTURE_2D, instance->m_RendererID);
+
+            uint32_t levels = instance->GetMipLevelCount();
+
+            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter, levels > 1));
+            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MAG_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter));
+            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(instance->m_Wrap));
+            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(instance->m_Wrap));
+
+            glTextureStorage2D(
+                instance->m_RendererID, levels, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+                instance->m_Width, instance->m_Height);
+        }
     });
 
     m_ImageData.Allocate(width * height * Texture::GetBPP(format));
@@ -120,44 +130,47 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
 
     m_Loaded = true;
 
-    RenderCommand::Submit([=]()
-    {
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
-        glBindTexture(GL_TEXTURE_2D, m_RendererID);
+    Ref<OpenGLTexture2D> instance = this;
+    RenderCommand::Submit([instance]() mutable {
+        glCreateTextures(GL_TEXTURE_2D, 1, &instance->m_RendererID);
+        glBindTexture(GL_TEXTURE_2D, instance->m_RendererID);
 
-        uint32_t levels = GetMipLevelCount();
+        uint32_t levels = instance->GetMipLevelCount();
 
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(m_Filter, levels > 1));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, AmberToOpenGLTextureFilter(m_Filter));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(m_Wrap));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(m_Wrap));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_R, AmberToOpenGLTextureWrap(m_Wrap));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter, levels > 1));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MAG_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(instance->m_Wrap));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(instance->m_Wrap));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_R, AmberToOpenGLTextureWrap(instance->m_Wrap));
 
-        GLenum type = m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
-        glTexImage2D(GL_TEXTURE_2D, 0, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height, 0, AmberToOpenGLTextureFormat(m_Format), type, m_ImageData.Data);
-        glGenerateTextureMipmap(m_RendererID); 
+        GLenum type = instance->m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        glTexImage2D(
+            GL_TEXTURE_2D, 0, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+            instance->m_Width, instance->m_Height, 0, AmberToOpenGLTextureFormat(instance->m_Format), 
+            type, instance->m_ImageData.Data);
+        glGenerateTextureMipmap(instance->m_RendererID);
 
-        stbi_image_free(m_ImageData.Data);
+        instance->m_ImageData.Clear();
     });
 }
 
 OpenGLTexture2D::~OpenGLTexture2D()
 {
-    AB_PROFILE_FUNCTION();
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
-        glDeleteTextures(1, &m_RendererID);
+        glDeleteTextures(1, &rendererID);
     });
 }
 
 void OpenGLTexture2D::Bind(uint32_t slot) const
 {
-    AB_PROFILE_FUNCTION();
+    Ref<const OpenGLTexture2D> instance = this;
+    RenderCommand::Submit([instance, slot]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this, slot]()
-    {
-        glBindTextureUnit(slot, m_RendererID);
+        glBindTextureUnit(slot, instance->m_RendererID);
     });
 }
 
@@ -169,15 +182,18 @@ void OpenGLTexture2D::Lock()
 void OpenGLTexture2D::Unlock()
 {
     m_Locked = false;
-    RenderCommand::Submit([this]()
-    {
+
+    Ref<OpenGLTexture2D> instance = this;
+    RenderCommand::Submit([instance]() {
         GLenum type =
-            m_Format == TextureFormat::Float16 ?
+            instance->m_Format == TextureFormat::Float16 ?
                 GL_FLOAT :
-                m_Format == TextureFormat::DepthStencil ?
+                instance->m_Format == TextureFormat::DepthStencil ?
                     GL_UNSIGNED_INT_24_8 :
                     GL_UNSIGNED_BYTE;
-        glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, AmberToOpenGLTextureFormat(m_Format), type, m_ImageData.Data);
+        glTextureSubImage2D(
+            instance->m_RendererID, 0, 0, 0, instance->m_Width, instance->m_Height, 
+            AmberToOpenGLTextureFormat(instance->m_Format), type, instance->m_ImageData.Data);
     });
 }
 
@@ -196,20 +212,23 @@ Buffer& OpenGLTexture2D::GetWritableBuffer()
 OpenGLTextureCube::OpenGLTextureCube(TextureFormat format, uint32_t width, uint32_t height)
     : m_Width(width), m_Height(height), m_Format(format)
 {
-    RenderCommand::Submit([this]() {
-        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_RendererID);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
+    Ref<OpenGLTextureCube> instance = this;
+    RenderCommand::Submit([instance]() mutable {
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &instance->m_RendererID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, instance->m_RendererID);
 
-        uint32_t levels = GetMipLevelCount();
+        uint32_t levels = instance->GetMipLevelCount();
 
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(TextureFilter::Linear, levels > 1));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(TextureFilter::Linear, levels > 1));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        GLenum type = m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
-        glTextureStorage2D(m_RendererID, levels, AmberToOpenGLInternalTextureFormat(m_Format), m_Width, m_Height);
+        GLenum type = instance->m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
+        glTextureStorage2D(
+            instance->m_RendererID, levels, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+            instance->m_Width, instance->m_Height);
     });
 }
 
@@ -269,21 +288,21 @@ OpenGLTextureCube::OpenGLTextureCube(const std::string& path)
         faceIndex++;
     }
 
-    RenderCommand::Submit([=]()
-    {
-        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &m_RendererID);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
+    Ref<OpenGLTextureCube> instance = this;
+    RenderCommand::Submit([instance, faceWidth, faceHeight, faces]() mutable {
+        glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &instance->m_RendererID);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, instance->m_RendererID);
 
-        uint32_t levels = GetMipLevelCount();
+        uint32_t levels = instance->GetMipLevelCount();
 
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(TextureFilter::Linear, levels > 1));
-        glTextureParameteri(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(TextureFilter::Linear, levels > 1));
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-        auto internalFormat = AmberToOpenGLInternalTextureFormat(m_Format);
-        auto format = AmberToOpenGLTextureFormat(m_Format);
+        auto internalFormat = AmberToOpenGLInternalTextureFormat(instance->m_Format);
+        auto format = AmberToOpenGLTextureFormat(instance->m_Format);
 
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalFormat, faceWidth, faceHeight, 0, format, GL_UNSIGNED_BYTE, faces[2]);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, internalFormat, faceWidth, faceHeight, 0, format, GL_UNSIGNED_BYTE, faces[0]);
@@ -294,28 +313,30 @@ OpenGLTextureCube::OpenGLTextureCube(const std::string& path)
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, internalFormat, faceWidth, faceHeight, 0, format, GL_UNSIGNED_BYTE, faces[1]);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, internalFormat, faceWidth, faceHeight, 0, format, GL_UNSIGNED_BYTE, faces[3]);
 
-        glGenerateTextureMipmap(m_RendererID);
+        glGenerateTextureMipmap(instance->m_RendererID);
 
         for (uint32_t i = 0; i < 6; i++)
             delete[] faces[i];
 
-        stbi_image_free(m_ImageData);
+        stbi_image_free(instance->m_ImageData);
     });
 }
 
 OpenGLTextureCube::~OpenGLTextureCube()
 {
-    RenderCommand::Submit([this]()
-    {
-        glDeleteTextures(1, &m_RendererID);
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
+
+        glDeleteTextures(1, &rendererID);
     });
 }
 
 void OpenGLTextureCube::Bind(uint32_t slot) const
 {
-    RenderCommand::Submit([this, slot]()
-    {
-        glBindTextureUnit(slot, m_RendererID);
+    Ref<const OpenGLTextureCube> instance = this;
+    RenderCommand::Submit([instance, slot]() {
+        glBindTextureUnit(slot, instance->m_RendererID);
     });
 }
 

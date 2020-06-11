@@ -12,7 +12,7 @@ OpenGLShaderUniform::OpenGLShaderUniform(ShaderDomain domain, OpenGLShaderUnifor
 
 OpenGLShaderUniform::OpenGLShaderUniform(ShaderDomain domain, ShaderUniformStruct* uniformStruct, const std::string& name, uint32_t count)
     : m_Name(name), m_Size(uniformStruct->GetSize() * count), m_Count(count), m_Domain(domain),
-    m_Type(OpenGLShaderUniform::Type::Struct), m_Struct(uniformStruct)
+        m_Type(OpenGLShaderUniform::Type::Struct), m_Struct(uniformStruct)
 {
 }
 
@@ -106,7 +106,7 @@ OpenGLShaderResource::OpenGLShaderResource(OpenGLShaderResource::Type type, cons
 
 OpenGLShaderResource::Type OpenGLShaderResource::StringToType(const std::string& type)
 {
-    if (type == "sampler2D") return OpenGLShaderResource::Type::Texture2D;
+    if (type == "sampler2D" || type == "sampler2DMS") return OpenGLShaderResource::Type::Texture2D;
     if (type == "samplerCube") return OpenGLShaderResource::Type::TextureCube;
 
     return OpenGLShaderResource::Type::None;

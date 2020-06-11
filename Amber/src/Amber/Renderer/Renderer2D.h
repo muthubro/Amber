@@ -1,9 +1,10 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
-#include "Amber/Renderer/OrthographicCamera.h"
 #include "Amber/Renderer/Material.h"
+#include "Amber/Renderer/OrthographicCamera.h"
 #include "Amber/Renderer/Texture.h"
 
 namespace Amber
@@ -12,6 +13,56 @@ namespace Amber
 class Renderer2D
 {
 public:
+
+    struct QuadData
+    {
+        glm::mat4 Transform = glm::mat4(1.0f);
+        glm::mat4 Color = { glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f) };
+        glm::vec2 TexCoords[4] = { glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f) };
+        Ref<Texture2D> Texture = nullptr;
+        float TilingFactor = 1.0f;
+
+        QuadData() = default;
+
+        QuadData(glm::vec2 position, glm::vec2 scale, float rotation, glm::vec4 color)
+        {
+            SetTransform({ position.x, position.y, 0.0f }, scale, rotation);
+            SetColor(color);
+        }
+
+        QuadData(glm::vec2 position, glm::vec2 scale, float rotation, Ref<Texture2D> texture)
+        {
+            SetTransform({ position.x, position.y, 0.0f }, scale, rotation);
+            Texture = texture;
+        }
+
+        void SetTransform(glm::vec3 position, glm::vec2 scale, float rotation)
+        {
+            Transform = glm::translate(glm::mat4(1.0f), position);
+            if (rotation)
+                Transform = glm::rotate(Transform, rotation, glm::vec3(0.0f, 0.0f, 1.0f));
+            Transform = glm::scale(Transform, { scale.x, scale.y, 1.0f });
+        }
+
+        void SetColor(glm::vec4 color)
+        {
+            Color = { color, color, color, color };
+        }
+
+        void SetTextureBounds(Texture2DBounds texBounds)
+        {
+            if (!Texture)
+                return;
+
+            uint32_t width = Texture->GetWidth();
+            uint32_t height = Texture->GetHeight();
+            TexCoords[0] = { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height };
+            TexCoords[1] = { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height };
+            TexCoords[2] = { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height };
+            TexCoords[3] = { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height };
+        }
+    };
+
     static void Init();
     static void Shutdown();
 
@@ -21,52 +72,8 @@ public:
     static void FlushQuads();
     static void FlushLines();
 
-    // Flat color (passed to 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color);
-
-    // Color gradient (passed to 2)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::mat4& color);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::mat4& color);
-
-    // Full texture (passed to 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor = 1.0f);
-
-    // Texture with texture bounds (passed to 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor = 1.0f);
-
-    // Texture with coordinates (passed to 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor = 1.0f);
-
-    // Full tinted texture (passed to 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor = 1.0f);
-
-    // Tinted texture with texture bounds (Main implementation 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor = 1.0f);
-
-    // Tinted texture with coordinates (Main implementation 1)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor = 1.0f);
-
-    // Full gradient tinted texture (passed to 2)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor = 1.0f);
-
-    // Gradient tinted texture with texture bounds (Main implementation 2)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor = 1.0f);
-
-    // Gradient tinted texture with coordinates (Main implementation 2)
-    static void SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor = 1.0f);
-    static void SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor = 1.0f);
-
+    static void SubmitQuad(const QuadData& data);
     static void SubmitFullscreenQuad(Ref<MaterialInstance> material);
-
     static void SubmitLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f));
 
     struct Statistics

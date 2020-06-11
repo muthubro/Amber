@@ -9,6 +9,7 @@
 
 namespace Amber
 {
+
 ParticleSystem::ParticleSystem(const uint32_t poolSize, ParticleType type)
     : m_PoolSize(poolSize), m_ParticleType(type)
 {
@@ -105,7 +106,9 @@ void ParticleSystem::OnUpdate(Timestep ts)
         float size = glm::lerp(particle.SizeEnd, particle.SizeBegin, life);
         glm::vec4 color = glm::lerp(particle.ColorEnd, particle.ColorBegin, life);
 
-        Renderer2D::SubmitQuad(particle.Position, { size, size }, particle.Rotation, m_ParticleTexture, color);
+        Renderer2D::QuadData data(particle.Position, { size, size }, particle.Rotation, m_ParticleTexture);
+        data.SetColor(color);
+        Renderer2D::SubmitQuad(data);
     }
 }
 

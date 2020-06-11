@@ -31,21 +31,21 @@ static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
 
 OpenGLVertexArray::OpenGLVertexArray()
 {
-    AB_PROFILE_FUNCTION();
+    Ref<OpenGLVertexArray> instance = this;
+    RenderCommand::Submit([instance]() mutable {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
-        glCreateVertexArrays(1, &m_RendererID);
+        glCreateVertexArrays(1, &instance->m_RendererID);
     });
 }
 
 OpenGLVertexArray::~OpenGLVertexArray()
 {
-    AB_PROFILE_FUNCTION();
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
-        glDeleteVertexArrays(1, &m_RendererID);
+        glDeleteVertexArrays(1, &rendererID);
     });
 }
 
@@ -57,48 +57,48 @@ void OpenGLVertexArray::AddVertexBuffer(const Ref<VertexBuffer>& vertexBuffer)
 
     Bind();
     vertexBuffer->Bind();
-    RenderCommand::Submit([=]()
-    {
+    m_VertexBuffers.push_back(vertexBuffer);
+
+    Ref<OpenGLVertexArray> instance = this;
+    RenderCommand::Submit([instance, vertexBuffer]() mutable {
         const auto & layout = vertexBuffer->GetLayout();
         for (const auto& element : layout)
         {
-            glEnableVertexAttribArray(m_VertexBufferIndex);
-            glVertexAttribPointer(m_VertexBufferIndex,
+            glEnableVertexAttribArray(instance->m_VertexBufferIndex);
+            glVertexAttribPointer(instance->m_VertexBufferIndex,
                 element.GetComponentCount(),
                 ShaderDataTypeToOpenGLBaseType(element.Type),
                 element.Normalized ? GL_TRUE : GL_FALSE,
                 layout.GetStride(),
                 (const void*)element.Offset);
-            m_VertexBufferIndex++;
+            instance->m_VertexBufferIndex++;
         }
     });
 }
 
 void OpenGLVertexArray::SetIndexBuffer(const Ref<IndexBuffer>& indexBuffer)
 {
-    AB_PROFILE_FUNCTION();
-
     m_IndexBuffer = indexBuffer;
 }
 
 void OpenGLVertexArray::Bind() const
 {
-    AB_PROFILE_FUNCTION();
+    Ref<const OpenGLVertexArray> instance = this;
+    RenderCommand::Submit([instance]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
-        glBindVertexArray(m_RendererID);
+        glBindVertexArray(instance->m_RendererID);
     });
+
     if (m_IndexBuffer)
         m_IndexBuffer->Bind();
 }
 
 void OpenGLVertexArray::Unbind() const
 {
-    AB_PROFILE_FUNCTION();
+    RenderCommand::Submit([]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
         glBindVertexArray(0);
     });
 }

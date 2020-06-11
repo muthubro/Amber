@@ -39,32 +39,6 @@ void Renderer::Shutdown()
     Renderer2D::Shutdown();
 }
 
-// TODO: Improve this API and move the OpenGL part out
-void Renderer::SubmitMesh(const std::string& filename, const glm::mat4& MVP)
-{
-    static auto mesh = Ref<Mesh>::Create(filename);
-    mesh->Bind();
-
-    for (auto& submesh : mesh->GetSubmeshes())
-    {
-        auto baseMaterial = mesh->GetMaterial();
-        baseMaterial->Set("u_MVP", MVP);
-
-        auto material = mesh->GetMaterials()[submesh.MaterialIndex];
-        material->Bind();
-
-        Submit([=]()
-        {
-            if (material->GetFlag(MaterialFlag::DepthTest))
-                glEnable(GL_DEPTH_TEST);
-            else
-                glDisable(GL_DEPTH_TEST);
-
-            glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT, (void*)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);
-        });
-    }
-}
-
 void Renderer::WaitAndRender()
 {
     RenderCommand::GetCommandQueue().Execute();
@@ -112,14 +86,9 @@ void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<
         material->Set("u_NormalTransform", normalTransform);
 
         material->Bind();
-        RenderCommand::Submit([submesh, material]() {
-            if (material->GetFlag(MaterialFlag::DepthTest))
-                glEnable(GL_DEPTH_TEST);
-            else
-                glDisable(GL_DEPTH_TEST);
-
-            glDrawElementsBaseVertex(GL_TRIANGLES, submesh.IndexCount, GL_UNSIGNED_INT, (void*)(sizeof(uint32_t) * submesh.BaseIndex), submesh.BaseVertex);
-        });
+        RenderCommand::DrawIndexedOffset(
+            submesh.IndexCount, PrimitiveType::Triangles, (void*)(sizeof(uint32_t) * submesh.BaseIndex), 
+            submesh.BaseVertex, material->GetFlag(MaterialFlag::DepthTest));
     }
 }
 

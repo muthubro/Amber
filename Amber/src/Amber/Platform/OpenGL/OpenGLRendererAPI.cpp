@@ -46,10 +46,14 @@ void OpenGLRendererAPI::Init()
 
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+    glEnable(GL_MULTISAMPLE);
+
     auto& caps = RendererAPI::GetCapabilities();
     caps.Vendor = (const char*)glGetString(GL_VENDOR);
     caps.Renderer = (const char*)glGetString(GL_RENDERER);
     caps.Version = (const char*)glGetString(GL_VERSION);
+    glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &caps.MaxColorAttachments);
+    glGetIntegerv(GL_MAX_COLOR_TEXTURE_SAMPLES, &caps.MaxTextureSamples);
     glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &caps.MaxTextureSlots);
 
     GLenum error = glGetError();
@@ -101,6 +105,32 @@ void OpenGLRendererAPI::DrawIndexed(uint32_t indexCount, PrimitiveType type, boo
     AB_CORE_ASSERT(primitiveType, "Unknown primitive type!");
 
     glDrawElements(primitiveType, indexCount, GL_UNSIGNED_INT, nullptr);
+
+    if (!depthTest)
+        glEnable(GL_DEPTH_TEST);
+}
+
+void OpenGLRendererAPI::DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest)
+{
+    if (indexCount == 0)
+        return;
+
+    if (!depthTest)
+        glDisable(GL_DEPTH_TEST);
+
+    GLenum primitiveType = 0;
+    switch (type)
+    {
+        case PrimitiveType::Triangles:
+            primitiveType = GL_TRIANGLES;
+            break;
+        case PrimitiveType::Lines:
+            primitiveType = GL_LINES;
+            break;
+    }
+    AB_CORE_ASSERT(primitiveType, "Unknown primitive type!");
+
+    glDrawElementsBaseVertex(primitiveType, indexCount, GL_UNSIGNED_INT, indexBufferPointer, offset);
 
     if (!depthTest)
         glEnable(GL_DEPTH_TEST);

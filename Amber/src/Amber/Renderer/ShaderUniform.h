@@ -10,6 +10,7 @@ enum class ShaderDomain
 {
     Vertex, Pixel
 };
+
 class ShaderUniform : public RefCounted
 {
 public:
@@ -63,7 +64,6 @@ private:
 };
 
 typedef std::vector<ShaderUniformStruct*> ShaderUniformStructList;
-
 
 class ShaderUniformBuffer : public RefCounted
 {

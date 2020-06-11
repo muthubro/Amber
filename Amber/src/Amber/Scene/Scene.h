@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Amber/Scene/Entity.h"
-
 #include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Texture.h"
+
+#include "Amber/Scene/Entity.h"
 
 namespace Amber
 {

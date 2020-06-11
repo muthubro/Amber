@@ -61,8 +61,6 @@ void ImGuiLayer::OnEvent(Event& e)
 
 void ImGuiLayer::Begin() 
 {
-    AB_PROFILE_FUNCTION();
-
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -70,8 +68,6 @@ void ImGuiLayer::Begin()
 
 void ImGuiLayer::End() 
 {
-    AB_PROFILE_FUNCTION();
-
     Application& app = Application::Get();
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float)app.GetWindow().GetWidth(), (float)app.GetWindow().GetHeight());

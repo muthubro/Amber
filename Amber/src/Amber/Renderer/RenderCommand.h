@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Amber/Renderer/RendererAPI.h"
 #include "Amber/Renderer/RenderCommandQueue.h"
+#include "Amber/Renderer/RendererAPI.h"
 
 namespace Amber 
 {
@@ -18,8 +18,16 @@ public:
 
     static void SetLineThickness(float thickness) { Submit([=]() { s_RendererAPI->SetLineThickness(thickness); }); }
 
-    static void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) { Submit([=]() { s_RendererAPI->DrawIndexed(indexCount, type, depthTest); }); }
-    
+    static void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) 
+    { 
+        Submit([=]() { s_RendererAPI->DrawIndexed(indexCount, type, depthTest); }); 
+    }
+
+    static void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true) 
+    {
+        Submit([=]() { s_RendererAPI->DrawIndexedOffset(indexCount, type, indexBufferPointer, offset, depthTest); });
+    }
+
     template<typename FuncT>
     static void Submit(FuncT&& func) 
     {

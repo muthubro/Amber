@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include "Amber/Core/Timestep.h"
+#include "Amber/Core/Time.h"
 
 #include "Amber/Core/Events/Event.h"
 #include "Amber/Core/Events/MouseEvent.h"

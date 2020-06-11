@@ -2,8 +2,8 @@
 
 #include <glm/glm.hpp>
 
-#include "Amber/Core/Buffer.h"
 #include "Amber/Core/Base.h"
+#include "Amber/Core/Buffer.h"
 
 namespace Amber
 {

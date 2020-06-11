@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "Amber/Core/Buffer.h"
+
 #include "Amber/Renderer/Shader.h"
 
 #include "Amber/Platform/OpenGL/OpenGLShaderUniform.h"
@@ -24,22 +25,6 @@ public:
     void Bind() const override;
     void Unbind() const override;
 
-    void SetInt(const std::string& name, int32_t value) override;
-    void SetIntArray(const std::string& name, int32_t* values, uint32_t count) override;
-    void SetFloat(const std::string& name, float value) override;
-    void SetFloat3(const std::string& name, const glm::vec3& value) override;
-    void SetFloat4(const std::string& name, const glm::vec4& value) override;
-    void SetMat4(const std::string& name, const glm::mat4& value) override;
-
-    void UploadUniformInt(const std::string& name, int32_t value);
-    void UploadUniformIntArray(const std::string& name, int32_t* values, uint32_t count);
-    void UploadUniformFloat(const std::string& name, float value);
-    void UploadUniformFloat2(const std::string& name, const glm::vec2& values);
-    void UploadUniformFloat3(const std::string& name, const glm::vec3& values);
-    void UploadUniformFloat4(const std::string& name, const glm::vec4& values);
-    void UploadUniformMat3(const std::string& name, const glm::mat3& matrix);
-    void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
-
     const std::string& GetName() const override { return m_Name; }
     RendererID GetRendererID() const override { return m_RendererID; }
 
@@ -49,8 +34,8 @@ public:
     const ShaderUniformBuffer& GetVSMaterialUniformBuffer() const override { return *m_VSMaterialUniformBuffer; }
     const ShaderUniformBuffer& GetPSMaterialUniformBuffer() const override { return *m_PSMaterialUniformBuffer; }
 
-    void SetVSMaterialUniformBuffer(Buffer buffer) override;
-    void SetPSMaterialUniformBuffer(Buffer buffer) override;
+    void SetVSMaterialUniformBuffer(const Buffer& buffer) override;
+    void SetPSMaterialUniformBuffer(const Buffer& buffer) override;
 
     const ShaderResourceList& GetResources() const override { return m_Resources; }
 

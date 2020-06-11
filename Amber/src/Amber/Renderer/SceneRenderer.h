@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Amber/Renderer/Texture.h"
 #include "Amber/Renderer/RenderPass.h"
+#include "Amber/Renderer/Texture.h"
 
 #include "Amber/Scene/Entity.h"
 #include "Amber/Scene/Scene.h"

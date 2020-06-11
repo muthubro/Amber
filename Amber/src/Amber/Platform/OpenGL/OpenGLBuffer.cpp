@@ -20,61 +20,61 @@ static GLenum OpenGLUsage(VertexBufferUsage usage)
     return 0;
 }
 
-/////////////////////////////////////////////////////////////////
-////////     VERTEX BUFFER     //////////////////////////////////
-/////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+////////////////////////////     VERTEX BUFFER     ////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(size_t size, VertexBufferUsage usage)
     : m_Size(size)
 {
-    AB_PROFILE_FUNCTION();
+    Ref<OpenGLVertexBuffer> instance = this;
+    RenderCommand::Submit([instance, usage]() mutable {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this, usage]()
-    {
-        glCreateBuffers(1, &m_RendererID);
-        glNamedBufferData(m_RendererID, m_Size, nullptr, OpenGLUsage(usage));
+        glCreateBuffers(1, &instance->m_RendererID);
+        glNamedBufferData(instance->m_RendererID, instance->m_Size, nullptr, OpenGLUsage(usage));
     });
 }
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, size_t size, VertexBufferUsage usage)
     : m_Size(size)
 {
-    AB_PROFILE_FUNCTION();
+    m_LocalData = Buffer(data, size);
 
-    m_LocalData = Buffer::Copy(data, size);
-    RenderCommand::Submit([this, usage]()
-    {
-        glCreateBuffers(1, &m_RendererID);
-        glNamedBufferData(m_RendererID, m_Size, m_LocalData.Data, OpenGLUsage(usage));
+    Ref<OpenGLVertexBuffer> instance = this;
+    RenderCommand::Submit([instance, usage]() mutable {
+        AB_PROFILE_FUNCTION();
+            
+        glCreateBuffers(1, &instance->m_RendererID);
+        glNamedBufferData(instance->m_RendererID, instance->m_Size, instance->m_LocalData.Data, OpenGLUsage(usage));
     });
 }
 
 OpenGLVertexBuffer::~OpenGLVertexBuffer() 
 {
-    AB_PROFILE_FUNCTION();
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
-        glDeleteBuffers(1, &m_RendererID);
+        glDeleteBuffers(1, &rendererID);
     });
 }
 
 void OpenGLVertexBuffer::Bind() const 
 {
-    AB_PROFILE_FUNCTION();
-
-    RenderCommand::Submit([this]()
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+    Ref<const OpenGLVertexBuffer> instance = this;
+    RenderCommand::Submit([instance]() {
+        AB_PROFILE_FUNCTION();
+        
+        glBindBuffer(GL_ARRAY_BUFFER, instance->m_RendererID);
     });
 }
 
 void OpenGLVertexBuffer::Unbind() const 
 {
-    AB_PROFILE_FUNCTION();
+    RenderCommand::Submit([]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     });
 }
@@ -83,11 +83,14 @@ void OpenGLVertexBuffer::SetData(void* buffer, size_t size, uint32_t offset)
 {
     AB_PROFILE_FUNCTION();
 
-    m_LocalData = Buffer::Copy(buffer, size);
+    m_LocalData = Buffer(buffer, size);
     m_Size = size;
-    RenderCommand::Submit([this, offset]()
-    {        
-        glNamedBufferSubData(m_RendererID, offset, m_Size, m_LocalData.Data);
+    
+    Ref<OpenGLVertexBuffer> instance = this;
+    RenderCommand::Submit([instance, offset]() {
+        AB_PROFILE_FUNCTION();
+        
+        glNamedBufferSubData(instance->m_RendererID, offset, instance->m_Size, instance->m_LocalData.Data);
     });
 }
 
@@ -98,55 +101,56 @@ void OpenGLVertexBuffer::SetData(void* buffer, size_t size, uint32_t offset)
 OpenGLIndexBuffer::OpenGLIndexBuffer(void* data, size_t size)
     : m_Size(size)
 {
-    AB_PROFILE_FUNCTION();
+    m_LocalData = Buffer(data, size);
+    
+    Ref<OpenGLIndexBuffer> instance = this;
+    RenderCommand::Submit([instance]() mutable {
+        AB_PROFILE_FUNCTION();
 
-    m_LocalData = Buffer::Copy(data, size);
-    RenderCommand::Submit([this]()
-    {
-        glCreateBuffers(1, &m_RendererID);
-        glNamedBufferData(m_RendererID, m_Size, m_LocalData.Data, GL_STATIC_DRAW);
-    });
+        glCreateBuffers(1, &instance->m_RendererID);
+        glNamedBufferData(instance->m_RendererID, instance->m_Size, instance->m_LocalData.Data, GL_STATIC_DRAW);
+    }); 
 }
 
 OpenGLIndexBuffer::~OpenGLIndexBuffer() 
 {
-    AB_PROFILE_FUNCTION();
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
-        glDeleteBuffers(1, &m_RendererID);
+        glDeleteBuffers(1, &rendererID);
     });
 }
 
 void OpenGLIndexBuffer::Bind() const 
 {
-    AB_PROFILE_FUNCTION();
+    Ref<const OpenGLIndexBuffer> instance = this;
+    RenderCommand::Submit([instance]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, instance->m_RendererID);
     });
 }
 
 void OpenGLIndexBuffer::Unbind() const 
 {
-    AB_PROFILE_FUNCTION();
+    RenderCommand::Submit([]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([this]()
-    {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     });
 }
 
 void OpenGLIndexBuffer::SetData(void* buffer, size_t size, uint32_t offset)
 {
-    AB_PROFILE_FUNCTION();
-
-    m_LocalData = Buffer::Copy(buffer, size);
+    m_LocalData = Buffer(buffer, size);
     m_Size = size;
-    RenderCommand::Submit([this, offset]()
-    {
-        glNamedBufferSubData(m_RendererID, offset, m_Size, m_LocalData.Data);
+    
+    Ref<OpenGLIndexBuffer> instance = this;
+    RenderCommand::Submit([instance, offset]() {
+        AB_PROFILE_FUNCTION();
+
+        glNamedBufferSubData(instance->m_RendererID, offset, instance->m_Size, instance->m_LocalData.Data);
     });
 }
 

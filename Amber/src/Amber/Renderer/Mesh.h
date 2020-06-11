@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Amber/Core/Timestep.h"
+#include "Amber/Core/Time.h"
 
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Shader.h"

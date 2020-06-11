@@ -13,9 +13,16 @@ public:
         s_RandomEngine.seed(std::random_device()());
     }
 
+    static bool Bool()
+    {
+        std::bernoulli_distribution dist;
+        return dist(s_RandomEngine);
+    }
+
     static float Float()
     {
-        return (float)s_Distribution(s_RandomEngine) / (float)std::numeric_limits<std::mt19937::result_type>::max();
+        std::uniform_real_distribution<float> dist;
+        return dist(s_RandomEngine) / (float)std::numeric_limits<float>::max();
     }
 
 private:

@@ -7,14 +7,37 @@ namespace Amber
 
 struct Buffer
 {
-    byte* Data;
-    size_t Size;
+    byte* Data = nullptr;
+    size_t Size = 0;
 
-    Buffer()
-        : Data(nullptr), Size(0) {}
+    Buffer() = default;
 
-    Buffer(byte* data, size_t size)
-        : Data(data), Size(size) {}
+    Buffer(void* data, size_t size)
+    {
+        Allocate(size);
+        Write(data, size);
+    }
+
+    Buffer(const Buffer& buffer)
+    {
+        Allocate(buffer.Size);
+        Write(buffer.Data, Size);
+    }
+
+    Buffer(Buffer&& buffer) noexcept
+    {
+        Data = buffer.Data;
+        Size = buffer.Size;
+
+        buffer.Data = nullptr;
+        buffer.Size = 0;
+    }
+
+    ~Buffer()
+    {
+        if (Data)
+            delete[] Data;
+    }
 
     void Allocate(size_t size)
     {
@@ -26,6 +49,14 @@ struct Buffer
 
         Data = new byte[size];
         Size = size;
+    }
+
+    void Clear()
+    {
+        if (Data)
+            delete[] Data;
+        Data = nullptr;
+        Size = 0;
     }
 
     void ZeroInitialize()
@@ -42,12 +73,21 @@ struct Buffer
 
     size_t GetSize() const { return Size; }
 
-    static Buffer Copy(void* data, size_t size)
+    Buffer& operator=(const Buffer& other)
     {
-        Buffer buffer;
-        buffer.Allocate(size);
-        buffer.Write(data, size);
-        return buffer;
+        Allocate(other.Size);
+        Write(other.Data, Size);
+    }
+
+    Buffer& operator=(Buffer&& other) noexcept
+    {
+        Data = other.Data;
+        Size = other.Size;
+
+        other.Data = nullptr;
+        other.Size = 0;
+
+        return *this;
     }
 
     operator bool() const

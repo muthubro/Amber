@@ -3,7 +3,7 @@
 #include "Amber/Core/Base.h"
 #include "Amber/Core/Layer.h"
 #include "Amber/Core/LayerStack.h"
-#include "Amber/Core/Timestep.h"
+#include "Amber/Core/Time.h"
 #include "Amber/Core/Window.h"
 
 #include "Amber/Core/Events/Event.h"

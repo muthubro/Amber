@@ -200,8 +200,6 @@ Mesh::Mesh(const std::string& filepath)
             AB_MESH_LOG("    No albedo textures found.");
 
             materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
-            //m_Textures[i] = Texture2D::Create("assets/models/backpack/diffuse.jpg", true);
-            //materialInstance->Set("u_Texture", m_Textures[i]);
         }
 
         if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)

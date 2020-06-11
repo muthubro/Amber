@@ -1,5 +1,5 @@
 #type vertex
-#version 450 core
+#version 440 core
 
 layout(location = 0) in vec2 a_Position;
 
@@ -16,7 +16,7 @@ void main()
 }
 
 #type fragment
-#version 450 core
+#version 440 core
 
 in vec3 v_TexCoords;
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Amber/Core/Timestep.h"
+#include "Amber/Core/Time.h"
 
 #include "Amber/Core/Events/ApplicationEvent.h"
 #include "Amber/Core/Events/MouseEvent.h"
@@ -10,14 +10,14 @@
 namespace Amber
 {
 
-    struct CameraBounds
-    {
-        float Left, Right;
-        float Bottom, Top;
+struct CameraBounds
+{
+    float Left, Right;
+    float Bottom, Top;
 
-        float GetWidth() { return Right - Left; }
-        float GetHeight() { return Top - Bottom; }
-    };
+    float GetWidth() { return Right - Left; }
+    float GetHeight() { return Top - Bottom; }
+};
 
 class OrthographicCameraController : public RefCounted
 {

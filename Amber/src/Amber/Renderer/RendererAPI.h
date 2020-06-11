@@ -16,6 +16,8 @@ struct RenderAPICapabilities
     std::string Renderer;
     std::string Version;
 
+    int MaxColorAttachments;
+    int MaxTextureSamples;
     int MaxTextureSlots;
 };
 
@@ -42,6 +44,7 @@ public:
     virtual void SetLineThickness(float thickness) = 0;
 
     virtual void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) = 0;
+    virtual void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true) = 0;
 
     static RenderAPICapabilities& GetCapabilities()
     {

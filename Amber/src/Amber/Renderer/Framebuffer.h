@@ -16,13 +16,26 @@ enum class FramebufferFormat
     RGBA16F
 };
 
+enum class DepthBufferType
+{
+    None = 0,
+    Texture,
+    Renderbuffer
+};
+
 struct FramebufferSpecification
 {
     uint32_t Width = 1280;
     uint32_t Height = 720;
-    glm::vec4 ClearColor;
     FramebufferFormat Format;
+
+    uint32_t ColorAttachmentCount = 1;
+    DepthBufferType DepthAttachmentType = DepthBufferType::Renderbuffer;
     uint32_t Samples = 1;
+    bool StencilBuffer = true;
+
+    glm::vec4 ClearColor;
+    
     bool SwapChainTarget = false;
 };
 
@@ -31,16 +44,16 @@ class Framebuffer : public RefCounted
 public:
     virtual ~Framebuffer() {}
 
-    virtual void Resize(uint32_t width, uint32_t height, bool forceRecreate = false) = 0;
+    virtual void Reset() = 0;
 
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;
-    virtual void BindTexture(uint32_t slot = 0) const = 0;
 
     virtual RendererID GetRendererID() const = 0;
-    virtual Ref<Texture2D> GetColorAttachment() const = 0;
-    virtual Ref<Texture2D> GetDepthAttachment() const = 0;
+    virtual const std::vector<Ref<Texture2D>>& GetColorAttachments() const = 0;
+    virtual RendererID GetDepthAttachment() const = 0;
 
+    virtual FramebufferSpecification& GetSpecification() = 0;
     virtual const FramebufferSpecification& GetSpecification() const = 0;
 
     static Ref<Framebuffer> Create(const FramebufferSpecification& spec);
@@ -49,15 +62,16 @@ public:
 class FramebufferPool final
 {
 public:
-    std::weak_ptr<Framebuffer> AllocateBuffer();
-    void Add(std::weak_ptr<Framebuffer> frameBuffer);
+    WeakRef<Framebuffer> AllocateBuffer();
+    void Add(WeakRef<Framebuffer> frameBuffer);
 
-    const std::vector<std::weak_ptr<Framebuffer>>& GetAll() const { return m_Pool; }
+    std::vector<WeakRef<Framebuffer>>& GetAll() { return m_Pool; }
+    const std::vector<WeakRef<Framebuffer>>& GetAll() const { return m_Pool; }
 
     static FramebufferPool* GetGlobal() { return s_Instance; }
 
 private:
-    std::vector<std::weak_ptr<Framebuffer>> m_Pool;
+    std::vector<WeakRef<Framebuffer>> m_Pool;
 
     static FramebufferPool* s_Instance;
 };

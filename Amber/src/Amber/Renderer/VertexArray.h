@@ -1,7 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <vector>
+#include <memory>
 
 #include "Amber/Renderer/Buffer.h"
 

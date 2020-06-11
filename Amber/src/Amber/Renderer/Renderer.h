@@ -31,7 +31,6 @@ public:
 
     static void SubmitFullscreenQuad(const Ref<MaterialInstance>& material);
     static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
-    static void SubmitMesh(const std::string& filename, const glm::mat4& MVP);
 
     static const Scope<ShaderLibrary>& GetShaderLibrary();
     static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }

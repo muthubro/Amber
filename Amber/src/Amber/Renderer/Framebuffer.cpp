@@ -26,12 +26,12 @@ Ref<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
 
 FramebufferPool* FramebufferPool::s_Instance = new FramebufferPool();
 
-std::weak_ptr<Framebuffer> FramebufferPool::AllocateBuffer()
+WeakRef<Framebuffer> FramebufferPool::AllocateBuffer()
 {
-    return std::weak_ptr<Framebuffer>();
+    return WeakRef<Framebuffer>();
 }
 
-void FramebufferPool::Add(std::weak_ptr<Framebuffer> frameBuffer)
+void FramebufferPool::Add(WeakRef<Framebuffer> frameBuffer)
 {
     m_Pool.push_back(frameBuffer);
 }

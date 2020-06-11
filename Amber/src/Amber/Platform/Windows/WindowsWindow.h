@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Amber/Core/Window.h"
+
 #include "Amber/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>

@@ -1,8 +1,7 @@
 #include "abpch.h"
 #include "Renderer2D.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/VertexArray.h"
@@ -32,7 +31,7 @@ struct Renderer2DData
     Renderer2D::Statistics Stats;
 
     // Quads
-    static const uint32_t MaxQuads = 200000;
+    static const uint32_t MaxQuads = 20000;
     static const uint32_t MaxQuadVertices = MaxQuads * 4;
     static const uint32_t MaxQuadIndices = MaxQuads * 6;
 
@@ -49,13 +48,15 @@ struct Renderer2DData
     QuadVertex* QuadVertexBufferBase = nullptr;
     QuadVertex* QuadVertexBufferPtr = nullptr;
 
-    glm::mat4 QuadVertexPositions;
-    glm::vec2 QuadTextureCoordinates[4];
-
     Ref<VertexArray> FullscreenQuadVertexArray;
 
+    glm::mat4 QuadVertexPositions;
+
+    Ref<Material> QuadBaseMaterial;
+    Ref<MaterialInstance> QuadMaterial;
+
     // Lines
-    static const uint32_t MaxLines = 100000;
+    static const uint32_t MaxLines = 10000;
     static const uint32_t MaxLineVertices = MaxLines * 2;
     static const uint32_t MaxLineIndices = MaxLines * 2;
 
@@ -65,6 +66,9 @@ struct Renderer2DData
     uint32_t LineIndexCount = 0;
     LineVertex* LineVertexBufferBase = nullptr;
     LineVertex* LineVertexBufferPtr = nullptr;
+
+    Ref<Material> LineBaseMaterial;
+    Ref<MaterialInstance> LineMaterial;
 };
 
 static Renderer2DData s_Data;
@@ -121,13 +125,7 @@ void Renderer2D::Init()
     s_Data.QuadVertexPositions[2] = { 0.5f,  0.5f, 0.0f, 1.0f };
     s_Data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
 
-    s_Data.QuadTextureCoordinates[0] = { 0.0f, 0.0f };
-    s_Data.QuadTextureCoordinates[1] = { 1.0f, 0.0f };
-    s_Data.QuadTextureCoordinates[2] = { 1.0f, 1.0f };
-    s_Data.QuadTextureCoordinates[3] = { 0.0f, 1.0f };
-
     s_Data.FullscreenQuadVertexArray = VertexArray::Create();
-    s_Data.FullscreenQuadVertexArray->Bind();
 
     float fsQuadData[] = {
         -1.0f, -1.0f, 0.0f, 0.0f,
@@ -145,6 +143,8 @@ void Renderer2D::Init()
     uint32_t fsQuadIndices[] = { 0, 1, 2, 2, 3, 0 };
     Ref<IndexBuffer> fullscreenIBO = IndexBuffer::Create(fsQuadIndices, sizeof(fsQuadIndices));
     s_Data.FullscreenQuadVertexArray->SetIndexBuffer(fullscreenIBO);
+
+    s_Data.QuadBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("Renderer2D"));
 
     // Lines
     s_Data.LineVertexArray = VertexArray::Create();
@@ -165,6 +165,8 @@ void Renderer2D::Init()
     delete[] lineIndices;
 
     s_Data.LineVertexBufferBase = new LineVertex[Renderer2DData::MaxLineVertices];
+
+    s_Data.LineBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("Line"));
 }
 
 void Renderer2D::Shutdown()
@@ -180,10 +182,8 @@ void Renderer2D::BeginScene(const glm::mat4& viewProjection)
     AB_PROFILE_FUNCTION();
 
     // Quad
-    auto textureShader = s_Data.ShaderLibrary->Get("Renderer2D");
-
-    textureShader->Bind();
-    textureShader->SetMat4("u_ViewProjection", viewProjection);
+    s_Data.QuadMaterial = Ref<MaterialInstance>::Create(s_Data.QuadBaseMaterial);
+    s_Data.QuadMaterial->Set("u_ViewProjection", viewProjection);
 
     s_Data.QuadIndexCount = 0;
     s_Data.QuadVertexBufferPtr = s_Data.QuadVertexBufferBase;
@@ -191,10 +191,8 @@ void Renderer2D::BeginScene(const glm::mat4& viewProjection)
     s_Data.TextureSlotIndex = 1;
 
     // Line
-    auto lineShader = s_Data.ShaderLibrary->Get("Line");
-
-    lineShader->Bind();
-    lineShader->SetMat4("u_ViewProjection", viewProjection);
+    s_Data.LineMaterial = Ref<MaterialInstance>::Create(s_Data.LineBaseMaterial);
+    s_Data.LineMaterial->Set("u_ViewProjection", viewProjection);
 
     s_Data.LineIndexCount = 0;
     s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
@@ -215,7 +213,7 @@ void Renderer2D::FlushQuads()
     if (s_Data.QuadIndexCount == 0)
         return;
 
-    s_Data.ShaderLibrary->Get("Renderer2D")->Bind();
+    s_Data.QuadMaterial->Bind();
     s_Data.QuadVertexArray->Bind();
 
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
@@ -239,7 +237,7 @@ void Renderer2D::FlushLines()
     if (s_Data.LineIndexCount == 0)
         return;
 
-    s_Data.ShaderLibrary->Get("Line")->Bind();
+    s_Data.LineMaterial->Bind();
     s_Data.LineVertexArray->Bind();
 
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
@@ -291,209 +289,20 @@ float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
     return textureIndex;
 }
 
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
-{
-    SubmitQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::mat4& color)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::mat4& color)
-{
-    SubmitQuad(position, size, rotation, s_Data.WhiteTexture, s_Data.QuadTextureCoordinates, color, 1.0f);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, float tilingFactor)
-{
-    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, float tilingFactor)
-{
-    uint32_t width = texture->GetWidth();
-    uint32_t height = texture->GetHeight();
-
-    glm::vec2 texCoords[4] = {
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
-    };
-    SubmitQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], float tilingFactor)
-{
-    SubmitQuad(position, size, rotation, texture, texCoords, glm::vec4(1.0f), tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& color, float tilingFactor)
-{
-    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::vec4& color, float tilingFactor)
-{
-    uint32_t width = texture->GetWidth();
-    uint32_t height = texture->GetHeight();
-
-    glm::vec2 texCoords[4] = {
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
-    };
-    SubmitQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::vec4& color, float tilingFactor)
+void Renderer2D::SubmitQuad(const QuadData& data)
 {
     AB_PROFILE_FUNCTION();
 
     if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
         FlushQuads();
 
-    float textureIndex = Renderer2D::GetTextureSlot(texture);
-
-    glm::mat4 actualPosition;
-    if (rotation)
-    {
-        AB_PROFILE_SCOPE("SubmitQuad Transform");
-
-        glm::mat4 transform(1.0f);
-        transform = glm::translate(transform, position);
-        transform = glm::rotate(transform, rotation, { 0.0f, 0.0f, 1.0f });
-        transform = glm::scale(transform, { size.x, size.y, 1.0f });
-
-        actualPosition = transform * s_Data.QuadVertexPositions;
-    }
-    else
-    {
-        actualPosition[0] = { position.x - 0.5 * size.x, position.y - 0.5 * size.y, position.z, 1.0f };
-        actualPosition[1] = { position.x + 0.5 * size.x, position.y - 0.5 * size.y, position.z, 1.0f };
-        actualPosition[2] = { position.x + 0.5 * size.x, position.y + 0.5 * size.y, position.z, 1.0f };
-        actualPosition[3] = { position.x - 0.5 * size.x, position.y + 0.5 * size.y, position.z, 1.0f };
-    }
-
-    const uint32_t quadVertexCount = 4;
-    for (uint32_t i = 0; i < quadVertexCount; i++)
-    {
-        AB_PROFILE_SCOPE("SubmitQuad SetQuadVertexData loop");
-
-        Renderer2D::SetQuadVertexData(actualPosition[i], color, texCoords[i], textureIndex, tilingFactor);
-        s_Data.QuadVertexBufferPtr++;
-    }
-
-    s_Data.QuadIndexCount += 6;
-
-    s_Data.Stats.QuadCount++;
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::mat4& color, float tilingFactor)
-{
-    SubmitQuad(position, size, rotation, texture, s_Data.QuadTextureCoordinates, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texBounds, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const Texture2DBounds& texBounds, const glm::mat4& color, float tilingFactor)
-{
-    uint32_t width = texture->GetWidth();
-    uint32_t height = texture->GetHeight();
-
-    glm::vec2 texCoords[4] = {
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.maxPos.y / (float)height },
-        { texBounds.maxPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height },
-        { texBounds.minPos.x / (float)width, 1.0f - texBounds.minPos.y / (float)height }
-    };
-    SubmitQuad(position, size, rotation, texture, texCoords, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
-{
-    SubmitQuad({ position.x, position.y, 0.0f }, size, rotation, texture, texCoords, color, tilingFactor);
-}
-
-void Renderer2D::SubmitQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec2 texCoords[4], const glm::mat4& color, float tilingFactor)
-{
-    AB_PROFILE_FUNCTION();
-
-    if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
-        FlushQuads();
-
-    float textureIndex = Renderer2D::GetTextureSlot(texture);
-
-    glm::mat4 actualPosition;
-    if (rotation)
-    {
-        AB_PROFILE_SCOPE("SubmitQuad Transform");
-
-        glm::mat4 transform(1.0f);
-        transform = glm::translate(transform, position);
-        transform = glm::rotate(transform, rotation, { 0.0f, 0.0f, 1.0f });
-        transform = glm::scale(transform, { size.x, size.y, 1.0f });
-
-        actualPosition = transform * s_Data.QuadVertexPositions;
-    }
-    else
-    {
-        actualPosition[0] = { position.x - 0.5 * size.x, position.y - 0.5 * size.y, position.z, 1.0f };
-        actualPosition[1] = { position.x + 0.5 * size.x, position.y - 0.5 * size.y, position.z, 1.0f };
-        actualPosition[2] = { position.x + 0.5 * size.x, position.y + 0.5 * size.y, position.z, 1.0f };
-        actualPosition[3] = { position.x - 0.5 * size.x, position.y + 0.5 * size.y, position.z, 1.0f };
-    }
+    float textureIndex = Renderer2D::GetTextureSlot(data.Texture);
+    glm::mat4 actualPosition = data.Transform * s_Data.QuadVertexPositions;
 
     const uint32_t quadVertexCount = 4;
     for (uint8_t i = 0; i < quadVertexCount; i++)
     {
-        Renderer2D::SetQuadVertexData(actualPosition[i], color[i], texCoords[i], textureIndex, tilingFactor);
+        Renderer2D::SetQuadVertexData(actualPosition[i], data.Color[i], data.TexCoords[i], textureIndex, data.TilingFactor);
         s_Data.QuadVertexBufferPtr++;
     }
 

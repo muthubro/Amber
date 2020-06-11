@@ -1,12 +1,12 @@
 #include "abpch.h"
 #include "Application.h"
 
-#include <GLFW/glfw3.h>
 #include <imgui.h>
 
 #include "Amber/Core/Input.h"
 #include "Amber/Core/Window.h"
 
+#include "Amber/Renderer/Framebuffer.h"
 #include "Amber/Renderer/Renderer.h"
 
 #include "Amber/Utils/Random.h"
@@ -25,7 +25,7 @@ Application::Application(const ApplicationProps& props)
 
     m_Window = Window::Create(WindowProps(props.Name, props.WindowWidth, props.WindowHeight));
     m_Window->SetEventCallback(AB_BIND_EVENT_FN(Application::OnEvent));
-    m_Window->SetVSync(false);
+    m_Window->SetVSync(true);
 
     Random::Init();
 
@@ -51,7 +51,7 @@ void Application::Run()
     {
         AB_PROFILE_SCOPE("RunLoop");
 
-        float time = (float)glfwGetTime();
+        float time = (float)Time::TimeSinceInit();
         m_Timestep = time - m_LastFrameTime;
         m_LastFrameTime = time;
 
@@ -59,13 +59,13 @@ void Application::Run()
         {
             {
                 AB_PROFILE_SCOPE("LayerStack OnUpdate");
-                
+
                 for (Layer* layer : m_LayerStack)
                     layer->OnUpdate(m_Timestep);
-            }
 
-            auto app = this;
-            Renderer::Submit([app]() { app->RenderImGui(); });
+                auto app = this;
+                Renderer::Submit([app]() { app->RenderImGui(); });
+            }
 
             Renderer::WaitAndRender();
         }
@@ -92,6 +92,8 @@ void Application::OnEvent(Event& event)
 
 void Application::RenderImGui()
 {
+    AB_PROFILE_FUNCTION();
+
     m_ImGuiLayer->Begin();
 
     ImGui::Begin("Renderer");
@@ -102,12 +104,8 @@ void Application::RenderImGui()
     ImGui::Text("Frame Time: %.2fms", m_Timestep.GetMilliseconds());
     ImGui::End();
 
-    {
-        AB_PROFILE_SCOPE("LayerStack OnImGuiRender");
-
-        for (Layer* layer : m_LayerStack)
-            layer->OnImGuiRender();
-    }
+    for (Layer* layer : m_LayerStack)
+        layer->OnImGuiRender();
 
     m_ImGuiLayer->End();
 }
@@ -136,8 +134,6 @@ bool Application::OnWindowClose(WindowCloseEvent& e)
 
 bool Application::OnWindowResize(WindowResizeEvent& e)
 {
-    AB_PROFILE_FUNCTION();
-
     uint32_t width = e.GetWidth(), height = e.GetHeight();
     if (width == 0 || height == 0)
     {
@@ -147,6 +143,15 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
     
     m_Minimized = false;
     RenderCommand::SetViewPort(0, 0, width, height);
+
+    auto& framebuffers = FramebufferPool::GetGlobal()->GetAll();
+    for (auto fb : framebuffers)
+    {
+        auto& spec = fb.Get()->GetSpecification();
+        spec.Width = width;
+        spec.Height = height;
+        fb.Get()->Reset();
+    }
     
     return false;
 }

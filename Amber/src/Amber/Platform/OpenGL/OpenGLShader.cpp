@@ -28,8 +28,6 @@ uint32_t OpenGLShader::ShaderTypeFromString(const std::string& type)
 OpenGLShader::OpenGLShader(const std::string& filepath)
     : m_AssetPath(filepath)
 {
-    AB_PROFILE_FUNCTION();
-
     auto loc = filepath.find_last_of("/\\");
     m_Name = loc != std::string::npos ? filepath.substr(loc + 1) : filepath;
     loc = m_Name.rfind(".");
@@ -41,16 +39,17 @@ OpenGLShader::OpenGLShader(const std::string& filepath)
 OpenGLShader::OpenGLShader(const std::string& name, const std::string& source)
     : m_Name(name)
 {
-    AB_PROFILE_FUNCTION();
-
     Load(source);
 }
 
 OpenGLShader::~OpenGLShader()
 {
-    AB_PROFILE_FUNCTION();
+    RendererID rendererID = m_RendererID;
+    RenderCommand::Submit([rendererID]() {
+        AB_PROFILE_FUNCTION();
 
-    glDeleteProgram(m_RendererID);
+        glDeleteProgram(rendererID);
+    });
 }
 
 void OpenGLShader::Reload()
@@ -65,16 +64,18 @@ void OpenGLShader::Load(const std::string& source)
     if (!m_IsCompute)
         Parse();
 
-    RenderCommand::Submit([=]()
-    {
-        if (m_RendererID)
-            glDeleteProgram(m_RendererID);
+    Ref<OpenGLShader> instance = this;
+    RenderCommand::Submit([instance]() mutable {
+        AB_PROFILE_FUNCTION();
 
-        CompileAndUploadShader();
-        glUseProgram(m_RendererID);
+        if (instance->m_RendererID)
+            glDeleteProgram(instance->m_RendererID);
 
-        if (!m_IsCompute)
-            ResolveUniforms();
+        instance->CompileAndUploadShader();
+        glUseProgram(instance->m_RendererID);
+
+        if (!instance->m_IsCompute)
+            instance->ResolveUniforms();
     });
 }
 
@@ -230,7 +231,7 @@ static bool StartsWith(const std::string& str, const std::string& start)
 
 static bool IsTypeStringResource(const std::string& type)
 {
-    if (type == "sampler2D" || type == "samplerCube") return true;
+    if (type == "sampler2D" || type == "samplerCube" || type == "sampler2DMS") return true;
     return false;
 }
 
@@ -359,8 +360,6 @@ void OpenGLShader::ParseUniform(const std::string& statement, ShaderDomain domai
 
 void OpenGLShader::CompileAndUploadShader()
 {
-    AB_PROFILE_FUNCTION();
-
     std::vector<RendererID> shaderIDs;
 
     RendererID program = glCreateProgram();
@@ -688,218 +687,41 @@ void OpenGLShader::UploadUniformStruct(OpenGLShaderUniform* uniform, byte* buffe
 
 void OpenGLShader::Bind() const
 {
-    AB_PROFILE_FUNCTION();
+    Ref<const OpenGLShader> instance = this;
+    RenderCommand::Submit([instance]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
-        glUseProgram(m_RendererID);
+        glUseProgram(instance->m_RendererID);
     });
 }
 
 void OpenGLShader::Unbind() const
 {
-    AB_PROFILE_FUNCTION();
+    RenderCommand::Submit([]() {
+        AB_PROFILE_FUNCTION();
 
-    RenderCommand::Submit([=]()
-    {
         glUseProgram(0);
     });
 }
 
-void OpenGLShader::SetVSMaterialUniformBuffer(Buffer buffer)
+void OpenGLShader::SetVSMaterialUniformBuffer(const Buffer& buffer)
 {
-    RenderCommand::Submit([this, buffer]
-        {
-            glUseProgram(m_RendererID);
-            ResolveAndSetUniforms(m_VSMaterialUniformBuffer, buffer);
-        });
+    RenderCommand::Submit([this, buffer] {
+        AB_PROFILE_FUNCTION();
+
+        glUseProgram(m_RendererID);
+        ResolveAndSetUniforms(m_VSMaterialUniformBuffer, buffer);
+    });
 }
 
-void OpenGLShader::SetPSMaterialUniformBuffer(Buffer buffer)
+void OpenGLShader::SetPSMaterialUniformBuffer(const Buffer& buffer)
 {
-    RenderCommand::Submit([this, buffer]
-        {
-            glUseProgram(m_RendererID);
-            ResolveAndSetUniforms(m_PSMaterialUniformBuffer, buffer);
-        });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-void OpenGLShader::SetInt(const std::string& name, int32_t value)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformInt(name, value);
-}
-
-void OpenGLShader::SetIntArray(const std::string& name, int32_t* values, uint32_t count)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformIntArray(name, values, count);
-}
-
-void OpenGLShader::SetFloat(const std::string& name, float value)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformFloat(name, value);
-}
-
-void OpenGLShader::SetFloat3(const std::string& name, const glm::vec3& value)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformFloat3(name, value);
-}
-
-void OpenGLShader::SetFloat4(const std::string& name, const glm::vec4& value)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformFloat4(name, value);
-}
-
-void OpenGLShader::SetMat4(const std::string& name, const glm::mat4& value)
-{
-    AB_PROFILE_FUNCTION();
-
-    UploadUniformMat4(name, value);
-}
-
-void OpenGLShader::UploadUniformInt(const std::string& name, int32_t value)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform1i(location, value);
-        });
-}
-
-void OpenGLShader::UploadUniformIntArray(const std::string& name, int32_t* values, uint32_t count)
-{
-    RenderCommand::Submit([=]()
-        {
-            int32_t samplers[32];
-            for (uint32_t i = 0; i < 32; i++)
-                samplers[i] = i;
-
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform1iv(location, count, samplers);
-        });
-}
-
-void OpenGLShader::UploadUniformFloat(const std::string& name, float value)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform1f(location, value);
-        });
-}
-
-void OpenGLShader::UploadUniformFloat2(const std::string& name, const glm::vec2& values)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform2f(location, values.x, values.y);
-        });
-}
-
-void OpenGLShader::UploadUniformFloat3(const std::string& name, const glm::vec3& values)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform3f(location, values.x, values.y, values.z);
-        });
-}
-
-void OpenGLShader::UploadUniformFloat4(const std::string& name, const glm::vec4& values)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniform4f(location, values.x, values.y, values.z, values.w);
-        });
-}
-
-void OpenGLShader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-        });
-}
-
-void OpenGLShader::UploadUniformMat4(const std::string& name, const glm::mat4& matrix)
-{
-    RenderCommand::Submit([=]()
-        {
-            if (m_LocationMap.find(name) == m_LocationMap.end())
-                m_LocationMap[name] = glGetUniformLocation(m_RendererID, name.c_str());
-
-            int32_t location = m_LocationMap[name];
-            if (location == -1)
-                AB_CORE_ERROR("Uniform {0} not found!", name);
-            else
-                glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
-        });
+    RenderCommand::Submit([this, buffer] {
+        AB_PROFILE_FUNCTION();
+        
+        glUseProgram(m_RendererID);
+        ResolveAndSetUniforms(m_PSMaterialUniformBuffer, buffer);
+    });
 }
 
 }
