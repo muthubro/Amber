@@ -9,6 +9,8 @@
 
 #include "Amber/Renderer/Renderer.h"
 
+#include <ImGui/imgui.h>
+
 namespace Amber 
 {
 
@@ -61,7 +63,7 @@ void WindowsWindow::Init(const WindowProps& props)
     }
 
     m_Context = GraphicsContext::Create(m_Window);
-    m_Context->Init();
+    glfwMaximizeWindow(m_Window);
 
     glfwSetWindowUserPointer(m_Window, &m_Data);
 
@@ -147,6 +149,20 @@ void WindowsWindow::Init(const WindowProps& props)
         MouseScrolledEvent event((float)xoffset, (float)yoffset);
         data.EventCallback(event);
     });
+
+    m_ImGuiMouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    m_ImGuiMouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+    m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeAll] = glfwCreateStandardCursor(GLFW_RESIZE_ALL_CURSOR);   // FIXME: GLFW doesn't have this.
+    m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeNS] = glfwCreateStandardCursor(GLFW_RESIZE_NS_CURSOR);
+    m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeEW] = glfwCreateStandardCursor(GLFW_RESIZE_EW_CURSOR);
+    m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeNESW] = glfwCreateStandardCursor(GLFW_RESIZE_NESW_CURSOR);  // FIXME: GLFW doesn't have this.
+    m_ImGuiMouseCursors[ImGuiMouseCursor_ResizeNWSE] = glfwCreateStandardCursor(GLFW_RESIZE_NWSE_CURSOR);  // FIXME: GLFW doesn't have this.
+    m_ImGuiMouseCursors[ImGuiMouseCursor_Hand] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+
+    int width, height;
+    glfwGetWindowSize(m_Window, &width, &height);
+    m_Data.Width = width;
+    m_Data.Height = height;
 }
 
 void WindowsWindow::Shutdown()
@@ -169,6 +185,10 @@ void WindowsWindow::OnUpdate()
 
     glfwPollEvents();
     m_Context->SwapBuffers();
+
+    ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
+    glfwSetCursor(m_Window, m_ImGuiMouseCursors[imgui_cursor] ? m_ImGuiMouseCursors[imgui_cursor] : m_ImGuiMouseCursors[ImGuiMouseCursor_Arrow]);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void WindowsWindow::SetVSync(bool enabled)

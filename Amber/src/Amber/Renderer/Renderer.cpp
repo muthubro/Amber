@@ -31,7 +31,6 @@ void Renderer::Init()
     RenderCommand::Init();
     Renderer2D::Init();
     SceneRenderer::Init();
-
 }
 
 void Renderer::Shutdown()
@@ -41,6 +40,14 @@ void Renderer::Shutdown()
 
 void Renderer::WaitAndRender()
 {
+    RenderCommand::Submit([] {
+        GLenum error = glGetError();
+        while (error != GL_NO_ERROR)
+        {
+            AB_CORE_ERROR("OpenGL Error {0}", error);
+            error = glGetError();
+        }
+    });
     RenderCommand::GetCommandQueue().Execute();
 }
 

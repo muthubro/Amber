@@ -57,7 +57,7 @@ void SceneRenderer::Init()
     geoFramebufferSpec.Width = 1280;
     geoFramebufferSpec.Height = 720;
     geoFramebufferSpec.Format = FramebufferFormat::RGBA16F;
-    geoFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 0.1f };
+    geoFramebufferSpec.ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
     geoFramebufferSpec.Samples = 8;
 
     RenderPassSpecification geoRenderPassSpec;
@@ -68,7 +68,7 @@ void SceneRenderer::Init()
     compFramebufferSpec.Width = 1280;
     compFramebufferSpec.Height = 720;
     compFramebufferSpec.Format = FramebufferFormat::RGBA16F;
-    compFramebufferSpec.ClearColor = { 0.5f, 0.1f, 0.1f, 0.1f };
+    compFramebufferSpec.ClearColor = { 0.5f, 0.1f, 0.1f, 1.0f };
 
     RenderPassSpecification compRenderPassSpec;
     compRenderPassSpec.TargetFramebuffer = Framebuffer::Create(compFramebufferSpec);
@@ -81,15 +81,8 @@ void SceneRenderer::Init()
 
 void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
 {
-    auto& geoBufferSpec = s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetSpecification();
-    geoBufferSpec.Width = width;
-    geoBufferSpec.Height = height;
-    s_Data.GeometryPass->GetSpecification().TargetFramebuffer->Reset();
-
-    auto& compBufferSpec = s_Data.CompositePass->GetSpecification().TargetFramebuffer->GetSpecification();
-    compBufferSpec.Width = width;
-    compBufferSpec.Height = height;
-    s_Data.CompositePass->GetSpecification().TargetFramebuffer->Reset();
+    s_Data.GeometryPass->GetSpecification().TargetFramebuffer->Resize(width, height);
+    s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
 }
 
 void SceneRenderer::BeginScene(Scene* scene)
@@ -171,17 +164,18 @@ void SceneRenderer::CompositePass()
 
     Renderer::SubmitFullscreenQuad(material);
 
-    auto fbo = s_Data.CompositePass->GetSpecification().TargetFramebuffer;
-    RenderCommand::Submit([fbo]() {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->GetRendererID());
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBlitFramebuffer(
-            0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height, 
-            0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
-            GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    });
-
     Renderer::EndRenderPass();
+
+    // For Sandbox3D
+    //auto fbo = s_Data.CompositePass->GetSpecification().TargetFramebuffer;
+    //Amber::RenderCommand::Submit([fbo] {
+    //    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->GetRendererID());
+    //    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    //    glBlitFramebuffer(
+    //        0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
+    //        0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
+    //        GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    //});
 }
 
 void SceneRenderer::FlushDrawList()

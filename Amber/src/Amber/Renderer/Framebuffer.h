@@ -45,6 +45,7 @@ public:
     virtual ~Framebuffer() {}
 
     virtual void Reset() = 0;
+    virtual void Resize(uint32_t width, uint32_t height) = 0;
 
     virtual void Bind() const = 0;
     virtual void Unbind() const = 0;

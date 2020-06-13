@@ -12,7 +12,8 @@ namespace Amber
 OpenGLContext::OpenGLContext(GLFWwindow* windowHandle)
     : m_WindowHandle(windowHandle)
 {
-    AB_CORE_ASSERT(windowHandle, "Window handle is null!")
+    AB_CORE_ASSERT(windowHandle, "Window handle is null!");
+    Init();
 }
 
 void OpenGLContext::Init()

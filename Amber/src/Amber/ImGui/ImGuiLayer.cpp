@@ -29,6 +29,9 @@ void ImGuiLayer::OnAttach()
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 
+    ImFont* pFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+    io.FontDefault = io.Fonts->Fonts.back();
+
     ImGui::StyleColorsDark();
 
     ImGuiStyle& style = ImGui::GetStyle();
@@ -54,9 +57,6 @@ void ImGuiLayer::OnDetach()
 
 void ImGuiLayer::OnEvent(Event& e)
 {
-    ImGuiIO& io = ImGui::GetIO();
-    e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-    e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
 }
 
 void ImGuiLayer::Begin() 

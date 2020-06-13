@@ -286,11 +286,13 @@ void OpenGLShader::ParseUniformStruct(const std::string& block, ShaderDomain dom
         std::string typeString = tokens[index++];
         std::string fieldName = tokens[index++];
 
-        if (auto semi = fieldName.find(";"))
+        auto semi = fieldName.find(";");
+        if (semi != std::string::npos)
             fieldName = fieldName.substr(0, semi);
 
         uint32_t count = 1;
-        if (auto open = fieldName.find("["))
+        auto open = fieldName.find("[");
+        if (open != std::string::npos)
         {
             auto close = fieldName.find("]");
             count = (uint32_t)atoi(fieldName.substr(open + 1, close - open).c_str());

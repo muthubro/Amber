@@ -40,7 +40,8 @@ public:
     void SetCamera(const Camera& camera) { m_Camera = camera; }
 
     Light& GetLight() { return m_Light; }
-    float GetSkyboxLOD() { return m_SkyboxLOD; }
+    float GetSkyboxLOD() const { return m_SkyboxLOD; }
+    float& GetSkyboxLOD() { return m_SkyboxLOD; }
 
     const Environment& GetEnvironment() { return m_Environment; }
     void SetEnvironment(const Environment& environment);
@@ -61,7 +62,7 @@ private:
 
     Ref<TextureCube> m_Skybox;
     Ref<MaterialInstance> m_SkyboxMaterial;
-    float m_SkyboxLOD = 0.0f;
+    float m_SkyboxLOD = 1.0f;
 };
 
 }

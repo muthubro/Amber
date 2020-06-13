@@ -33,7 +33,9 @@ public:
     float GetDistance() const { return m_Distance; }
     float GetPitch() const { return m_Pitch; }
     float GetYaw() const { return m_Yaw; }
+
     float GetExposure() const { return m_Exposure; }
+    float& GetExposure() { return m_Exposure; }
 
     const glm::vec3& GetUpDirection() const { return m_UpDirection; }
     const glm::vec3& GetRightDirection() const { return m_RightDirection; }

@@ -316,7 +316,7 @@ void Renderer2D::SubmitFullscreenQuad(Ref<MaterialInstance> material)
     if (material)
     {
         material->Bind();
-        bool depthTest = material->GetFlag(MaterialFlag::DepthTest);
+        depthTest = material->GetFlag(MaterialFlag::DepthTest);
     }
 
     s_Data.FullscreenQuadVertexArray->Bind();

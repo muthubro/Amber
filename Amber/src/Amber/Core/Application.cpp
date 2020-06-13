@@ -29,11 +29,11 @@ Application::Application(const ApplicationProps& props)
 
     Random::Init();
 
-    Renderer::Init();
-    Renderer::WaitAndRender();
-
     m_ImGuiLayer = new ImGuiLayer();
     PushOverlay(m_ImGuiLayer);
+
+    Renderer::Init();
+    Renderer::WaitAndRender();
 }
 
 Application::~Application()
@@ -144,14 +144,11 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
     m_Minimized = false;
     RenderCommand::SetViewPort(0, 0, width, height);
 
-    auto& framebuffers = FramebufferPool::GetGlobal()->GetAll();
-    for (auto fb : framebuffers)
-    {
-        auto& spec = fb.Get()->GetSpecification();
-        spec.Width = width;
-        spec.Height = height;
-        fb.Get()->Reset();
-    }
+    //auto& framebuffers = FramebufferPool::GetGlobal()->GetAll();
+    //for (auto fb : framebuffers)
+    //{
+    //    fb.Get()->Resize(width, height);
+    //}
     
     return false;
 }

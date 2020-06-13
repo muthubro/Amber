@@ -5,6 +5,7 @@
 #include "Amber/Core/Base.h"
 
 #include "Amber/Core/Application.h"
+#include "Amber/Core/FileSystem.h"
 #include "Amber/Core/Layer.h"
 #include "Amber/Core/Log.h"
 #include "Amber/Core/Time.h"
@@ -32,6 +33,7 @@
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Renderer2D.h"
+#include "Amber/Renderer/SceneRenderer.h"
 
 #include "Amber/Renderer/Buffer.h"
 #include "Amber/Renderer/Material.h"

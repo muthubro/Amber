@@ -38,6 +38,7 @@ private:
     };
 
     GLFWwindow* m_Window;
+    GLFWcursor* m_ImGuiMouseCursors[9] = { 0 };
     Scope<GraphicsContext> m_Context;
     WindowData m_Data;
 

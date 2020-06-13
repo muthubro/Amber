@@ -28,8 +28,7 @@ group "Dependencies"
     include "Amber/vendor/Glad"
     include "Amber/vendor/ImGui"
 
-group ""
-
+group "Core"
 project "Amber"
     location "Amber"
     kind "StaticLib"
@@ -93,6 +92,7 @@ project "Amber"
         runtime "Release"
         optimize "on"
 
+group "Tools"
 project "Editor"
     location "Editor"
     kind "ConsoleApp"
@@ -175,7 +175,7 @@ project "Editor"
 			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
 		}
 
-
+group ""
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"

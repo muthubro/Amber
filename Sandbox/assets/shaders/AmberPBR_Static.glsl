@@ -70,7 +70,7 @@ out vec4 o_Color;
 struct Light
 {
 	vec3 Radiance;
-	vec3 Multiplier;
+	float Multiplier;
 };
 uniform Light u_Light;
 

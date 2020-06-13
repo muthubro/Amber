@@ -3,17 +3,22 @@
 
 #include "EditorLayer.h"
 
-class EditorApplication : public Amber::Application
+namespace Amber
+{
+    
+class EditorApplication : public Application
 {
 public:
-    EditorApplication(const Amber::ApplicationProps& props)
+    EditorApplication(const ApplicationProps& props)
         : Application(props) 
     {
         PushLayer(new EditorLayer());
     }
 };
 
-Amber::Application* Amber::CreateApplication()
+Application* CreateApplication()
 {
-    return new EditorApplication({ "Amber Editor", 1280, 720 });
+    return new EditorApplication({ "Amber Editor", 1600, 900 });
+}
+
 }

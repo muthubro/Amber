@@ -46,28 +46,32 @@ OpenGLFramebuffer::~OpenGLFramebuffer()
 
 void OpenGLFramebuffer::Reset()
 {
-    // TODO: Delete depth buffer too
-    if (m_RendererID)
-        m_ColorAttachments.clear();
+    // TODO: Do this with depth buffer too
 
+    std::vector<Ref<Texture2D>> newColorAttachments;
+    newColorAttachments.reserve(m_Specification.ColorAttachmentCount);
     for (uint32_t i = 0; i < m_Specification.ColorAttachmentCount; i++)
     {
-        m_ColorAttachments.push_back(Texture2D::Create(
+        newColorAttachments.push_back(Texture2D::Create(
             FramebufferFormatToTextureFormat(m_Specification.Format),
             m_Specification.Width, m_Specification.Height,
             TextureWrap::Clamp, TextureFilter::Linear,
             m_Specification.Samples));
 
-        m_ColorAttachments[i]->Bind();
+        newColorAttachments[i]->Bind();
     }
 
     // Renderbuffers cannot be used if we set fixedSampleLocations to false for MS texture
     if (m_Specification.Samples > 1)
         m_Specification.DepthAttachmentType = DepthBufferType::Texture;
 
+    uint32_t width = m_Specification.Width;
+    uint32_t height = m_Specification.Height;
     Ref<OpenGLFramebuffer> instance = this;
-    RenderCommand::Submit([instance]() mutable {
+    RenderCommand::Submit([instance, width, height, newColorAttachments]() mutable {
         AB_PROFILE_FUNCTION();
+
+        instance->m_ColorAttachments.swap(newColorAttachments);
 
         bool multisample = instance->m_Specification.Samples > 1;
 
@@ -84,7 +88,7 @@ void OpenGLFramebuffer::Reset()
                     instance->m_DepthAttachment,
                     instance->m_Specification.Samples,
                     instance->m_Specification.StencilBuffer ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32,
-                    instance->m_Specification.Width, instance->m_Specification.Height, GL_FALSE);
+                    width, height, GL_FALSE);
             }
             else
             {
@@ -99,7 +103,7 @@ void OpenGLFramebuffer::Reset()
                 glTextureStorage2D(
                     instance->m_DepthAttachment, 1,
                     instance->m_Specification.StencilBuffer ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32,
-                    instance->m_Specification.Width, instance->m_Specification.Height);
+                    width, height);
             }
         }
         else if (instance->m_Specification.DepthAttachmentType == DepthBufferType::Renderbuffer)
@@ -115,14 +119,14 @@ void OpenGLFramebuffer::Reset()
                     GL_RENDERBUFFER,
                     instance->m_Specification.Samples,
                     instance->m_Specification.StencilBuffer ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32,
-                    instance->m_Specification.Width, instance->m_Specification.Height);
+                    width, height);
             }
             else
             {
                 glRenderbufferStorage(
                     GL_RENDERBUFFER,
                     instance->m_Specification.StencilBuffer ? GL_DEPTH24_STENCIL8 : GL_DEPTH_COMPONENT32,
-                    instance->m_Specification.Width, instance->m_Specification.Height);
+                    width, height);
             }
         }
 
@@ -170,11 +174,20 @@ void OpenGLFramebuffer::Reset()
                     GL_RENDERBUFFER, instance->m_DepthAttachment);
             }
         }
-
         AB_CORE_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Framebuffer is incomplete!");
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     });
+}
+
+void OpenGLFramebuffer::Resize(uint32_t width, uint32_t height)
+{
+    if (m_Specification.Width == width && m_Specification.Height == height)
+        return;
+
+    m_Specification.Width = width;
+    m_Specification.Height = height;
+    Reset();
 }
 
 void OpenGLFramebuffer::Bind() const
@@ -184,6 +197,7 @@ void OpenGLFramebuffer::Bind() const
         AB_PROFILE_FUNCTION();
 
         glBindFramebuffer(GL_FRAMEBUFFER, instance->m_RendererID);
+        glViewport(0, 0, instance->m_Specification.Width, instance->m_Specification.Height);
     });
 }
 
