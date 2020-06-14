@@ -91,19 +91,30 @@ Mesh::Mesh(const std::string& filepath)
     uint32_t vertexCount = 0, indexCount = 0;
     uint32_t numMeshes = m_Scene->mNumMeshes;
     m_Submeshes.reserve(numMeshes);
-    for (uint32_t i = 0; i < numMeshes; i++)
+    for (uint32_t m = 0; m < numMeshes; m++)
     {
-        aiMesh* mesh = m_Scene->mMeshes[i];
-        m_Submeshes.emplace_back(vertexCount, indexCount, mesh->mNumFaces * 3, mesh->mMaterialIndex);
+        aiMesh* mesh = m_Scene->mMeshes[m];
+        Submesh& submesh = m_Submeshes.emplace_back(vertexCount, indexCount, mesh->mNumFaces * 3, mesh->mMaterialIndex);
 
         vertexCount += mesh->mNumVertices;
-        indexCount += mesh->mNumFaces * 3;
+        indexCount += submesh.IndexCount;
+
+        auto& aabb = submesh.BoundingBox;
+        aabb.Min = glm::vec3(std::numeric_limits<float>::max());
+        aabb.Max = glm::vec3(-std::numeric_limits<float>::max());
 
         for (uint32_t i = 0; i < mesh->mNumVertices; i++)
         {
             Vertex vertex;
             vertex.Position = { mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z };
             vertex.Normal = { mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z };
+
+            aabb.Min.x = glm::min(vertex.Position.x, aabb.Min.x);
+            aabb.Min.y = glm::min(vertex.Position.y, aabb.Min.y);
+            aabb.Min.z = glm::min(vertex.Position.z, aabb.Min.z);
+            aabb.Max.x = glm::max(vertex.Position.x, aabb.Max.x);
+            aabb.Max.y = glm::max(vertex.Position.y, aabb.Max.y);
+            aabb.Max.z = glm::max(vertex.Position.z, aabb.Max.z);
 
             if (mesh->HasTangentsAndBitangents())
             {
@@ -123,6 +134,10 @@ Mesh::Mesh(const std::string& filepath)
 
             Index index = { mesh->mFaces[i].mIndices[0], mesh->mFaces[i].mIndices[1], mesh->mFaces[i].mIndices[2] };
             m_Indices.push_back(index);
+            m_TriangleCache[m].emplace_back(
+                m_StaticVertices[index.V0 + submesh.BaseVertex],
+                m_StaticVertices[index.V1 + submesh.BaseVertex],
+                m_StaticVertices[index.V2 + submesh.BaseVertex]);
         }
     }
 

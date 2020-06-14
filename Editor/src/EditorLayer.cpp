@@ -4,6 +4,8 @@
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 
+#include "Amber/ImGui/ImGuizmo.h"
+
 namespace Amber
 {
 
@@ -79,6 +81,8 @@ void EditorLayer::OnAttach()
     auto& light = m_Scene->GetLight();
     light.Direction = { -0.5f, 0.5f, 1.0f };
     light.Radiance = { 1.0f, 1.0f, 1.0f };
+
+    m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
 }
 
 void EditorLayer::OnDetach()
@@ -87,8 +91,12 @@ void EditorLayer::OnDetach()
 
 void EditorLayer::OnEvent(Event& e)
 {
-    //if (m_AllowViewportCameraEvents)
+    if (m_AllowViewportCameraEvents)
         m_Scene->OnEvent(e);
+
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<MouseButtonPressedEvent>(AB_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
+    dispatcher.Dispatch<KeyPressedEvent>(AB_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
 }
 
 void EditorLayer::OnUpdate(Timestep ts)
@@ -98,15 +106,34 @@ void EditorLayer::OnUpdate(Timestep ts)
 
     m_Scene->OnUpdate(ts);
 
-    //if (m_AllowViewportCameraEvents)
-        m_Scene->GetCamera().OnUpdate(ts);
+    if (m_EnableOverlay && !m_SelectionContext.empty())
+    {
+        Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+        Renderer2D::BeginScene(m_Scene->GetCamera().GetViewProjection());
+
+        if (m_SelectionMode == SelectionMode::Entity)
+        {
+            auto& selection = m_SelectionContext[0];
+            Renderer::DrawAABB(selection.Entity->GetBoundingBox(), selection.Entity->GetTransform(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+        }
+        else if (m_SelectionMode == SelectionMode::Submesh)
+        {
+            for (auto& selection : m_SelectionContext)
+                Renderer::DrawAABB(selection.Mesh->BoundingBox, selection.Entity->GetTransform() * selection.Mesh->Transform);
+        }
+
+        Renderer2D::EndScene();
+        Renderer::EndRenderPass();
+    }
+
+    m_Scene->GetCamera().OnUpdate(ts);
 }
 
 void EditorLayer::OnImGuiRender()
 {
     static bool pOpen = true;
     static bool fullscreen = true;
-    static ImGuiDockNodeFlags dockNodeFlags = ImGuiDockNodeFlags_None;
+    static ImGuiDockNodeFlags dockNodeFlags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode;
 
     // Main window
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_MenuBar;
@@ -135,7 +162,23 @@ void EditorLayer::OnImGuiRender()
     ImGuiID dockspaceID = ImGui::GetID("Editor Dockspace");
     ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
 
-    // Editor Panel
+    // ---------------------------- Editor Panel ----------------------------
+
+    // Viewport settings
+    ImGui::Begin("ViewportSettings");
+    ImGui::Columns(2);
+
+    Property("Overlay", m_EnableOverlay);
+
+    ImGui::Columns(1);
+
+    char* label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
+    if (ImGui::Button(label))
+        m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
+
+    ImGui::End();
+
+    // Environment Settings
     ImGui::Begin("Environment");
 
     if (ImGui::Button("Load Environment Map"))
@@ -161,32 +204,6 @@ void EditorLayer::OnImGuiRender()
 
     ImGui::End();
 
-    // Viewport
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Viewport");
-
-    auto viewportSize = ImGui::GetContentRegionAvail();
-    SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-    m_Scene->GetCamera().SetProjectionMatrix(glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
-    m_Scene->GetCamera().SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-
-    ImGui::Image((void*)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
-
-    auto viewportOffset = ImGui::GetCursorPos();
-    auto minBounds = ImGui::GetWindowPos();
-    auto windowSize = ImGui::GetWindowSize();
-
-    minBounds.x += viewportOffset.x;
-    minBounds.y += viewportOffset.y;
-    ImVec2 maxBounds = { minBounds.x + windowSize.x, minBounds.y + windowSize.y };
-    
-    m_ViewportBounds[0] = { minBounds.x, minBounds.y };
-    m_ViewportBounds[1] = { maxBounds.x, maxBounds.y };
-    m_AllowViewportCameraEvents = ImGui::IsMouseHoveringRect(minBounds, maxBounds);
-
-    ImGui::End();
-    ImGui::PopStyleVar();
-
     // Editor Panel
     ImGui::Begin("Environment2");
 
@@ -194,7 +211,193 @@ void EditorLayer::OnImGuiRender()
 
     ImGui::End();
 
+    // Viewport
+    ImGui::SetNextWindowDockID(dockspaceID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("Viewport");
+
+    auto viewportOffset = ImGui::GetCursorPos();
+    auto viewportSize = ImGui::GetContentRegionAvail();
+    SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    m_Scene->GetCamera().SetProjectionMatrix(glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
+    m_Scene->GetCamera().SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+
+    ImGui::Image((void*)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
+
+    auto minBounds = ImGui::GetWindowPos();
+    auto windowSize = ImGui::GetWindowSize();
+
+    minBounds.x += viewportOffset.x;
+    minBounds.y += viewportOffset.y;
+    ImVec2 maxBounds = { minBounds.x + windowSize.x, minBounds.y + windowSize.y };
+
+    m_ViewportBounds[0] = { minBounds.x, minBounds.y };
+    m_ViewportBounds[1] = { maxBounds.x, maxBounds.y };
+    m_AllowViewportCameraEvents = ImGui::IsMouseHoveringRect(minBounds, maxBounds);
+
+    // Guizmos
+    if (m_GizmoMode != -1 && !m_SelectionContext.empty())
+    {
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+        bool snap = Input::IsKeyPressed(AB_KEY_LEFT_CONTROL);
+        float snapValue[3] = { m_SnapValue, m_SnapValue, m_SnapValue };
+
+        auto& topSelection = m_SelectionContext[0];
+        auto& entityTransform = topSelection.Entity->Transform();
+
+        if (m_SelectionMode == SelectionMode::Entity)
+        {
+            ImGuizmo::Manipulate(
+                glm::value_ptr(m_Scene->GetCamera().GetViewMatrix()),
+                glm::value_ptr(m_Scene->GetCamera().GetProjectionMatrix()),
+                (ImGuizmo::OPERATION)m_GizmoMode,
+                ImGuizmo::MODE::LOCAL,
+                glm::value_ptr(entityTransform),
+                nullptr,
+                snap ? snapValue : nullptr);
+        }
+        else if (m_SelectionMode == SelectionMode::Submesh)
+        {
+            glm::mat4 centroidTransform(0.0f);
+            for (auto& selection : m_SelectionContext)
+                centroidTransform += selection.Mesh->Transform;
+            centroidTransform /= (float)m_SelectionContext.size();
+
+            glm::mat4 baseTransform = entityTransform * centroidTransform;
+            ImGuizmo::Manipulate(
+                glm::value_ptr(m_Scene->GetCamera().GetViewMatrix()),
+                glm::value_ptr(m_Scene->GetCamera().GetProjectionMatrix()),
+                (ImGuizmo::OPERATION)m_GizmoMode,
+                ImGuizmo::MODE::LOCAL,
+                glm::value_ptr(baseTransform),
+                nullptr,
+                snap ? snapValue : nullptr);
+
+            for (auto& selection : m_SelectionContext)
+                selection.Mesh->Transform = baseTransform * glm::inverse(entityTransform * centroidTransform) * selection.Mesh->Transform;
+        }
+    }
+
     ImGui::End();
+    ImGui::PopStyleVar();
+
+    if (ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceID))
+        centralNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+
+    // Menu Bar
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Exit", "Alt+F4"))
+                Shutdown();
+
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
+
+    ImGui::End();
+}
+
+bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+{
+    if (e.GetMouseButton() == AB_MOUSE_BUTTON_LEFT && !Input::IsKeyPressed(AB_KEY_LEFT_ALT) && !ImGuizmo::IsOver())
+    {
+        auto [mouseX, mouseY] = GetMousePosition();
+        if (mouseX >= -1.0f && mouseX <= 1.0f && mouseY >= -1.0f && mouseY <= 1.0f)
+        {
+            if (!Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) && !Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+                m_SelectionContext.clear();
+
+            auto [origin, direction] = CastRay(mouseX, mouseY);
+            auto mesh = m_MeshEntity->GetMesh();
+            auto& submeshes = mesh->GetSubmeshes();
+
+            float minT = std::numeric_limits<float>::max();
+            SelectedSubmesh selected;
+            for (uint32_t i = 0; i < submeshes.size(); i++)
+            {
+                auto& submesh = submeshes[i];
+                Ray ray = {
+                    glm::inverse(m_MeshEntity->GetTransform() * submesh.Transform) * glm::vec4(origin, 1.0f),
+                    glm::inverse(glm::mat3(m_MeshEntity->GetTransform()) * glm::mat3(submesh.Transform)) * direction
+                };
+
+                float t;
+                if (ray.IntersectsAABB(submesh.BoundingBox, t))
+                {
+                    const auto& triangleCache = mesh->GetTriangleCache(i);
+                    for (const auto& triangle : triangleCache)
+                    {
+                        if (ray.IntersectsTriangle(triangle.V0.Position, triangle.V1.Position, triangle.V2.Position, t))
+                        {
+                            if (t < minT)
+                            {
+                                minT = t;
+                                selected = SelectedSubmesh(m_MeshEntity, &submesh, t );
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            m_SelectionContext.push_back(selected);
+        }
+    }
+
+    return false;
+}
+
+bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
+{
+    switch (e.GetKeyCode())
+    {
+        case AB_KEY_Q:
+            m_GizmoMode = -1;
+            break;
+        case AB_KEY_T:
+            m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+            break;
+        case AB_KEY_R:
+            m_GizmoMode = ImGuizmo::OPERATION::ROTATE;
+            break;
+        case AB_KEY_S:
+            m_GizmoMode = ImGuizmo::OPERATION::SCALE;
+            break;
+    }
+    return false;
+}
+
+std::pair<glm::vec3, glm::vec3> EditorLayer::CastRay(float x, float y)
+{
+    glm::vec3 origin = m_Scene->GetCamera().GetPosition();
+
+    glm::mat4 invProj = glm::inverse(m_Scene->GetCamera().GetProjectionMatrix());
+    glm::mat3 invView = glm::inverse(glm::mat3(m_Scene->GetCamera().GetViewMatrix()));
+
+    glm::vec4 mouseClipPos(x, y, -1.0f, 1.0f);
+    glm::vec4 ray = invProj * mouseClipPos;
+    glm::vec3 direction = invView * glm::vec3(ray);
+
+    return { origin, direction };
+}
+
+std::pair<float, float> EditorLayer::GetMousePosition()
+{
+    auto [x, y] = ImGui::GetMousePos();
+    x -= m_ViewportBounds[0].x;
+    y -= m_ViewportBounds[0].y;
+
+    float viewportWidth = m_ViewportBounds[1].x - m_ViewportBounds[0].x;
+    float viewportHeight = m_ViewportBounds[1].y - m_ViewportBounds[0].y;
+
+    return { (x / viewportWidth) * 2.0f - 1.0f, ((y / viewportHeight) * 2.0f - 1.0f) * -1.0f };
 }
 
 void EditorLayer::Property(const std::string& name, bool& value)

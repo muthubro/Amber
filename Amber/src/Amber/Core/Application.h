@@ -27,6 +27,7 @@ public:
     virtual ~Application();
 
     void Run();
+    void Shutdown();
 
     void OnEvent(Event& event);
 

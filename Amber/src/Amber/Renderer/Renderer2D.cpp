@@ -29,6 +29,7 @@ struct Renderer2DData
     // General
     Scope<ShaderLibrary> ShaderLibrary;
     Renderer2D::Statistics Stats;
+    bool ActiveScene = false;
 
     // Quads
     static const uint32_t MaxQuads = 20000;
@@ -181,6 +182,10 @@ void Renderer2D::BeginScene(const glm::mat4& viewProjection)
 {
     AB_PROFILE_FUNCTION();
 
+    AB_CORE_ASSERT(!s_Data.ActiveScene, "A scene is already active!");
+
+    s_Data.ActiveScene = true;
+
     // Quad
     s_Data.QuadMaterial = Ref<MaterialInstance>::Create(s_Data.QuadBaseMaterial);
     s_Data.QuadMaterial->Set("u_ViewProjection", viewProjection);
@@ -202,8 +207,12 @@ void Renderer2D::EndScene()
 {
     AB_PROFILE_FUNCTION();
 
+    AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
+
     FlushQuads();
     FlushLines();
+
+    s_Data.ActiveScene = false;
 }
 
 void Renderer2D::FlushQuads()
@@ -243,7 +252,7 @@ void Renderer2D::FlushLines()
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
     s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
 
-    RenderCommand::DrawIndexed(s_Data.LineIndexCount, PrimitiveType::Lines);
+    RenderCommand::DrawIndexed(s_Data.LineIndexCount, PrimitiveType::Lines, false);
     s_Data.Stats.DrawCalls++;
 
     s_Data.LineIndexCount = 0;
@@ -289,9 +298,11 @@ float Renderer2D::GetTextureSlot(const Ref<Texture2D>& texture)
     return textureIndex;
 }
 
-void Renderer2D::SubmitQuad(const QuadData& data)
+void Renderer2D::DrawQuad(const QuadData& data)
 {
     AB_PROFILE_FUNCTION();
+
+    AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
 
     if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
         FlushQuads();
@@ -310,7 +321,7 @@ void Renderer2D::SubmitQuad(const QuadData& data)
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::SubmitFullscreenQuad(Ref<MaterialInstance> material)
+void Renderer2D::DrawFullscreenQuad(Ref<MaterialInstance> material)
 {
     bool depthTest = false;
     if (material)
@@ -323,9 +334,11 @@ void Renderer2D::SubmitFullscreenQuad(Ref<MaterialInstance> material)
     RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
 }
 
-void Renderer2D::SubmitLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
+void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
 {
     AB_PROFILE_FUNCTION();
+
+    AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
 
     if (s_Data.LineIndexCount >= s_Data.MaxLineIndices)
         FlushLines();

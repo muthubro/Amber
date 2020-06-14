@@ -14,10 +14,12 @@ namespace Amber
 
 std::string FileSystem::OpenFileDialog(const std::string& filter, const std::string& title)
 {
+    using namespace std::string_literals;
+
     OPENFILENAMEA ofn;
     CHAR szFile[260] = { 0 };
     
-    size_t filterSplit = filter.find_first_of(':');
+    size_t filterSplit = filter.find(':');
     std::string filterName, filterValue;
     if (filterSplit == std::string::npos)
     {
@@ -30,12 +32,14 @@ std::string FileSystem::OpenFileDialog(const std::string& filter, const std::str
         filterValue = filter.substr(filterSplit + 1);
     }
 
+    std::string filterText = filterName + "\0"s + filterValue + "\0All\0*.*\0"s;
+
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(OPENFILENAME);
     ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
     ofn.lpstrFile = szFile;
     ofn.nMaxFile = sizeof(szFile);
-    ofn.lpstrFilter = ("All\0*.*\0" + filterName + "\0" + filterValue + "\0").c_str();
+    ofn.lpstrFilter = filterText.c_str();
     ofn.nFilterIndex = 1;
     ofn.lpstrTitle = title.c_str();
     ofn.lpstrFileTitle = NULL;

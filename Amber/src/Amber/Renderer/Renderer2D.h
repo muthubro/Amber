@@ -72,9 +72,9 @@ public:
     static void FlushQuads();
     static void FlushLines();
 
-    static void SubmitQuad(const QuadData& data);
-    static void SubmitFullscreenQuad(Ref<MaterialInstance> material);
-    static void SubmitLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f));
+    static void DrawQuad(const QuadData& data);
+    static void DrawFullscreenQuad(Ref<MaterialInstance> material);
+    static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f));
 
     struct Statistics
     {

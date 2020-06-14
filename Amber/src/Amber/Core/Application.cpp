@@ -110,6 +110,11 @@ void Application::RenderImGui()
     m_ImGuiLayer->End();
 }
 
+void Application::Shutdown()
+{
+    m_Running = false;
+}
+
 void Application::PushLayer(Layer* layer) 
 {
     AB_PROFILE_FUNCTION();
@@ -128,7 +133,7 @@ void Application::PushOverlay(Layer* overlay)
 
 bool Application::OnWindowClose(WindowCloseEvent& e) 
 {
-    m_Running = false;
+    Shutdown();
     return true;
 }
 

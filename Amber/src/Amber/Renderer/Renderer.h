@@ -29,8 +29,11 @@ public:
     static void BeginRenderPass(const Ref<RenderPass>& renderpass, bool clear = true);
     static void EndRenderPass();
 
-    static void SubmitFullscreenQuad(const Ref<MaterialInstance>& material);
-    static void SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
+    static void DrawFullscreenQuad(const Ref<MaterialInstance>& material);
+    static void DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial = nullptr);
+
+    static void DrawAABB(const AABB& aabb, const glm::mat4& transform, const glm::vec4& color = glm::vec4(1.0f));
+    static void DrawAABB(Ref<Mesh> mesh, const glm::mat4& transform, const glm::vec4& color = glm::vec4(1.0f));
 
     static const Scope<ShaderLibrary>& GetShaderLibrary();
     static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }

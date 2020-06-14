@@ -74,12 +74,12 @@ void Renderer::EndRenderPass()
     s_Data.ActiveRenderPass = nullptr;
 }
 
-void Renderer::SubmitFullscreenQuad(const Ref<MaterialInstance>& material)
+void Renderer::DrawFullscreenQuad(const Ref<MaterialInstance>& material)
 {
-    Renderer2D::SubmitFullscreenQuad(material);
+    Renderer2D::DrawFullscreenQuad(material);
 }
 
-void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
+void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
 {
     mesh->Bind();
 
@@ -97,6 +97,37 @@ void Renderer::SubmitMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<
             submesh.IndexCount, PrimitiveType::Triangles, (void*)(sizeof(uint32_t) * submesh.BaseIndex), 
             submesh.BaseVertex, material->GetFlag(MaterialFlag::DepthTest));
     }
+}
+
+void Renderer::DrawAABB(const AABB& aabb, const glm::mat4& transform, const glm::vec4& color)
+{
+    glm::vec4 corners[8] = {
+        transform * glm::vec4(aabb.Min.x, aabb.Min.y, aabb.Max.z, 1.0f),
+        transform * glm::vec4(aabb.Min.x, aabb.Max.y, aabb.Max.z, 1.0f),
+        transform * glm::vec4(aabb.Max.x, aabb.Max.y, aabb.Max.z, 1.0f),
+        transform * glm::vec4(aabb.Max.x, aabb.Min.y, aabb.Max.z, 1.0f),
+
+        transform * glm::vec4(aabb.Min.x, aabb.Min.y, aabb.Min.z, 1.0f),
+        transform * glm::vec4(aabb.Min.x, aabb.Max.y, aabb.Min.z, 1.0f),
+        transform * glm::vec4(aabb.Max.x, aabb.Max.y, aabb.Min.z, 1.0f),
+        transform * glm::vec4(aabb.Max.x, aabb.Min.y, aabb.Min.z, 1.0f)
+    };
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i], corners[(i + 1) % 4], color);
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i + 4], corners[((i + 1) % 4) + 4], color);
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i], corners[i + 4], color);
+}
+
+void Renderer::DrawAABB(Ref<Mesh> mesh, const glm::mat4& transform, const glm::vec4& color)
+{
+    const auto& submeshes = mesh->GetSubmeshes();
+    for (auto& submesh : submeshes)
+        DrawAABB(submesh.BoundingBox, transform * submesh.Transform, color);
 }
 
 const Scope<ShaderLibrary>& Renderer::GetShaderLibrary()

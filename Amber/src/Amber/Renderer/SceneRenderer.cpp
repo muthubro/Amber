@@ -7,6 +7,7 @@
 #include "Amber/Renderer/Framebuffer.h"
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/Renderer.h"
+#include "Amber/Renderer/Renderer2D.h"
 #include "Amber/Renderer/Shader.h"
 
 namespace Amber
@@ -123,7 +124,7 @@ void SceneRenderer::GeometryPass()
     
     // Skybox
     s_Data.SceneData.SkyboxMaterial->Set("u_InverseVP", glm::inverse(viewProj));
-    Renderer::SubmitFullscreenQuad(s_Data.SceneData.SkyboxMaterial);
+    Renderer::DrawFullscreenQuad(s_Data.SceneData.SkyboxMaterial);
 
     // Render entities
     for (auto& drawCommand : s_Data.DrawList)
@@ -147,7 +148,7 @@ void SceneRenderer::GeometryPass()
         baseMaterial->Set("u_LightDirection", s_Data.SceneData.ActiveLight.Direction);
         baseMaterial->Set("u_Light", light);
 
-        Renderer::SubmitMesh(drawCommand.Mesh, drawCommand.Transform, nullptr);
+        Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, nullptr);
     }
 
     Renderer::EndRenderPass();
@@ -162,7 +163,7 @@ void SceneRenderer::CompositePass()
     material->Set("u_Texture", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetColorAttachments()[0]);
     material->Set("u_TextureSamples", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetSpecification().Samples);
 
-    Renderer::SubmitFullscreenQuad(material);
+    Renderer::DrawFullscreenQuad(material);
 
     Renderer::EndRenderPass();
 

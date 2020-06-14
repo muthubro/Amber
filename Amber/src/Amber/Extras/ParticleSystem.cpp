@@ -108,7 +108,7 @@ void ParticleSystem::OnUpdate(Timestep ts)
 
         Renderer2D::QuadData data(particle.Position, { size, size }, particle.Rotation, m_ParticleTexture);
         data.SetColor(color);
-        Renderer2D::SubmitQuad(data);
+        Renderer2D::DrawQuad(data);
     }
 }
 
