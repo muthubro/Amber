@@ -101,8 +101,13 @@ void EditorLayer::OnEvent(Event& e)
 
 void EditorLayer::OnUpdate(Timestep ts)
 {
-    Amber::RenderCommand::SetClearColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-    Amber::RenderCommand::Clear();
+    RenderCommand::SetClearColor(glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+    RenderCommand::Clear();
+
+    auto& options = SceneRenderer::GetOptions();
+    options.ShowGrid = m_ShowGrid;
+    options.GridResolution = m_GridResolution;
+    options.GridScale = m_GridScale;
 
     m_Scene->OnUpdate(ts);
 
@@ -165,10 +170,16 @@ void EditorLayer::OnImGuiRender()
     // ---------------------------- Editor Panel ----------------------------
 
     // Viewport settings
-    ImGui::Begin("ViewportSettings");
+    ImGui::Begin("Viewport##Settings");
     ImGui::Columns(2);
 
     Property("Overlay", m_EnableOverlay);
+
+    ImGui::Separator();
+
+    Property("Grid", m_ShowGrid);
+    Property("Grid Resolution", m_GridResolution, 0.025f, 0.975f);
+    Property("Grid Scale", m_GridScale, 1.0f, 100.0f);
 
     ImGui::Columns(1);
 
@@ -261,23 +272,53 @@ void EditorLayer::OnImGuiRender()
         }
         else if (m_SelectionMode == SelectionMode::Submesh)
         {
-            glm::mat4 centroidTransform(0.0f);
-            for (auto& selection : m_SelectionContext)
-                centroidTransform += selection.Mesh->Transform;
-            centroidTransform /= (float)m_SelectionContext.size();
+            // TODO: Fix rotation and scaling for multiple selections
 
-            glm::mat4 baseTransform = entityTransform * centroidTransform;
-            ImGuizmo::Manipulate(
-                glm::value_ptr(m_Scene->GetCamera().GetViewMatrix()),
-                glm::value_ptr(m_Scene->GetCamera().GetProjectionMatrix()),
-                (ImGuizmo::OPERATION)m_GizmoMode,
-                ImGuizmo::MODE::LOCAL,
-                glm::value_ptr(baseTransform),
-                nullptr,
-                snap ? snapValue : nullptr);
-
+            glm::vec3 centroidTranslation(0.0f);
             for (auto& selection : m_SelectionContext)
-                selection.Mesh->Transform = baseTransform * glm::inverse(entityTransform * centroidTransform) * selection.Mesh->Transform;
+            {
+                float translation[3], rotation[3], scale[3];
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Mesh->Transform), translation, rotation, scale);
+
+                glm::vec3 translationVector(translation[0], translation[1], translation[2]);
+                centroidTranslation += translationVector;
+            }
+            centroidTranslation /= (float)m_SelectionContext.size();
+
+            for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
+            {
+                auto& selection = m_SelectionContext[i];
+                if (m_GizmoMode == ImGuizmo::OPERATION::TRANSLATE)
+                {
+                    glm::mat4 baseTransform = entityTransform * glm::translate(glm::mat4(1.0f), centroidTranslation);
+                    glm::mat4 delta;
+                    ImGuizmo::Manipulate(
+                        glm::value_ptr(m_Scene->GetCamera().GetViewMatrix()),
+                        glm::value_ptr(m_Scene->GetCamera().GetProjectionMatrix()),
+                        (ImGuizmo::OPERATION)m_GizmoMode,
+                        ImGuizmo::MODE::LOCAL,
+                        glm::value_ptr(baseTransform),
+                        glm::value_ptr(delta),
+                        snap ? snapValue : nullptr);
+
+                    selection.Mesh->Transform = glm::inverse(entityTransform) * delta  * entityTransform * selection.Mesh->Transform;
+                }
+                else
+                {
+                    glm::mat4 baseTransform = entityTransform * topSelection.Mesh->Transform;
+                    glm::mat4 delta;
+                    ImGuizmo::Manipulate(
+                        glm::value_ptr(m_Scene->GetCamera().GetViewMatrix()),
+                        glm::value_ptr(m_Scene->GetCamera().GetProjectionMatrix()),
+                        (ImGuizmo::OPERATION)m_GizmoMode,
+                        ImGuizmo::MODE::LOCAL,
+                        glm::value_ptr(baseTransform),
+                        glm::value_ptr(delta),
+                        snap ? snapValue : nullptr);
+
+                    selection.Mesh->Transform = glm::inverse(entityTransform) * baseTransform * glm::inverse(topSelection.Mesh->Transform) * selection.Mesh->Transform;
+                }
+            }
         }
     }
 
@@ -319,7 +360,7 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
             auto& submeshes = mesh->GetSubmeshes();
 
             float minT = std::numeric_limits<float>::max();
-            SelectedSubmesh selected;
+            SelectedSubmesh selected(nullptr, nullptr, 0.0f);
             for (uint32_t i = 0; i < submeshes.size(); i++)
             {
                 auto& submesh = submeshes[i];
@@ -347,7 +388,21 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 }
             }
 
-            m_SelectionContext.push_back(selected);
+            if (selected.Entity)
+            {
+                if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+                {
+                    auto pos = std::find_if(m_SelectionContext.begin(), m_SelectionContext.end(), SelectedSubmeshComparator(selected));
+                    if (pos != m_SelectionContext.end())
+                        m_SelectionContext.erase(pos);
+                    else
+                        m_SelectionContext.push_back(selected);
+                }
+                else
+                {
+                    m_SelectionContext.push_back(selected);
+                }
+            }
         }
     }
 
@@ -369,6 +424,18 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
             break;
         case AB_KEY_S:
             m_GizmoMode = ImGuizmo::OPERATION::SCALE;
+            break;
+        case AB_KEY_B:
+            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
+                m_EnableOverlay = !m_EnableOverlay;
+            break;
+        case AB_KEY_G:
+            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
+                m_ShowGrid = !m_ShowGrid;
+            break;
+        case AB_KEY_TAB:
+            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
+                m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
             break;
     }
     return false;

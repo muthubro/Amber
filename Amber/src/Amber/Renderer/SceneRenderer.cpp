@@ -41,6 +41,10 @@ struct SceneRendererData
         glm::mat4 Transform;
     };
     std::vector<DrawCommand> DrawList;
+
+    Ref<MaterialInstance> GridMaterial;
+
+    SceneRendererOptions Options;
 };
 
 static SceneRendererData s_Data;
@@ -53,6 +57,7 @@ void SceneRenderer::Init()
     s_Data.ShaderLibrary->Load("assets/shaders/EnvironmentMipFilter.glsl");
     s_Data.ShaderLibrary->Load("assets/shaders/EquirectangularToCubemap.glsl");
     s_Data.ShaderLibrary->Load("assets/shaders/SceneComposite.glsl");
+    s_Data.ShaderLibrary->Load("assets/shaders/Grid.glsl");
 
     FramebufferSpecification geoFramebufferSpec;
     geoFramebufferSpec.Width = 1280;
@@ -78,6 +83,8 @@ void SceneRenderer::Init()
     s_Data.CompositeBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("SceneComposite"));
 
     s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
+
+    s_Data.GridMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(s_Data.ShaderLibrary->Get("Grid")));
 }
 
 void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
@@ -149,6 +156,18 @@ void SceneRenderer::GeometryPass()
         baseMaterial->Set("u_Light", light);
 
         Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, nullptr);
+    }
+
+    if (s_Data.Options.ShowGrid)
+    {
+        s_Data.GridMaterial->Set("u_ViewProjection", viewProj);
+        s_Data.GridMaterial->Set("u_Resolution", s_Data.Options.GridResolution);
+        s_Data.GridMaterial->Set("u_Scale", s_Data.Options.GridScale);
+
+        glm::mat4 gridTransform(1.0f);
+        gridTransform = glm::rotate(gridTransform, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        gridTransform = glm::scale(gridTransform, glm::vec3(s_Data.Options.GridScale * 0.5f));
+        Renderer2D::DrawQuad(s_Data.GridMaterial, gridTransform);
     }
 
     Renderer::EndRenderPass();
@@ -253,6 +272,11 @@ Ref<RenderPass> SceneRenderer::GetFinalRenderPass()
 Ref<Texture2D> SceneRenderer::GetFinalColorBuffer()
 {
     return s_Data.CompositePass->GetSpecification().TargetFramebuffer->GetColorAttachments()[0];
+}
+
+SceneRendererOptions& SceneRenderer::GetOptions()
+{
+    return s_Data.Options;
 }
 
 }

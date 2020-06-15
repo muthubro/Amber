@@ -9,6 +9,13 @@
 namespace Amber
 {
 
+struct SceneRendererOptions
+{
+    bool ShowGrid = true;
+    float GridScale = 16.025f;
+    float GridResolution = 0.025f;
+};
+
 class SceneRenderer
 {
 public:
@@ -24,6 +31,8 @@ public:
 
     static Ref<RenderPass> GetFinalRenderPass();
     static Ref<Texture2D> GetFinalColorBuffer();
+
+    static SceneRendererOptions& GetOptions();
 
 private:
     static void GeometryPass();

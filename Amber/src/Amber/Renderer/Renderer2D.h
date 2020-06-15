@@ -73,8 +73,11 @@ public:
     static void FlushLines();
 
     static void DrawQuad(const QuadData& data);
-    static void DrawFullscreenQuad(Ref<MaterialInstance> material);
     static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color = glm::vec4(1.0f));
+
+    // Stateless draw calls
+    static void DrawQuad(Ref<MaterialInstance> material, const glm::mat4& transform);
+    static void DrawFullscreenQuad(Ref<MaterialInstance> material);
 
     struct Statistics
     {

@@ -42,6 +42,18 @@ private:
             : Entity(entity), Mesh(mesh), Distance(distance) {}
     };
 
+    struct SelectedSubmeshComparator
+    {
+        explicit SelectedSubmeshComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
+
+        bool operator() (const SelectedSubmesh& other) const
+        {
+            return SelectedMesh.Mesh == other.Mesh;
+        }
+
+        SelectedSubmesh SelectedMesh;
+    };
+
     Ref<Scene> m_Scene;
     Entity* m_MeshEntity = nullptr;
     Ref<Material> m_MeshMaterial;
@@ -49,6 +61,10 @@ private:
     glm::vec2 m_ViewportBounds[2];
     bool m_AllowViewportCameraEvents = true;
     bool m_EnableOverlay = true;
+    bool m_ShowGrid = true;
+    float m_GridResolution = 0.025f;
+    float m_GridScale = 16.025f;
+
     std::vector<SelectedSubmesh> m_SelectionContext;
     float m_SnapValue = 0.5f;
     int m_GizmoMode = -1;

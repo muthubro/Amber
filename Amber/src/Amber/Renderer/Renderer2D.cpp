@@ -321,19 +321,6 @@ void Renderer2D::DrawQuad(const QuadData& data)
     s_Data.Stats.QuadCount++;
 }
 
-void Renderer2D::DrawFullscreenQuad(Ref<MaterialInstance> material)
-{
-    bool depthTest = false;
-    if (material)
-    {
-        material->Bind();
-        depthTest = material->GetFlag(MaterialFlag::DepthTest);
-    }
-
-    s_Data.FullscreenQuadVertexArray->Bind();
-    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
-}
-
 void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color)
 {
     AB_PROFILE_FUNCTION();
@@ -353,6 +340,34 @@ void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::v
 
     s_Data.LineIndexCount += 2;
     s_Data.Stats.LineCount++;
+}
+
+void Renderer2D::DrawQuad(Ref<MaterialInstance> material, const glm::mat4& transform)
+{
+    bool depthTest = false;
+    if (material)
+    {
+        material->Bind();
+        depthTest = material->GetFlag(MaterialFlag::DepthTest);
+
+        material->Set("u_Transform", transform);
+    }
+
+    s_Data.FullscreenQuadVertexArray->Bind();
+    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+}
+
+void Renderer2D::DrawFullscreenQuad(Ref<MaterialInstance> material)
+{
+    bool depthTest = false;
+    if (material)
+    {
+        material->Bind();
+        depthTest = material->GetFlag(MaterialFlag::DepthTest);
+    }
+
+    s_Data.FullscreenQuadVertexArray->Bind();
+    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
 }
 
 void Renderer2D::ResetStats()
