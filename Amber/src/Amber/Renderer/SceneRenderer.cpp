@@ -166,7 +166,7 @@ void SceneRenderer::GeometryPass()
 
         glm::mat4 gridTransform(1.0f);
         gridTransform = glm::rotate(gridTransform, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        gridTransform = glm::scale(gridTransform, glm::vec3(s_Data.Options.GridScale * 0.5f));
+        gridTransform = glm::scale(gridTransform, glm::vec3(s_Data.Options.GridSize * 0.5f));   // DrawQuad uses fullscreen quad, which is 2x2
         Renderer2D::DrawQuad(s_Data.GridMaterial, gridTransform);
     }
 
@@ -213,7 +213,7 @@ std::pair<Ref<TextureCube>, Ref<TextureCube>> SceneRenderer::CreateEnvironmentMa
     const uint32_t irradianceSize = 32;
 
     // Equirectangular to cubemap
-    Ref<Texture2D> equiTexture = Texture2D::Create(filepath);
+    Ref<Texture2D> equiTexture = Texture2D::Create(filepath, false, false);
     AB_CORE_ASSERT(equiTexture->GetFormat() == TextureFormat::Float16, "Equirectangular texture is not HDR!");
     Ref<TextureCube> cubemapTexture = TextureCube::Create(TextureFormat::Float16, cubemapSize, cubemapSize);
 

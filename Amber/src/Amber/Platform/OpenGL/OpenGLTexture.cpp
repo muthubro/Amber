@@ -12,6 +12,8 @@ static GLenum AmberToOpenGLTextureFormat(TextureFormat format)
 {
     switch (format)
     {
+        case TextureFormat::R:              return GL_RED;
+        case TextureFormat::RG:             return GL_RG;
         case TextureFormat::RGB:            return GL_RGB;
         case TextureFormat::RGBA:           return GL_RGBA;
         case TextureFormat::Float16:        return GL_RGB;
@@ -22,12 +24,14 @@ static GLenum AmberToOpenGLTextureFormat(TextureFormat format)
     return 0;
 }
 
-static GLint AmberToOpenGLInternalTextureFormat(TextureFormat format)
+static GLint AmberToOpenGLInternalTextureFormat(TextureFormat format, bool srgb = false)
 {
     switch (format)
     {
-        case TextureFormat::RGB:            return GL_RGB8;
-        case TextureFormat::RGBA:           return GL_RGBA8;
+        case TextureFormat::R:              return GL_R8;
+        case TextureFormat::RG:             return GL_RG8;
+        case TextureFormat::RGB:            return srgb ? GL_SRGB8 : GL_RGB8;
+        case TextureFormat::RGBA:           return srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8;
         case TextureFormat::Float16:        return GL_RGBA16F;
         case TextureFormat::DepthStencil:   return GL_DEPTH24_STENCIL8;
     }
@@ -119,8 +123,25 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
         {
             AB_CORE_TRACE("Loading texture {0}, srgb = {1}", path, srgb);
 
-            m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, srgb ? STBI_rgb : STBI_rgb_alpha);
-            m_Format = srgb ? TextureFormat::RGB : TextureFormat::RGBA;
+            m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, 0);
+            switch (channels)
+            {
+                case 1:
+                    m_Format = TextureFormat::R;
+                    break;
+
+                case 2:
+                    m_Format = TextureFormat::RG;
+                    break;
+
+                case 3:
+                    m_Format = TextureFormat::RGB;
+                    break;
+
+                case 4:
+                    m_Format = TextureFormat::RGBA;
+                    break;
+            }
         }
     }
     AB_CORE_ASSERT(m_ImageData, "Failed to load image!");
@@ -131,7 +152,7 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
     m_Loaded = true;
 
     Ref<OpenGLTexture2D> instance = this;
-    RenderCommand::Submit([instance]() mutable {
+    RenderCommand::Submit([instance, srgb]() mutable {
         glCreateTextures(GL_TEXTURE_2D, 1, &instance->m_RendererID);
         glBindTexture(GL_TEXTURE_2D, instance->m_RendererID);
 
@@ -145,7 +166,7 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
 
         GLenum type = instance->m_Format == TextureFormat::Float16 ? GL_FLOAT : GL_UNSIGNED_BYTE;
         glTexImage2D(
-            GL_TEXTURE_2D, 0, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+            GL_TEXTURE_2D, 0, AmberToOpenGLInternalTextureFormat(instance->m_Format, srgb), 
             instance->m_Width, instance->m_Height, 0, AmberToOpenGLTextureFormat(instance->m_Format), 
             type, instance->m_ImageData.Data);
         glGenerateTextureMipmap(instance->m_RendererID);

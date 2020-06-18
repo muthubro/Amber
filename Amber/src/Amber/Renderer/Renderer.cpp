@@ -26,6 +26,7 @@ void Renderer::Init()
     s_Data.ShaderLibrary = CreateScope<ShaderLibrary>();
 
     s_Data.ShaderLibrary->Load("assets/shaders/MeshShader.glsl");
+    s_Data.ShaderLibrary->Load("Animated_Lighting", "assets/shaders/AmberPBR_Animated.glsl");
     s_Data.ShaderLibrary->Load("Static_Lighting", "assets/shaders/AmberPBR_Static.glsl");
 
     RenderCommand::Init();
@@ -82,6 +83,13 @@ void Renderer::DrawFullscreenQuad(const Ref<MaterialInstance>& material)
 void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
 {
     mesh->Bind();
+
+    if (mesh->IsAnimated())
+    {
+        auto baseMaterial = mesh->GetMaterial();
+        auto& boneTransforms = mesh->GetBoneTransforms();
+        baseMaterial->Set("u_BoneTransform", *boneTransforms.data());
+    }
 
     auto materials = mesh->GetMaterials();
     for (Submesh& submesh : mesh->GetSubmeshes())

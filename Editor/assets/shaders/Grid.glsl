@@ -34,5 +34,5 @@ float Grid(vec2 st, float res)
 void main()
 {
 	float empty = Grid(v_TexCoords * u_Scale, u_Resolution);
-	o_Color = vec4(vec3(0.5), 1.0) * (1.0 - empty);
+	o_Color = vec4(0.5) * (1.0 - empty);
 }

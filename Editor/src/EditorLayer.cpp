@@ -73,7 +73,9 @@ void EditorLayer::OnAttach()
 
     m_MeshEntity = m_Scene->CreateEntity("Test entity");
 
-    auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
+    //auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
+    auto mesh = Ref<Mesh>::Create("assets/meshes/m1911/M1911Materials.fbx");
+    //auto mesh = Ref<Mesh>::Create("assets/meshes/cerberus/CerberusMaterials.fbx");
     m_MeshEntity->SetMesh(mesh);
 
     m_MeshMaterial = mesh->GetMaterial();
@@ -108,6 +110,7 @@ void EditorLayer::OnUpdate(Timestep ts)
     options.ShowGrid = m_ShowGrid;
     options.GridResolution = m_GridResolution;
     options.GridScale = m_GridScale;
+    options.GridSize = m_GridSize;
 
     m_Scene->OnUpdate(ts);
 
@@ -180,6 +183,7 @@ void EditorLayer::OnImGuiRender()
     Property("Grid", m_ShowGrid);
     Property("Grid Resolution", m_GridResolution, 0.025f, 0.975f);
     Property("Grid Scale", m_GridScale, 1.0f, 100.0f);
+    Property("Grid Size", m_GridSize, 1.0f, 100.0f);
 
     ImGui::Columns(1);
 
@@ -372,17 +376,29 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 float t;
                 if (ray.IntersectsAABB(submesh.BoundingBox, t))
                 {
-                    const auto& triangleCache = mesh->GetTriangleCache(i);
-                    for (const auto& triangle : triangleCache)
+                    // TODO: Triangle check for animated meshes?
+                    if (mesh->IsAnimated())
                     {
-                        if (ray.IntersectsTriangle(triangle.V0.Position, triangle.V1.Position, triangle.V2.Position, t))
+                        if (t < minT)
                         {
-                            if (t < minT)
+                            minT = t;
+                            selected = SelectedSubmesh(m_MeshEntity, &submesh, t);
+                        }
+                    }
+                    else
+                    {
+                        const auto& triangleCache = mesh->GetTriangleCache(i);
+                        for (const auto& triangle : triangleCache)
+                        {
+                            if (ray.IntersectsTriangle(triangle.V0, triangle.V1, triangle.V2, t))
                             {
-                                minT = t;
-                                selected = SelectedSubmesh(m_MeshEntity, &submesh, t );
+                                if (t < minT)
+                                {
+                                    minT = t;
+                                    selected = SelectedSubmesh(m_MeshEntity, &submesh, t );
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                 }

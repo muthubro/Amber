@@ -12,8 +12,9 @@ namespace Amber
 struct SceneRendererOptions
 {
     bool ShowGrid = true;
-    float GridScale = 16.025f;
     float GridResolution = 0.025f;
+    float GridScale = 16.025f;
+    float GridSize = 16.025f;
 };
 
 class SceneRenderer

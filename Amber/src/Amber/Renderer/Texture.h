@@ -11,6 +11,8 @@ namespace Amber
 enum class TextureFormat
 {
     None = 0,
+    R,
+    RG,
     RGB,
     RGBA,
     Float16,
@@ -65,7 +67,7 @@ public:
     virtual Buffer& GetWritableBuffer() = 0;
 
     static Ref<Texture2D> Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap = TextureWrap::Clamp, TextureFilter filter = TextureFilter::Linear, uint32_t samples = 1);
-    static Ref<Texture2D> Create(const std::string& path, bool srgb = false, bool flip = false, TextureWrap wrap = TextureWrap::Clamp, TextureFilter filter = TextureFilter::Linear);
+    static Ref<Texture2D> Create(const std::string& path, bool srgb = false, bool flip = true, TextureWrap wrap = TextureWrap::Clamp, TextureFilter filter = TextureFilter::Linear);
 
     static Texture2DBounds GetBounds(const glm::vec2& position, const glm::vec2& cellSize, const glm::vec2& cellCount = glm::vec2(1.0f));
 };
