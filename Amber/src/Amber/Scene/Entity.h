@@ -6,8 +6,12 @@
 
 #include "Amber/Core/Math/AABB.h"
 
-#include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Mesh.h"
+
+#include "Amber/Scene/Component.h"
+#include "Amber/Scene/Scene.h"
+
+#include <entt/entt.hpp>
 
 namespace Amber
 {
@@ -15,51 +19,47 @@ namespace Amber
 class Entity : public RefCounted
 {
 public:
-    Entity(const std::string& name) : m_Name(name), m_Transform(1.0f) {}
+    Entity() = default;
+    Entity(entt::entity handle, Scene* scene);
 
-    const std::string& GetName() const { return m_Name; }
-
-    const glm::mat4& GetTransform() const { return m_Transform; }
-    glm::mat4& Transform() { return m_Transform; }
-
-    Ref<MaterialInstance> GetMaterial() { return m_Material; }
-    void SetMaterial(const Ref<MaterialInstance>& material) { m_Material = material; }
-
-    Ref<Mesh> GetMesh() { return m_Mesh; }
-    void SetMesh(const Ref<Mesh>& mesh) 
-    { 
-        m_Mesh = mesh; 
-
-        glm::vec3 min = glm::vec3(std::numeric_limits<float>::max());
-        glm::vec3 max = glm::vec3(-std::numeric_limits<float>::max());
-
-        for (auto& submesh : mesh->GetSubmeshes())
-        {
-            glm::vec3 submeshMin = glm::vec3(submesh.Transform * glm::vec4(submesh.BoundingBox.Min, 1.0f));
-            glm::vec3 submeshMax = glm::vec3(submesh.Transform * glm::vec4(submesh.BoundingBox.Max, 1.0f));
-
-            min.x = glm::min(glm::min(submeshMin.x, submeshMax.x), min.x);
-            min.y = glm::min(glm::min(submeshMin.y, submeshMax.y), min.y);
-            min.z = glm::min(glm::min(submeshMin.z, submeshMax.z), min.z);
-
-            max.x = glm::max(glm::max(submeshMin.x, submeshMax.x), max.x);
-            max.y = glm::max(glm::max(submeshMin.y, submeshMax.y), max.y);
-            max.z = glm::max(glm::max(submeshMin.z, submeshMax.z), max.z);
-        }
-
-        m_BoundingBox.Min = min;
-        m_BoundingBox.Max = max;
+    template<typename T, typename... Args>
+    T& AddComponent(Args... args)
+    {
+        return m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
     }
 
-    const AABB& GetBoundingBox() const { return m_BoundingBox; }
+    template<typename T>
+    bool HasComponent()
+    {
+        return m_Scene->m_Registry.has<T>(m_EntityHandle);
+    }
+
+    template<typename T>
+    T& GetComponent()
+    {
+        return m_Scene->m_Registry.get<T>(m_EntityHandle);
+    }
+
+    template<typename T>
+    T* GetComponentIfExists()
+    {
+        return m_Scene->m_Registry.try_get<T>(m_EntityHandle);
+    }
+
+    glm::mat4& Transform() { return m_Scene->m_Registry.get<TransformComponent>(m_EntityHandle); }
+    const glm::mat4& Transform() const { return m_Scene->m_Registry.get<TransformComponent>(m_EntityHandle); }
+
+    operator uint32_t() const { return (uint32_t)m_EntityHandle; }
+    operator bool() const { return (uint32_t)m_EntityHandle && m_Scene; }
+
+    bool operator==(const Entity& other) { return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene; }
+    bool operator!=(const Entity& other) { return !(*this == other); }
 
 private:
-    std::string m_Name;
-    glm::mat4 m_Transform;
-    AABB m_BoundingBox;
+    entt::entity m_EntityHandle;
+    Scene* m_Scene = nullptr;
 
-    Ref<MaterialInstance> m_Material;
-    Ref<Mesh> m_Mesh;
+    friend class Scene;
 };
 
 }

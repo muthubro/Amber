@@ -16,6 +16,7 @@ public:
 
 private:
     Amber::Ref<Amber::Scene> m_Scene;
-    Amber::Entity* m_MeshEntity = nullptr;
+    Amber::Entity m_CameraEntity;
+    Amber::Entity m_MeshEntity;
     Amber::Ref<Amber::Material> m_MeshMaterial;
 };

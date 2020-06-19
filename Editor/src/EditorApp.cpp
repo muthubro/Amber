@@ -1,7 +1,7 @@
 #include <Amber.h>
 #include <Amber/EntryPoint.h>
 
-#include "EditorLayer.h"
+#include "Editor/EditorLayer.h"
 
 namespace Amber
 {
@@ -12,7 +12,7 @@ public:
     EditorApplication(const ApplicationProps& props)
         : Application(props) 
     {
-        PushLayer(new EditorLayer());
+        PushLayer(new Editor::EditorLayer());
     }
 };
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
+#include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/RenderPass.h"
 #include "Amber/Renderer/Texture.h"
 
@@ -23,10 +26,10 @@ public:
     static void Init();
     static void SetViewportSize(uint32_t width, uint32_t height);
 
-    static void BeginScene(Scene* scene);
+    static void BeginScene(Scene* scene, const Camera& camera);
     static void EndScene();
 
-    static void SubmitEntity(Entity* entity);
+    static void SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), const Ref<MaterialInstance> = nullptr);
 
     static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string& filepath);
 

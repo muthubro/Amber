@@ -93,13 +93,13 @@ void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
     s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
 }
 
-void SceneRenderer::BeginScene(Scene* scene)
+void SceneRenderer::BeginScene(Scene* scene, const Camera& camera)
 {
     AB_CORE_ASSERT(!s_Data.ActiveScene, "Another scene is still active!");
 
     s_Data.ActiveScene = scene;
 
-    s_Data.SceneData.SceneCamera = scene->GetCamera();
+    s_Data.SceneData.SceneCamera = camera;
     s_Data.SceneData.SkyboxMaterial = scene->GetSkyboxMaterial();
     s_Data.SceneData.SceneEnvironment = scene->GetEnvironment();
     s_Data.SceneData.ActiveLight = scene->GetLight();
@@ -114,13 +114,9 @@ void SceneRenderer::EndScene()
     FlushDrawList();
 }
 
-void SceneRenderer::SubmitEntity(Entity* entity)
+void SceneRenderer::SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance> overrideMaterial)
 {
-    auto mesh = entity->GetMesh();
-    if (!mesh)
-        return;
-
-    s_Data.DrawList.push_back({ mesh, entity->GetMaterial(), entity->GetTransform() });
+    s_Data.DrawList.push_back({ mesh, overrideMaterial, transform });
 }
 
 void SceneRenderer::GeometryPass()
@@ -155,7 +151,7 @@ void SceneRenderer::GeometryPass()
         baseMaterial->Set("u_LightDirection", s_Data.SceneData.ActiveLight.Direction);
         baseMaterial->Set("u_Light", light);
 
-        Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, nullptr);
+        Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Material);
     }
 
     if (s_Data.Options.ShowGrid)

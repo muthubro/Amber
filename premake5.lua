@@ -17,6 +17,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["Assimp"] = "Amber/vendor/Assimp/include"
+IncludeDir["entt"] = "Amber/vendor/entt/include"
 IncludeDir["Glad"] = "Amber/vendor/Glad/include"
 IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
 IncludeDir["glm"] = "Amber/vendor/glm"
@@ -54,6 +55,7 @@ project "Amber"
         "%{prj.name}/src",
         "%{prj.name}/vendor",
         "%{IncludeDir.Assimp}",
+        "%{IncludeDir.entt}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
@@ -115,6 +117,7 @@ project "Editor"
         "%{prj.name}/src",
         "Amber/src",
         "Amber/vendor",
+        "%{IncludeDir.entt}",
         "%{IncludeDir.glm}"
     }
     links
@@ -198,6 +201,7 @@ project "Sandbox"
         "%{prj.name}/src",
         "Amber/src",
         "Amber/vendor",
+        "%{IncludeDir.entt}",
         "%{IncludeDir.glm}"
     }
     links

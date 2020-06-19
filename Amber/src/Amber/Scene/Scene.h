@@ -4,10 +4,12 @@
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Texture.h"
 
-#include "Amber/Scene/Entity.h"
+#include <entt/entt.hpp>
 
 namespace Amber
 {
+
+class Entity;
 
 struct Environment
 {
@@ -36,8 +38,18 @@ public:
     void OnUpdate(Timestep ts);
     void OnEvent(Event& e);
 
-    Camera& GetCamera() { return m_Camera; }
-    void SetCamera(const Camera& camera) { m_Camera = camera; }
+    Entity CreateEntity(const std::string& name = "");
+    void DeleteEntity(const Entity& entity);
+
+    template<typename... Types>
+    auto GetAllEntitiesWith()
+    {
+        return m_Registry.view<Types...>();
+    }
+
+    std::vector<Entity> GetAllEntities();
+
+    Entity* GetEntity(const entt::entity handle) { return m_EntityMap.find(handle) == m_EntityMap.end() ? nullptr : m_EntityMap[handle].Raw(); }
 
     Light& GetLight() { return m_Light; }
     float GetSkyboxLOD() const { return m_SkyboxLOD; }
@@ -49,20 +61,22 @@ public:
     Ref<MaterialInstance> GetSkyboxMaterial() { return m_SkyboxMaterial; }
     void SetSkybox(const Ref<TextureCube>& skybox);
 
-    void AddEntity(Entity* entity);
-    Entity* CreateEntity(const std::string& name = "Entity");
-
 private:
     std::string m_DebugName;
+    entt::registry m_Registry;
+    entt::entity m_SceneEntity;
+    uint32_t m_SceneID;
 
-    Camera m_Camera;
-    std::vector<Entity*> m_Entities;
+    std::unordered_map<entt::entity, Ref<Entity>> m_EntityMap;
+
     Environment m_Environment;
     Light m_Light;
 
     Ref<TextureCube> m_Skybox;
     Ref<MaterialInstance> m_SkyboxMaterial;
     float m_SkyboxLOD = 1.0f;
+
+    friend class Entity;
 };
 
 }
