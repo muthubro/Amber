@@ -156,6 +156,8 @@ private:
     Ref<Shader> m_MeshShader;
     std::vector<Ref<Texture2D>> m_Textures;
 
+    inline static const uint32_t s_MaxBones = 100;
+
     void TraverseNodes(aiNode* node, const glm::mat4& parentTransform = glm::mat4(1.0f));
 
     void UpdateBones(float time);

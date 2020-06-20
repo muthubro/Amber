@@ -179,6 +179,7 @@ Mesh::Mesh(const std::string& filepath)
                 }
             }
 
+            m_BoneTransforms.resize(s_MaxBones);
             UpdateBones(0.0f);
         }
         else
@@ -499,7 +500,6 @@ void Mesh::TraverseNodes(aiNode* node, const glm::mat4& parentTransform)
 
 void Mesh::UpdateBones(float time)
 {
-    m_BoneTransforms.resize(m_BoneCount);
     TraverseNodeHierarchy(m_AnimationTime, m_Scene->mRootNode);
 
     for (uint32_t m = 0; m < m_Scene->mNumMeshes; m++)

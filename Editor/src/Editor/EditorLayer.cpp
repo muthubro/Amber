@@ -130,9 +130,11 @@ void EditorLayer::OnUpdate(Timestep ts)
 
         if (m_SelectionMode == SelectionMode::Entity)
         {
-            auto& selection = m_SelectionContext[0];
-            auto component = selection.Entity.GetComponentIfExists<BoxCollider>();
-            Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+            for (auto& selection : m_SelectionContext)
+            {
+                auto component = selection.Entity.GetComponentIfExists<BoxCollider>();
+                Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+            }
         }
         else if (m_SelectionMode == SelectionMode::Submesh)
         {
@@ -270,69 +272,53 @@ void EditorLayer::OnImGuiRender()
         bool snap = Input::IsKeyPressed(AB_KEY_LEFT_CONTROL);
         float snapValue[3] = { m_SnapValue, m_SnapValue, m_SnapValue };
 
-        auto& topSelection = m_SelectionContext[0];
-        auto& entityTransform = topSelection.Entity.Transform();
-
-        if (m_SelectionMode == SelectionMode::Entity)
+        glm::vec3 centroidTranslation(0.0f);
+        for (auto& selection : m_SelectionContext)
         {
-            ImGuizmo::Manipulate(
-                glm::value_ptr(camera.GetViewMatrix()),
-                glm::value_ptr(camera.GetProjectionMatrix()),
-                (ImGuizmo::OPERATION)m_GizmoMode,
-                ImGuizmo::MODE::LOCAL,
-                glm::value_ptr(entityTransform),
-                nullptr,
-                snap ? snapValue : nullptr);
+            float translation[3], rotation[3], scale[3];
+            if (m_SelectionMode == SelectionMode::Entity)
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform()), translation, rotation, scale);
+            else
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform() * selection.Mesh->Transform), translation, rotation, scale);
+
+            centroidTranslation.x += translation[0];
+            centroidTranslation.y += translation[1];
+            centroidTranslation.z += translation[2];
         }
-        else if (m_SelectionMode == SelectionMode::Submesh)
+        centroidTranslation /= (float)m_SelectionContext.size();
+        glm::mat4 centroidTransform = glm::translate(glm::mat4(1.0f), centroidTranslation);
+
+        glm::mat4 delta;
+        ImGuizmo::Manipulate(
+            glm::value_ptr(camera.GetViewMatrix()),
+            glm::value_ptr(camera.GetProjectionMatrix()),
+            (ImGuizmo::OPERATION)m_GizmoMode,
+            ImGuizmo::MODE::LOCAL,
+            glm::value_ptr(centroidTransform),
+            glm::value_ptr(delta),
+            snap ? snapValue : nullptr);
+
+        if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
+            delta = glm::mat4(1.0f) + (delta - glm::mat4(1.0f)) * 0.1f;
+
+        for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
         {
-            // TODO: Fix rotation and scaling for multiple selections
-            // TODO: Fix cross entity selections
+            auto& selection = m_SelectionContext[i];
+            auto& entityTransform = selection.Entity.Transform();
 
-            glm::vec3 centroidTranslation(0.0f);
-            for (auto& selection : m_SelectionContext)
+            if (m_SelectionMode == SelectionMode::Entity)
             {
-                float translation[3], rotation[3], scale[3];
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Mesh->Transform), translation, rotation, scale);
-
-                glm::vec3 translationVector(translation[0], translation[1], translation[2]);
-                centroidTranslation += translationVector;
-            }
-            centroidTranslation /= (float)m_SelectionContext.size();
-
-            for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
-            {
-                auto& selection = m_SelectionContext[i];
-                if (m_GizmoMode == ImGuizmo::OPERATION::TRANSLATE)
-                {
-                    glm::mat4 baseTransform = entityTransform * glm::translate(glm::mat4(1.0f), centroidTranslation);
-                    glm::mat4 delta;
-                    ImGuizmo::Manipulate(
-                        glm::value_ptr(camera.GetViewMatrix()),
-                        glm::value_ptr(camera.GetProjectionMatrix()),
-                        (ImGuizmo::OPERATION)m_GizmoMode,
-                        ImGuizmo::MODE::LOCAL,
-                        glm::value_ptr(baseTransform),
-                        glm::value_ptr(delta),
-                        snap ? snapValue : nullptr);
-
-                    selection.Mesh->Transform = glm::inverse(entityTransform) * delta * entityTransform * selection.Mesh->Transform;
-                }
+                if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
+                    entityTransform = entityTransform * delta;
                 else
-                {
-                    glm::mat4 baseTransform = entityTransform * topSelection.Mesh->Transform;
-                    glm::mat4 delta;
-                    ImGuizmo::Manipulate(
-                        glm::value_ptr(camera.GetViewMatrix()),
-                        glm::value_ptr(camera.GetProjectionMatrix()),
-                        (ImGuizmo::OPERATION)m_GizmoMode,
-                        ImGuizmo::MODE::LOCAL,
-                        glm::value_ptr(baseTransform),
-                        glm::value_ptr(delta),
-                        snap ? snapValue : nullptr);
-
-                    selection.Mesh->Transform = glm::inverse(entityTransform) * baseTransform * glm::inverse(topSelection.Mesh->Transform) * selection.Mesh->Transform;
-                }
+                    entityTransform = delta * entityTransform;
+            }
+            else
+            {
+                if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
+                    selection.Mesh->Transform = selection.Mesh->Transform * delta;
+                else
+                    selection.Mesh->Transform = glm::inverse(entityTransform) * delta * entityTransform * selection.Mesh->Transform;
             }
         }
     }
@@ -427,7 +413,12 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
             {
                 if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
                 {
-                    auto pos = std::find_if(m_SelectionContext.begin(), m_SelectionContext.end(), SelectedSubmeshComparator(selected));
+                    std::vector<SelectedSubmesh>::iterator pos;
+                    if (m_SelectionMode == SelectionMode::Entity)
+                        pos = std::find_if(m_SelectionContext.begin(), m_SelectionContext.end(), SelectedEntityComparator(selected));
+                    else
+                        pos = std::find_if(m_SelectionContext.begin(), m_SelectionContext.end(), SelectedSubmeshComparator(selected));
+
                     if (pos != m_SelectionContext.end())
                         m_SelectionContext.erase(pos);
                     else

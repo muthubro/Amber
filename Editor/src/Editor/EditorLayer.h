@@ -51,6 +51,18 @@ private:
         SelectedSubmesh SelectedMesh;
     };
 
+    struct SelectedEntityComparator
+    {
+        explicit SelectedEntityComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
+
+        bool operator() (const SelectedSubmesh& other) const
+        {
+            return (Entity)SelectedMesh.Entity == other.Entity;
+        }
+
+        SelectedSubmesh SelectedMesh;
+    };
+
     Ref<Scene> m_Scene;
     Entity m_CameraEntity;
 
