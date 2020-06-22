@@ -93,6 +93,7 @@ struct Submesh : public RefCounted
     glm::mat4 Transform = glm::mat4(1.0f);
     AABB BoundingBox;
 
+    Submesh() = default;
     Submesh(uint32_t baseVertex, uint32_t baseIndex, uint32_t indexCount, uint32_t materialIndex)
         : BaseVertex(baseVertex), BaseIndex(baseIndex), IndexCount(indexCount), MaterialIndex(materialIndex) {}
 };

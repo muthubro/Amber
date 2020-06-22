@@ -1,6 +1,9 @@
 #include "EditorLayer.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 
@@ -12,6 +15,17 @@ namespace Amber
 {
 namespace Editor
 {
+
+static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform)
+{
+    glm::vec3 translationVector, skew, scaleVector;
+    glm::vec4 perspective;
+    glm::quat rotationVector;
+
+    glm::decompose(transform, scaleVector, rotationVector, translationVector, skew, perspective);
+
+    return { translationVector, rotationVector, scaleVector };
+}
 
 EditorLayer::EditorLayer()
     : Layer("Editor Layer")
@@ -94,6 +108,9 @@ void EditorLayer::OnAttach()
     light.Radiance = { 1.0f, 1.0f, 1.0f };
 
     m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+
+    m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_Scene);
+    m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
 }
 
 void EditorLayer::OnDetach()
@@ -132,6 +149,9 @@ void EditorLayer::OnUpdate(Timestep ts)
         {
             for (auto& selection : m_SelectionContext)
             {
+                if (!selection.Mesh)
+                    continue;
+
                 auto component = selection.Entity.GetComponentIfExists<BoxCollider>();
                 Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
             }
@@ -139,7 +159,12 @@ void EditorLayer::OnUpdate(Timestep ts)
         else if (m_SelectionMode == SelectionMode::Submesh)
         {
             for (auto& selection : m_SelectionContext)
+            {
+                if (!selection.Mesh)
+                    continue;
+
                 Renderer::DrawAABB(selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>().Transform * selection.Mesh->Transform);
+            }
         }
 
         Renderer2D::EndScene();
@@ -180,22 +205,23 @@ void EditorLayer::OnImGuiRender()
     ImGuiID dockspaceID = ImGui::GetID("Editor Dockspace");
     ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
 
+    ImGui::AlignTextToFramePadding();
+
     // ---------------------------- Editor Panel ----------------------------
 
     // Viewport settings
     ImGui::Begin("Viewport##Settings");
-    ImGui::Columns(2);
+
+    BeginPropertyGrid();
 
     Property("Overlay", m_EnableOverlay);
-
     ImGui::Separator();
-
     Property("Grid", m_ShowGrid);
     Property("Grid Resolution", m_GridResolution, 0.025f, 0.975f);
     Property("Grid Scale", m_GridScale, 1.0f, 100.0f);
     Property("Grid Size", m_GridSize, 1.0f, 100.0f);
 
-    ImGui::Columns(1);
+    EndPropertyGrid();
 
     char* label = m_SelectionMode == SelectionMode::Entity ? "Entity" : "Mesh";
     if (ImGui::Button(label))
@@ -215,8 +241,7 @@ void EditorLayer::OnImGuiRender()
 
     Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
 
-    ImGui::Columns(2);
-    ImGui::AlignTextToFramePadding();
+    BeginPropertyGrid();
 
     Property("Skybox LOD", m_Scene->GetSkyboxLOD(), 0.0f, 11.0f);
 
@@ -227,14 +252,7 @@ void EditorLayer::OnImGuiRender()
 
     Property("Exposure", camera.GetExposure(), 0.0f, 5.0f);
 
-    ImGui::Columns(1);
-
-    ImGui::End();
-
-    // Editor Panel
-    ImGui::Begin("Environment2");
-
-    ImGui::Text("Hi. This is a test window.");
+    EndPropertyGrid();
 
     ImGui::End();
 
@@ -250,7 +268,7 @@ void EditorLayer::OnImGuiRender()
     camera.SetProjectionMatrix(glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
     camera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 
-    ImGui::Image((void*)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
+    ImGui::Image((void*)(size_t)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
 
     auto minBounds = ImGui::GetWindowPos();
     auto windowSize = ImGui::GetWindowSize();
@@ -304,6 +322,9 @@ void EditorLayer::OnImGuiRender()
         for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
         {
             auto& selection = m_SelectionContext[i];
+            if (!selection.Entity.HasComponent<MeshComponent>())
+                continue;
+
             auto& entityTransform = selection.Entity.Transform();
 
             if (m_SelectionMode == SelectionMode::Entity)
@@ -312,6 +333,12 @@ void EditorLayer::OnImGuiRender()
                     entityTransform = entityTransform * delta;
                 else
                     entityTransform = delta * entityTransform;
+
+                if (m_GizmoMode == ImGuizmo::OPERATION::ROTATE && ImGuizmo::IsUsing())
+                {
+                    auto [translation, rotation, scale] = GetTransformDecomposition(delta);
+                    m_SceneHierarchyPanel->SetOrientation(selection.Entity, rotation);
+                }
             }
             else
             {
@@ -342,6 +369,8 @@ void EditorLayer::OnImGuiRender()
 
         ImGui::EndMenuBar();
     }
+
+    m_SceneHierarchyPanel->OnImGuiRender();
 
     ImGui::End();
 }
@@ -428,6 +457,8 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 {
                     m_SelectionContext.push_back(selected);
                 }
+
+                m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
             }
         }
     }

@@ -2,12 +2,51 @@
 
 #include <vector>
 
-#include "Amber.h"
+#include <Amber.h>
+
+#include "Editor/ScenePanel/SceneHierarchyPanel.h"
 
 namespace Amber
 {
 namespace Editor
 {
+
+struct SelectedSubmesh
+{
+    Entity Entity;
+    Submesh* Mesh;
+    float Distance;
+
+    SelectedSubmesh() = default;
+    SelectedSubmesh(Amber::Entity entity, Submesh* mesh, float distance)
+        : Entity(entity), Mesh(mesh), Distance(distance)
+    {
+    }
+};
+
+struct SelectedSubmeshComparator
+{
+    explicit SelectedSubmeshComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
+
+    bool operator() (const SelectedSubmesh& other) const
+    {
+        return SelectedMesh.Mesh == other.Mesh;
+    }
+
+    SelectedSubmesh SelectedMesh;
+};
+
+struct SelectedEntityComparator
+{
+    explicit SelectedEntityComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
+
+    bool operator() (const SelectedSubmesh& other) const
+    {
+        return (Entity)SelectedMesh.Entity == other.Entity;
+    }
+
+    SelectedSubmesh SelectedMesh;
+};
 
 class EditorLayer : public Layer
 {
@@ -27,42 +66,6 @@ private:
         None = 0, Entity, Submesh
     };
 
-    struct SelectedSubmesh
-    {
-        Entity Entity;
-        Submesh* Mesh;
-        float Distance;
-
-        SelectedSubmesh() = default;
-
-        SelectedSubmesh(Amber::Entity entity, Submesh* mesh, float distance)
-            : Entity(entity), Mesh(mesh), Distance(distance) {}
-    };
-
-    struct SelectedSubmeshComparator
-    {
-        explicit SelectedSubmeshComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
-
-        bool operator() (const SelectedSubmesh& other) const
-        {
-            return SelectedMesh.Mesh == other.Mesh;
-        }
-
-        SelectedSubmesh SelectedMesh;
-    };
-
-    struct SelectedEntityComparator
-    {
-        explicit SelectedEntityComparator(const SelectedSubmesh& mesh) : SelectedMesh(mesh) {}
-
-        bool operator() (const SelectedSubmesh& other) const
-        {
-            return (Entity)SelectedMesh.Entity == other.Entity;
-        }
-
-        SelectedSubmesh SelectedMesh;
-    };
-
     Ref<Scene> m_Scene;
     Entity m_CameraEntity;
 
@@ -78,6 +81,8 @@ private:
     float m_SnapValue = 0.5f;
     int m_GizmoMode = -1;
     SelectionMode m_SelectionMode = SelectionMode::Entity;
+
+    Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
 
     bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
     bool OnKeyPressed(KeyPressedEvent& e);
