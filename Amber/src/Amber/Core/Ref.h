@@ -62,14 +62,14 @@ public:
     template<typename T2>
     Ref(const Ref<T2>& other)
     {
-        m_Instance = other.m_Instance;
+        m_Instance = (T*)other.m_Instance;
         IncRef();
     }
 
     template<typename T2>
     Ref(Ref<T2>&& other)
     {
-        m_Instance = other.m_Instance;
+        m_Instance = (T*)other.m_Instance;
         other.m_Instance = nullptr;
     }
 
@@ -89,7 +89,7 @@ public:
        m_Instance = nullptr;
        if (other.m_Instance)
        {
-           m_Instance = other.m_Instance;
+           m_Instance = (T*)other.m_Instance;
            IncRef();
        }
    }
@@ -106,7 +106,7 @@ public:
         other.IncRef();
         DecRef();
 
-        m_Instance = other.m_Instance;
+        m_Instance = (T*)other.m_Instance;
         return *this;
     }
 
@@ -116,7 +116,7 @@ public:
         other.IncRef();
         DecRef();
 
-        m_Instance = other.m_Instance;
+        m_Instance = (T*)other.m_Instance;
         return *this;
     }
 
@@ -125,7 +125,7 @@ public:
     {
         DecRef();
 
-        m_Instance = other.m_Instance;
+        m_Instance = (T*)other.m_Instance;
         other.m_Instance = nullptr;
         return *this;
     }

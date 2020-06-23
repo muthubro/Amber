@@ -21,11 +21,12 @@ void Material::Bind()
 {
     m_Shader->Bind();
 
-    if (m_VSUniformStorageBuffer)
-        m_Shader->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
-
+    // Pixel shader has to be set first for uniforms that appear in both shaders
     if (m_PSUniformStorageBuffer)
         m_Shader->SetPSMaterialUniformBuffer(m_PSUniformStorageBuffer);
+
+    if (m_VSUniformStorageBuffer)
+        m_Shader->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
 
     BindTextures();
 }
@@ -57,7 +58,7 @@ void Material::BindTextures() const
     }
 }
 
-ShaderUniform* Material::FindUniform(const std::string& name)
+ShaderUniform* Material::FindUniform(const std::string& name) const
 {
     if (m_VSUniformStorageBuffer)
     {
@@ -82,7 +83,7 @@ ShaderUniform* Material::FindUniform(const std::string& name)
     return nullptr;
 }
 
-ShaderResource* Material::FindResource(const std::string& name)
+ShaderResource* Material::FindResource(const std::string& name) const
 {
     auto& resources = m_Shader->GetResources();
     for (auto resource : resources)
@@ -95,6 +96,18 @@ ShaderResource* Material::FindResource(const std::string& name)
 }
 
 Buffer& Material::GetUniformBufferTarget(ShaderUniform* uniform)
+{
+    switch (uniform->GetDomain())
+    {
+        case ShaderDomain::Vertex:  return m_VSUniformStorageBuffer;
+        case ShaderDomain::Pixel:   return m_PSUniformStorageBuffer;
+    }
+
+    AB_CORE_ASSERT(false, "Invalid shader domain! Material does not support this shader type.");
+    return m_VSUniformStorageBuffer;
+}
+
+const Buffer& Material::GetUniformBufferTarget(ShaderUniform* uniform) const
 {
     switch (uniform->GetDomain())
     {
@@ -126,11 +139,11 @@ void MaterialInstance::Bind()
 {
     m_Material->GetShader()->Bind();
 
-    if (m_VSUniformStorageBuffer)
-        m_Material->GetShader()->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
-
     if (m_PSUniformStorageBuffer)
         m_Material->GetShader()->SetPSMaterialUniformBuffer(m_PSUniformStorageBuffer);
+
+    if (m_VSUniformStorageBuffer)
+        m_Material->GetShader()->SetVSMaterialUniformBuffer(m_VSUniformStorageBuffer);
 
     m_Material->BindTextures();
     BindTextures();
@@ -164,6 +177,18 @@ void MaterialInstance::BindTextures() const
 }
 
 Buffer& MaterialInstance::GetUniformBufferTarget(ShaderUniform* uniform)
+{
+    switch (uniform->GetDomain())
+    {
+        case ShaderDomain::Vertex:  return m_VSUniformStorageBuffer;
+        case ShaderDomain::Pixel:   return m_PSUniformStorageBuffer;
+    }
+
+    AB_CORE_ASSERT(false, "Invalid shader domain! Material does not support this shader type.");
+    return m_VSUniformStorageBuffer;
+}
+
+const Buffer& MaterialInstance::GetUniformBufferTarget(ShaderUniform* uniform) const
 {
     switch (uniform->GetDomain())
     {

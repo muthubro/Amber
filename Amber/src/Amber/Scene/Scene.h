@@ -15,6 +15,7 @@ struct Environment
 {
     Ref<TextureCube> IrradianceMap;
     Ref<TextureCube> RadianceMap;
+    float Rotation = 0.0f;
 
     static Environment Load(const std::string& filepath);
 };
@@ -55,7 +56,9 @@ public:
     float GetSkyboxLOD() const { return m_SkyboxLOD; }
     float& GetSkyboxLOD() { return m_SkyboxLOD; }
 
-    const Environment& GetEnvironment() { return m_Environment; }
+    Environment& GetEnvironment() { return m_Environment; }
+    const Environment& GetEnvironment() const { return m_Environment; }
+    
     void SetEnvironment(const Environment& environment);
 
     Ref<MaterialInstance> GetSkyboxMaterial() { return m_SkyboxMaterial; }

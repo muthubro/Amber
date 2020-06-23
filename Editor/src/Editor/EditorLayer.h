@@ -69,6 +69,8 @@ private:
     Ref<Scene> m_Scene;
     Entity m_CameraEntity;
 
+    Ref<Texture2D> m_CheckerboardTexture;
+
     glm::vec2 m_ViewportBounds[2];
     bool m_AllowViewportCameraEvents = true;
     bool m_EnableOverlay = true;

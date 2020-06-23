@@ -36,7 +36,7 @@ private:
 
     glm::vec3 m_PrevOrientation = glm::vec3(0.0f);
 
-    void DrawEntityNode(Entity& entity, int32_t index);
+    bool DrawEntityNode(Entity& entity, int32_t index);
     void DrawComponents(Entity& entity);
 };
 

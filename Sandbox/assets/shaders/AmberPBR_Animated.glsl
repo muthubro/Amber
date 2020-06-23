@@ -40,6 +40,7 @@ void main()
 	vec4 worldPos = u_Transform  * boneTransform * vec4(a_Position, 1.0);
 	vec3 N = a_Normal;
 
+	vs_Output.Normal = u_NormalTransform * mat3(boneTransform) * N;
 	vs_Output.TexCoord = a_TexCoords;
 	if (u_NormalTexToggle)
 	{
@@ -48,7 +49,7 @@ void main()
 
 		vec3 B = cross(N, T);
 
-		mat3 TBN = u_NormalTransform * mat3(T, B, N);
+		mat3 TBN = inverse(u_NormalTransform * mat3(boneTransform) * mat3(T, B, N));
 		vs_Output.FragPos = TBN * vec3(worldPos);
 		vs_Output.ViewPos = TBN * u_ViewPosition;
 		vs_Output.LightDir = TBN * u_LightDirection;
@@ -59,7 +60,6 @@ void main()
 		vs_Output.ViewPos = u_ViewPosition;
 		vs_Output.LightDir = u_LightDirection;
 	}
-	vs_Output.Normal = u_NormalTransform * mat3(boneTransform) * N;
 
 	gl_Position = u_ViewProjection * worldPos;
 }

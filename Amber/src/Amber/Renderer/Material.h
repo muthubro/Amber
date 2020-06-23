@@ -67,6 +67,30 @@ public:
         Set(name, (const Ref<Texture>&)texture);
     }
 
+    template<typename T>
+    T Get(const std::string& name) const
+    {
+        auto uniform = FindUniform(name);
+        AB_CORE_ASSERT(uniform, "Could not find uniform!");
+
+        const auto& buffer = GetUniformBufferTarget(uniform);
+        T dest;
+        buffer.Read(&dest, uniform->GetSize(), uniform->GetOffset());
+
+        return dest;
+    }
+
+    Ref<Texture> GetResource(const std::string& name) const
+    {
+        auto resource = FindResource(name);
+        AB_CORE_ASSERT(resource, "Could not find texture!");
+
+        uint32_t slot = resource->GetRegister();
+        AB_CORE_ASSERT(m_Textures.size() > slot, "Texture not set!");
+
+        return m_Textures[slot];
+    }
+
 private:
     std::unordered_set<MaterialInstance*> m_MaterialInstances;
 
@@ -81,12 +105,16 @@ private:
     void AllocateStorage();
     void BindTextures() const;
 
-    ShaderUniform* FindUniform(const std::string& name);
-    ShaderResource* FindResource(const std::string& name);
+    ShaderUniform* FindUniform(const std::string& name) const;
+    ShaderResource* FindResource(const std::string& name) const;
 
     Buffer& GetVSUniformStorageBuffer() { return m_VSUniformStorageBuffer; }
     Buffer& GetPSUniformStorageBuffer() { return m_PSUniformStorageBuffer; }
     Buffer& GetUniformBufferTarget(ShaderUniform* uniform);
+
+    const Buffer& GetVSUniformStorageBuffer() const { return m_VSUniformStorageBuffer; }
+    const Buffer& GetPSUniformStorageBuffer() const { return m_PSUniformStorageBuffer; }
+    const Buffer& GetUniformBufferTarget(ShaderUniform* uniform) const;
 
     void AddMaterialInstance(MaterialInstance* materialInstance) { m_MaterialInstances.insert(materialInstance); }
     void RemoveMaterialInstance(MaterialInstance* materialInstance) { m_MaterialInstances.erase(materialInstance); }
@@ -139,6 +167,30 @@ public:
         Set(name, (const Ref<Texture>&)texture);
     }
 
+    template<typename T>
+    T Get(const std::string& name) const
+    {
+        auto uniform = m_Material->FindUniform(name);
+        AB_CORE_ASSERT(uniform, "Could not find uniform!");
+
+        const auto& buffer = GetUniformBufferTarget(uniform);
+        T dest;
+        buffer.Read(&dest, uniform->GetSize(), uniform->GetOffset());
+
+        return dest;
+    }
+
+    Ref<Texture> GetResource(const std::string& name) const
+    {
+        auto resource = m_Material->FindResource(name);
+        AB_CORE_ASSERT(resource, "Could not find texture!");
+
+        uint32_t slot = resource->GetRegister();
+        AB_CORE_ASSERT(m_Textures.size() > slot, "Texture not set!");
+
+        return m_Textures[slot];
+    }
+
 private:
     Ref<Material> m_Material;
 
@@ -153,6 +205,7 @@ private:
     void BindTextures() const;
 
     Buffer& GetUniformBufferTarget(ShaderUniform* uniform);
+    const Buffer& GetUniformBufferTarget(ShaderUniform* uniform) const;
 
     void OnMaterialValueUpdated(ShaderUniform* uniform);
 

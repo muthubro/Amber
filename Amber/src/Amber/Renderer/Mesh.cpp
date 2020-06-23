@@ -271,9 +271,10 @@ Mesh::Mesh(const std::string& filepath)
     uint32_t materialCount = m_Scene->mNumMaterials;
     m_Materials.resize(materialCount);
     m_Textures.resize(materialCount);
-    for (uint32_t i = 0; i < materialCount; i++)
+    for (uint32_t i = 0; i < m_Scene->mNumMeshes; i++)
     {
-        aiMaterial* material = m_Scene->mMaterials[i];
+        auto& submesh = m_Submeshes[i];
+        aiMaterial* material = m_Scene->mMaterials[submesh.MaterialIndex];
         auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
         m_Materials[i] = materialInstance;
 
@@ -308,6 +309,7 @@ Mesh::Mesh(const std::string& filepath)
                 m_Textures[i] = albedo;
                 materialInstance->Set("u_AlbedoTexture", albedo);
                 materialInstance->Set("u_AlbedoTexToggle", 1);
+                submesh.HasAlbedoMap = true;
             }
             else
             {
@@ -332,6 +334,7 @@ Mesh::Mesh(const std::string& filepath)
             {
                 materialInstance->Set("u_NormalTexture", normalMap);
                 materialInstance->Set("u_NormalTexToggle", 1);
+                submesh.HasNormalMap = true;
             }
             else
             {
@@ -353,6 +356,7 @@ Mesh::Mesh(const std::string& filepath)
             {
                 materialInstance->Set("u_RoughnessTexture", roughnessMap);
                 materialInstance->Set("u_RoughnessTexToggle", 1);
+                submesh.HasRoughnessMap = true;
             }
             else
             {
@@ -439,6 +443,7 @@ Mesh::Mesh(const std::string& filepath)
                 {
                     materialInstance->Set("u_MetalnessTexture", metalnessMap);
                     materialInstance->Set("u_MetalnessTexToggle", 1);
+                    submesh.HasMetalnessMap = true;
                 }
                 else
                 {
@@ -483,6 +488,152 @@ void Mesh::OnUpdate(Timestep ts)
 
         UpdateBones(m_AnimationTime);
     }
+}
+
+glm::vec3 Mesh::GetAlbedo(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<glm::vec3>("u_Albedo");
+}
+
+float Mesh::GetRoughness(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<float>("u_Roughness");
+}
+
+float Mesh::GetMetalness(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<float>("u_Metalness");
+}
+
+Ref<Texture2D> Mesh::GetAlbedoTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    return submesh.HasAlbedoMap ? m_Textures[index] : nullptr;
+}
+
+Ref<Texture2D> Mesh::GetNormalTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return submesh.HasNormalMap ? Ref<Texture2D>(materialInstance->GetResource("u_NormalTexture")) : nullptr;
+}
+
+Ref<Texture2D> Mesh::GetRoughnessTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return submesh.HasRoughnessMap ? Ref<Texture2D>(materialInstance->GetResource("u_RoughnessTexture")) : nullptr;
+}
+
+Ref<Texture2D> Mesh::GetMetalnessTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return submesh.HasMetalnessMap ? Ref<Texture2D>(materialInstance->GetResource("u_MetalnessTexture")) : nullptr;
+}
+
+bool Mesh::UsingAlbedoTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<uint32_t>("u_AlbedoTexToggle");
+}
+
+bool Mesh::UsingNormalTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<uint32_t>("u_NormalTexToggle");
+}
+
+bool Mesh::UsingRoughnessTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<uint32_t>("u_RoughnessTexToggle");
+}
+
+bool Mesh::UsingMetalnessTexture(Submesh& submesh) const
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    return materialInstance->Get<uint32_t>("u_MetalnessTexToggle");
+}
+
+void Mesh::SetAlbedo(Submesh& submesh, const glm::vec3& albedo)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    materialInstance->Set("u_Albedo", albedo);
+}
+
+void Mesh::SetRoughness(Submesh& submesh, float roughness)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    materialInstance->Set("u_Roughness", roughness);
+}
+
+void Mesh::SetMetalness(Submesh& submesh, float metalness)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    materialInstance->Set("u_Metalness", metalness);
+}
+
+void Mesh::SetAlbedoTexture(Submesh& submesh, bool use, Ref<Texture2D> albedo)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    if (albedo)
+    {
+        m_Textures[index] = albedo;
+        materialInstance->Set("u_AlbedoTexture", albedo);
+        submesh.HasAlbedoMap = true;
+    }
+    materialInstance->Set("u_AlbedoTexToggle", (uint32_t)(use && submesh.HasAlbedoMap));
+}
+
+void Mesh::SetNormalTexture(Submesh& submesh, bool use, Ref<Texture2D> normal)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    if (normal)
+    {
+        materialInstance->Set("u_NormalTexture", normal);
+        submesh.HasNormalMap = true;
+    }
+    materialInstance->Set("u_NormalTexToggle", (uint32_t)(use && submesh.HasNormalMap));
+}
+
+void Mesh::SetRoughnessTexture(Submesh& submesh, bool use, Ref<Texture2D> roughness)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    if (roughness)
+    {
+        materialInstance->Set("u_RoughnessTexture", roughness);
+        submesh.HasRoughnessMap = true;
+    }
+    materialInstance->Set("u_RoughnessTexToggle", (uint32_t)(use && submesh.HasRoughnessMap));
+}
+
+void Mesh::SetMetalnessTexture(Submesh& submesh, bool use, Ref<Texture2D> metalness)
+{
+    uint32_t index = submesh.MaterialIndex;
+    auto& materialInstance = m_Materials[index];
+    if (metalness)
+    {
+        materialInstance->Set("u_MetalnessTexture", metalness);
+        submesh.HasMetalnessMap = true;
+    }
+    materialInstance->Set("u_MetalnessTexToggle", (uint32_t)(use && submesh.HasMetalnessMap));
 }
 
 void Mesh::TraverseNodes(aiNode* node, const glm::mat4& parentTransform)

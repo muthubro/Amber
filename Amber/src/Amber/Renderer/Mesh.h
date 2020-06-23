@@ -90,6 +90,11 @@ struct Submesh : public RefCounted
     uint32_t IndexCount;
     uint32_t MaterialIndex;
 
+    bool HasAlbedoMap = false;
+    bool HasNormalMap = false;
+    bool HasRoughnessMap = false;
+    bool HasMetalnessMap = false;
+
     glm::mat4 Transform = glm::mat4(1.0f);
     AABB BoundingBox;
 
@@ -123,8 +128,35 @@ public:
 
     const std::vector<BoneInfo>& GetBoneInfo() const { return m_BoneInfo; }
 
+    glm::vec3 GetAlbedo(Submesh& submesh) const;
+    float GetRoughness(Submesh& submesh) const;
+    float GetMetalness(Submesh& submesh) const;
+
+    Ref<Texture2D> GetAlbedoTexture(Submesh& submesh) const;
+    Ref<Texture2D> GetNormalTexture(Submesh& submesh) const;
+    Ref<Texture2D> GetRoughnessTexture(Submesh& submesh) const;
+    Ref<Texture2D> GetMetalnessTexture(Submesh& submesh) const;
+
+    bool UsingAlbedoTexture(Submesh& submesh) const;
+    bool UsingNormalTexture(Submesh& submesh) const;
+    bool UsingRoughnessTexture(Submesh& submesh) const;
+    bool UsingMetalnessTexture(Submesh& submesh) const;
+
+    void SetAlbedo(Submesh& submesh, const glm::vec3& albedo);
+    void SetRoughness(Submesh& submesh, float roughness);
+    void SetMetalness(Submesh& submesh, float metalness);
+
+    void SetAlbedoTexture(Submesh& submesh, bool use, Ref<Texture2D> albedo = nullptr);
+    void SetNormalTexture(Submesh& submesh, bool use, Ref<Texture2D> normal = nullptr);
+    void SetRoughnessTexture(Submesh& submesh, bool use, Ref<Texture2D> roughness = nullptr);
+    void SetMetalnessTexture(Submesh& submesh, bool use, Ref<Texture2D> metalness = nullptr);
+
     bool IsAnimated() { return m_IsAnimated; }
-    void ToggleAnimation() { m_AnimationPlaying = !m_AnimationPlaying; }
+    bool& IsAnimationPlaying() { return m_AnimationPlaying; }
+    const bool IsAnimationPlaying() const { return m_AnimationPlaying; }
+
+    float& AnimationTimeMultiplier() { return m_TimeMultiplier; }
+    const float AnimationTimeMultiplier() const { return m_TimeMultiplier; }
 
 private:
     std::string m_FilePath;

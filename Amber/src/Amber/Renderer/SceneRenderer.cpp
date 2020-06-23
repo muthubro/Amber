@@ -127,6 +127,7 @@ void SceneRenderer::GeometryPass()
     
     // Skybox
     s_Data.SceneData.SkyboxMaterial->Set("u_InverseVP", glm::inverse(viewProj));
+    s_Data.SceneData.SkyboxMaterial->Set("u_Rotation", s_Data.SceneData.SceneEnvironment.Rotation);
     Renderer::DrawFullscreenQuad(s_Data.SceneData.SkyboxMaterial);
 
     // Render entities
@@ -140,6 +141,7 @@ void SceneRenderer::GeometryPass()
         baseMaterial->Set("u_IrradianceTexture", s_Data.SceneData.SceneEnvironment.IrradianceMap);
         baseMaterial->Set("u_RadianceTexture", s_Data.SceneData.SceneEnvironment.RadianceMap);
         baseMaterial->Set("u_BRDFLUT", s_Data.BRDFLUT);
+        baseMaterial->Set("u_EnvironmentRotation", s_Data.SceneData.SceneEnvironment.Rotation);
 
         struct LightUniform
         {

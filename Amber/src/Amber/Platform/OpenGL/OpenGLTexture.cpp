@@ -123,25 +123,8 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, 
         {
             AB_CORE_TRACE("Loading texture {0}, srgb = {1}", path, srgb);
 
-            m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, 0);
-            switch (channels)
-            {
-                case 1:
-                    m_Format = TextureFormat::R;
-                    break;
-
-                case 2:
-                    m_Format = TextureFormat::RG;
-                    break;
-
-                case 3:
-                    m_Format = TextureFormat::RGB;
-                    break;
-
-                case 4:
-                    m_Format = TextureFormat::RGBA;
-                    break;
-            }
+            m_ImageData.Data = (byte*)stbi_load(path.c_str(), &width, &height, &channels, srgb ? STBI_rgb : STBI_rgb_alpha);
+            m_Format = srgb ? TextureFormat::RGB : TextureFormat::RGBA;
         }
     }
     AB_CORE_ASSERT(m_ImageData, "Failed to load image!");

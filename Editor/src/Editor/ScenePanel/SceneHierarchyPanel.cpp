@@ -71,15 +71,32 @@ void SceneHierarchyPanel::OnImGuiRender()
 {
     ImGui::Begin("Scene Hierarchy");
 
+    bool entityClicked = false;
+    auto& entities = m_Context->GetAllEntities();
     int32_t i = 0;
-    for (auto& entity : m_Context->GetAllEntities())
+    for (auto& entity : entities)
     {
         if (m_EntityMap.find(entity) == m_EntityMap.end())
         {
             auto [translation, orientation, scale] = GetTransformDecomposition(entity.GetComponent<TransformComponent>());
             m_EntityMap[entity] = EntityData{ false, glm::degrees(glm::eulerAngles(orientation)) };
         }
-        DrawEntityNode(entity, i++);
+        entityClicked |= DrawEntityNode(entity, i++);
+    }
+
+    if (!entityClicked && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered())
+    {
+        m_SelectionContext->clear();
+        for (auto& pair : m_EntityMap)
+            pair.second.Selected = false;
+    }
+
+    if (ImGui::BeginPopupContextWindow(nullptr, ImGuiMouseButton_Right, false))
+    {
+        if (ImGui::MenuItem("Create Entity"))
+            m_Context->CreateEntity("Unnamed Entity");
+
+        ImGui::EndPopup();
     }
 
     ImGui::End();
@@ -95,7 +112,7 @@ void SceneHierarchyPanel::OnImGuiRender()
     ImGui::End();
 }
 
-void SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
+bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 {
     const char* name = "Unnamed Entity";
     auto tag = entity.GetComponentIfExists<TagComponent>();
@@ -105,9 +122,10 @@ void SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
     static int32_t selectionStart = -1;
     static int32_t selectionEnd = -1;
 
-    ImGuiTreeNodeFlags nodeFlags = m_EntityMap[entity].Selected ? ImGuiTreeNodeFlags_Selected : 0;
+    ImGuiTreeNodeFlags nodeFlags = (m_EntityMap[entity].Selected ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth;
     bool opened = ImGui::TreeNodeEx(name, nodeFlags);
-    if (ImGui::IsItemClicked())
+    bool clicked = ImGui::IsItemClicked();
+    if (clicked)
     {
         SelectedSubmesh selection{ entity, nullptr, 0.0f };
         auto mesh = entity.GetComponentIfExists<MeshComponent>();
@@ -181,8 +199,26 @@ void SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
         }
     }
 
+    bool entityDeleted = false;
+    if (ImGui::BeginPopupContextItem())
+    {
+        if (ImGui::MenuItem("Delete"))
+            entityDeleted = true;
+
+        ImGui::EndPopup();
+    }
+
     if (opened)
         ImGui::TreePop();
+
+    if (entityDeleted)
+    {
+        m_EntityMap.erase(entity);
+        m_SelectionContext->clear();
+        m_Context->DeleteEntity(entity);
+    }
+
+    return clicked;
 }
 
 void SceneHierarchyPanel::DrawComponents(Entity& entity)

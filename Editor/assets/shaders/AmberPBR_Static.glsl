@@ -34,12 +34,12 @@ void main()
 	vs_Output.TexCoord = a_TexCoords;
 	if (u_NormalTexToggle)
 	{
-		vec3 T = u_NormalTransform * a_Tangent;
+		vec3 T = a_Tangent;
 		T = normalize(T - dot(T, N) * N);
 
 		vec3 B = cross(N, T);
 
-		mat3 TBN = mat3(T, B, N);
+		mat3 TBN = inverse(u_NormalTransform * mat3(T, B, N));
 		vs_Output.FragPos = TBN * vec3(worldPos);
 		vs_Output.ViewPos = TBN * u_ViewPosition;
 		vs_Output.LightDir = TBN * u_LightDirection;
@@ -92,6 +92,8 @@ uniform bool u_RoughnessTexToggle;
 uniform samplerCube u_IrradianceTexture;
 uniform samplerCube u_RadianceTexture;
 uniform sampler2D u_BRDFLUT;
+
+uniform float u_EnvironmentRotation;
 
 struct PBRParameters
 {
@@ -148,6 +150,18 @@ vec3 FresnelSchlickRoughness(float HdotV, vec3 F0, float roughness)
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - HdotV, 5.0);
 }
 
+vec3 RotateAboutY(float angle, vec3 vec)
+{
+	angle = radians(angle);
+	mat3 transform = { 
+		vec3(cos(angle), 0.0, sin(angle)),
+		vec3(	0.0    , 1.0,	0.0     ),
+		vec3(-sin(angle), 0.0, cos(angle))
+	};
+
+	return transform * vec;
+}
+
 vec3 Lighting(vec3 F0)
 {
 	vec3 L = normalize(fs_Input.LightDir);
@@ -174,7 +188,7 @@ vec3 IBL(vec3 F0, vec3 R)
 	vec3 diffuse = k_D * irradiance * m_Params.Albedo;
 
 	const float MAX_RADIANCE_LOD = textureQueryLevels(u_RadianceTexture) - 1.0;
-	vec3 radiance = textureLod(u_RadianceTexture, R, m_Params.Roughness * MAX_RADIANCE_LOD).rgb;
+	vec3 radiance = textureLod(u_RadianceTexture, RotateAboutY(u_EnvironmentRotation, R), m_Params.Roughness * MAX_RADIANCE_LOD).rgb;
 	vec2 brdf  = texture(u_BRDFLUT, vec2(m_Params.NdotV, 1.0 - m_Params.Roughness)).rg;
 	vec3 specular = radiance * (k_S * brdf.x + brdf.y);
 
