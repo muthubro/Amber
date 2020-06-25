@@ -1,13 +1,13 @@
 #include "EditorLayer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 
-#include "Amber/ImGui/ImGuizmo.h"
+#include <Amber/ImGui/ImGuizmo.h>
 
 #include "Editor/ImGui/ImGuiUtils.h"
 
@@ -29,10 +29,6 @@ static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(con
 
 EditorLayer::EditorLayer()
     : Layer("Editor Layer")
-{
-}
-
-EditorLayer::~EditorLayer()
 {
 }
 

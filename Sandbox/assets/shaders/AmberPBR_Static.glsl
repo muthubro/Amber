@@ -4,16 +4,17 @@
 layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec3 a_Tangent;
-layout(location = 3) in vec2 a_TexCoords;
+layout(location = 3) in vec3 a_Binormal;
+layout(location = 4) in vec2 a_TexCoords;
 
 out VertexOutput
 {
-	vec3 v_FragPos;
-	vec3 v_Normal;
-	vec2 v_TexCoord;
-	vec3 v_ViewPos;
-	vec3 v_LightDir;
-} vsOutput;
+	vec3 FragPos;
+	vec3 Normal;
+	vec2 TexCoord;
+	vec3 ViewPos;
+	vec3 LightDir;
+} vs_Output;
 
 uniform vec3 u_ViewPosition;
 uniform vec3 u_LightDirection;
@@ -29,25 +30,25 @@ void main()
 	vec4 worldPos = u_Transform * vec4(a_Position, 1.0);
 	vec3 N = a_Normal;
 
-	vsOutput.v_Normal = u_NormalTransform * N;
-	vsOutput.v_TexCoord = a_TexCoords;
+	vs_Output.Normal = u_NormalTransform * N;
+	vs_Output.TexCoord = a_TexCoords;
 	if (u_NormalTexToggle)
 	{
-		vec3 T = u_NormalTransform * a_Tangent;
+		vec3 T = a_Tangent;
 		T = normalize(T - dot(T, N) * N);
 
 		vec3 B = cross(N, T);
 
-		mat3 TBN = u_NormalTransform * mat3(T, B, N);
-		vsOutput.v_FragPos = TBN * vec3(worldPos);
-		vsOutput.v_ViewPos = TBN * u_ViewPosition;
-		vsOutput.v_LightDir = TBN * u_LightDirection;
+		mat3 TBN = inverse(u_NormalTransform * mat3(T, B, N));
+		vs_Output.FragPos = TBN * vec3(worldPos);
+		vs_Output.ViewPos = TBN * u_ViewPosition;
+		vs_Output.LightDir = TBN * u_LightDirection;
 	}
 	else
 	{
-		vsOutput.v_FragPos = vec3(worldPos);
-		vsOutput.v_ViewPos = u_ViewPosition;
-		vsOutput.v_LightDir = u_LightDirection;
+		vs_Output.FragPos = vec3(worldPos);
+		vs_Output.ViewPos = u_ViewPosition;
+		vs_Output.LightDir = u_LightDirection;
 	}
 
 	gl_Position = u_ViewProjection * worldPos;
@@ -58,12 +59,12 @@ void main()
 
 in VertexOutput
 {
-	vec3 v_FragPos;
-	vec3 v_Normal;
-	vec2 v_TexCoord;
-	vec3 v_ViewPos;
-	vec3 v_LightDir;
-} fsInput;
+	vec3 FragPos;
+	vec3 Normal;
+	vec2 TexCoord;
+	vec3 ViewPos;
+	vec3 LightDir;
+} fs_Input;
 
 out vec4 o_Color;
 
@@ -91,6 +92,8 @@ uniform bool u_RoughnessTexToggle;
 uniform samplerCube u_IrradianceTexture;
 uniform samplerCube u_RadianceTexture;
 uniform sampler2D u_BRDFLUT;
+
+uniform float u_EnvironmentRotation;
 
 struct PBRParameters
 {
@@ -147,9 +150,21 @@ vec3 FresnelSchlickRoughness(float HdotV, vec3 F0, float roughness)
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - HdotV, 5.0);
 }
 
+vec3 RotateAboutY(float angle, vec3 vec)
+{
+	angle = radians(angle);
+	mat3 transform = { 
+		vec3(cos(angle), 0.0, sin(angle)),
+		vec3(	0.0    , 1.0,	0.0     ),
+		vec3(-sin(angle), 0.0, cos(angle))
+	};
+
+	return transform * vec;
+}
+
 vec3 Lighting(vec3 F0)
 {
-	vec3 L = normalize(fsInput.v_LightDir);
+	vec3 L = normalize(fs_Input.LightDir);
 	vec3 H = normalize(L + m_Params.View);
 	float NdotL = max(dot(m_Params.Normal, L), 0.0);
 
@@ -173,7 +188,7 @@ vec3 IBL(vec3 F0, vec3 R)
 	vec3 diffuse = k_D * irradiance * m_Params.Albedo;
 
 	const float MAX_RADIANCE_LOD = textureQueryLevels(u_RadianceTexture) - 1.0;
-	vec3 radiance = textureLod(u_RadianceTexture, R, m_Params.Roughness * MAX_RADIANCE_LOD).rgb;
+	vec3 radiance = textureLod(u_RadianceTexture, RotateAboutY(u_EnvironmentRotation, R), m_Params.Roughness * MAX_RADIANCE_LOD).rgb;
 	vec2 brdf  = texture(u_BRDFLUT, vec2(m_Params.NdotV, 1.0 - m_Params.Roughness)).rg;
 	vec3 specular = radiance * (k_S * brdf.x + brdf.y);
 
@@ -182,13 +197,13 @@ vec3 IBL(vec3 F0, vec3 R)
 
 void main()
 {
-	m_Params.Albedo    = u_AlbedoTexToggle ? texture(u_AlbedoTexture, fsInput.v_TexCoord).rgb : u_Albedo;
-	m_Params.Metalness = u_MetalnessTexToggle ? texture(u_MetalnessTexture, fsInput.v_TexCoord).r : u_Metalness;
-	m_Params.Roughness = u_RoughnessTexToggle ? texture(u_RoughnessTexture, fsInput.v_TexCoord).r : u_Roughness;
+	m_Params.Albedo    = u_AlbedoTexToggle ? texture(u_AlbedoTexture, fs_Input.TexCoord).rgb : u_Albedo;
+	m_Params.Metalness = u_MetalnessTexToggle ? texture(u_MetalnessTexture, fs_Input.TexCoord).r : u_Metalness;
+	m_Params.Roughness = u_RoughnessTexToggle ? texture(u_RoughnessTexture, fs_Input.TexCoord).r : u_Roughness;
 	m_Params.Roughness = max(m_Params.Roughness, 0.05);
 
-	m_Params.Normal = u_NormalTexToggle ? texture(u_NormalTexture, fsInput.v_TexCoord).rgb * 2.0 - 1.0 : normalize(fsInput.v_Normal);
-	m_Params.View = normalize(fsInput.v_ViewPos - fsInput.v_FragPos);
+	m_Params.Normal = u_NormalTexToggle ? texture(u_NormalTexture, fs_Input.TexCoord).rgb * 2.0 - 1.0 : normalize(fs_Input.Normal);
+	m_Params.View = normalize(fs_Input.ViewPos - fs_Input.FragPos);
 	m_Params.NdotV = clamp(dot(m_Params.Normal, m_Params.View), 0.0, 1.0);
 
 	vec3 F0 = vec3(0.04);

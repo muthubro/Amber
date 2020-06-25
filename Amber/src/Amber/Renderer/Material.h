@@ -180,7 +180,7 @@ public:
         return dest;
     }
 
-    Ref<Texture> GetResource(const std::string& name) const
+    Ref<Texture> Get(const std::string& name) const
     {
         auto resource = m_Material->FindResource(name);
         AB_CORE_ASSERT(resource, "Could not find texture!");

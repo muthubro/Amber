@@ -19,4 +19,5 @@ private:
     Amber::Entity m_CameraEntity;
     Amber::Entity m_MeshEntity;
     Amber::Ref<Amber::Material> m_MeshMaterial;
+    Amber::Ref<Amber::Shader> m_FinalShader;
 };

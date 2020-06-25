@@ -521,21 +521,21 @@ Ref<Texture2D> Mesh::GetNormalTexture(Submesh& submesh) const
 {
     uint32_t index = submesh.MaterialIndex;
     auto& materialInstance = m_Materials[index];
-    return submesh.HasNormalMap ? Ref<Texture2D>(materialInstance->GetResource("u_NormalTexture")) : nullptr;
+    return submesh.HasNormalMap ? Ref<Texture2D>(materialInstance->Get("u_NormalTexture")) : nullptr;
 }
 
 Ref<Texture2D> Mesh::GetRoughnessTexture(Submesh& submesh) const
 {
     uint32_t index = submesh.MaterialIndex;
     auto& materialInstance = m_Materials[index];
-    return submesh.HasRoughnessMap ? Ref<Texture2D>(materialInstance->GetResource("u_RoughnessTexture")) : nullptr;
+    return submesh.HasRoughnessMap ? Ref<Texture2D>(materialInstance->Get("u_RoughnessTexture")) : nullptr;
 }
 
 Ref<Texture2D> Mesh::GetMetalnessTexture(Submesh& submesh) const
 {
     uint32_t index = submesh.MaterialIndex;
     auto& materialInstance = m_Materials[index];
-    return submesh.HasMetalnessMap ? Ref<Texture2D>(materialInstance->GetResource("u_MetalnessTexture")) : nullptr;
+    return submesh.HasMetalnessMap ? Ref<Texture2D>(materialInstance->Get("u_MetalnessTexture")) : nullptr;
 }
 
 bool Mesh::UsingAlbedoTexture(Submesh& submesh) const

@@ -183,17 +183,6 @@ void SceneRenderer::CompositePass()
     Renderer::DrawFullscreenQuad(material);
 
     Renderer::EndRenderPass();
-
-    // For Sandbox3D
-    //auto fbo = s_Data.CompositePass->GetSpecification().TargetFramebuffer;
-    //Amber::RenderCommand::Submit([fbo] {
-    //    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->GetRendererID());
-    //    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    //    glBlitFramebuffer(
-    //        0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
-    //        0, 0, fbo->GetSpecification().Width, fbo->GetSpecification().Height,
-    //        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    //});
 }
 
 void SceneRenderer::FlushDrawList()

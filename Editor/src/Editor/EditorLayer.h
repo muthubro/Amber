@@ -52,7 +52,6 @@ class EditorLayer : public Layer
 {
 public:
     EditorLayer();
-    ~EditorLayer();
 
     void OnAttach() override;
     void OnDetach() override;

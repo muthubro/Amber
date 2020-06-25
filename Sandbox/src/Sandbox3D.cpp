@@ -3,9 +3,6 @@
 #include <glm/glm.hpp>
 #include <ImGui/imgui.h>
 
-// INSTRUCTIONS:
-// Before running this, go to SceneRenderer and uncomment the commented section in CompositePass
-
 Sandbox3D::Sandbox3D()
 {
 }
@@ -36,6 +33,8 @@ void Sandbox3D::OnAttach()
     auto& light = m_Scene->GetLight();
     light.Direction = { -0.5f, 0.5f, 1.0f };
     light.Radiance = { 1.0f, 1.0f, 1.0f };
+
+    m_FinalShader = Amber::Shader::Create("assets/shaders/SceneComposite.glsl");
 }
 
 void Sandbox3D::OnEvent(Amber::Event& e)
@@ -49,6 +48,18 @@ void Sandbox3D::OnUpdate(Amber::Timestep ts)
     Amber::RenderCommand::Clear();
 
     m_Scene->OnUpdate(ts);
+
+    auto& camera = m_CameraEntity.GetComponent<Amber::CameraComponent>().Camera;
+
+    Amber::Renderer2D::BeginScene(camera.GetViewProjection());
+
+    auto material = Amber::Ref<Amber::MaterialInstance>::Create(Amber::Ref<Amber::Material>::Create(m_FinalShader));
+    material->Set("u_Exposure", camera.GetExposure());
+    material->Set("u_Texture", Amber::SceneRenderer::GetFinalColorBuffer());
+    material->Set("u_TextureSamples", 8);
+    Amber::Renderer2D::DrawFullscreenQuad(material);
+
+    Amber::Renderer2D::EndScene();
 }
 
 void Sandbox3D::OnImGuiRender()
