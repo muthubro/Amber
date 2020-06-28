@@ -4,11 +4,11 @@
 
 #include "Amber/Core/Base.h"
 
-#include "Amber/Core/Math/AABB.h"
+#include "Amber/Math/AABB.h"
 
 #include "Amber/Renderer/Mesh.h"
 
-#include "Amber/Scene/Component.h"
+#include "Amber/Scene/Components.h"
 #include "Amber/Scene/Scene.h"
 
 #include <entt/entt.hpp>
@@ -16,7 +16,7 @@
 namespace Amber
 {
 
-class Entity : public RefCounted
+class Entity
 {
 public:
     Entity() = default;
@@ -54,6 +54,8 @@ public:
 
     bool operator==(const Entity& other) { return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene; }
     bool operator!=(const Entity& other) { return !(*this == other); }
+
+    operator uint32_t() { return (uint32_t)m_EntityHandle; }
 
 private:
     entt::entity m_EntityHandle;

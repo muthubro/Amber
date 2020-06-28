@@ -31,9 +31,11 @@ static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(con
 SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
     : m_Context(context)
 {
-    for (auto& entity : context->GetAllEntities())
+    for (auto& entityID : context->GetAllEntities())
     {
-        m_EntityMap[entity] = EntityData();
+        Entity entity(entityID, context.Raw());
+
+        m_EntityMap[(uint32_t)entity] = EntityData();
         auto [translation, orientation, scale] = GetTransformDecomposition(entity.GetComponent<TransformComponent>());
         m_EntityMap[entity].Orientation = glm::degrees(glm::eulerAngles(orientation));
     }
@@ -61,7 +63,7 @@ void SceneHierarchyPanel::SetSelection(std::vector<SelectedSubmesh>& selection)
     m_SelectionContext = &selection;
 
     for (const auto& entity : m_Context->GetAllEntities())
-        m_EntityMap[entity].Selected = false;
+        m_EntityMap[(uint32_t)entity].Selected = false;
 
     for (const auto& selection : *m_SelectionContext)
         m_EntityMap[selection.Entity].Selected = true;
@@ -76,6 +78,7 @@ void SceneHierarchyPanel::OnImGuiRender()
     int32_t i = 0;
     for (auto& entity : entities)
     {
+        Entity entity(entity, m_Context.Raw());
         if (m_EntityMap.find(entity) == m_EntityMap.end())
         {
             auto [translation, orientation, scale] = GetTransformDecomposition(entity.GetComponent<TransformComponent>());
@@ -153,18 +156,19 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 
                 m_SelectionContext->clear();
                 for (const auto& entity : m_Context->GetAllEntities())
-                    m_EntityMap[entity].Selected = false;
+                    m_EntityMap[(uint32_t)entity].Selected = false;
 
                 const auto& entities = m_Context->GetAllEntities();
                 for (int32_t i = selectionStart; i <= selectionEnd; i++)
                 {
-                    SelectedSubmesh entitySelection{ entities[i], nullptr, 0.0f };
+                    Entity entity_i(entities[i], m_Context.Raw());
+                    SelectedSubmesh entitySelection{ entity_i, nullptr, 0.0f };
                     auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
                     if (mesh)
                         entitySelection.Mesh = &meshComponent->Mesh->GetSubmeshes()[0];
                     
                     m_SelectionContext->push_back(entitySelection);
-                    m_EntityMap[entities[i]].Selected = true;
+                    m_EntityMap[entity_i].Selected = true;
                 }
             }
         }
@@ -193,7 +197,7 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
                 m_SelectionContext->push_back(selection);
 
                 for (const auto& entity : m_Context->GetAllEntities())
-                    m_EntityMap[entity].Selected = false;
+                    m_EntityMap[(uint32_t)entity].Selected = false;
                 m_EntityMap[selection.Entity].Selected = true;
             }
         }
@@ -286,12 +290,103 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(CameraComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
         {
             BeginPropertyGrid();
-            ImGui::TreePop();
             EndPropertyGrid();
+            ImGui::TreePop();
         }
         ImGui::Separator();
     }
-    ImGui::Columns();
+
+    auto script = entity.GetComponentIfExists<ScriptComponent>();
+    if (script)
+    {
+        if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(ScriptComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Script"))
+        {
+            BeginPropertyGrid();
+            Property("", script->ModuleName.c_str());
+
+            auto& fieldMap = ScriptEngine::GetFieldMap();
+            if (fieldMap.find(script->ModuleName) != fieldMap.end())
+            {
+                auto& fields = fieldMap.at(script->ModuleName);
+                for (auto& field : fields)
+                {
+                    switch (field.Type)
+                    {
+                        case FieldType::Bool:
+                        {
+                            bool value = field.GetValue<bool>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::Int:
+                        {
+                            int32_t value = field.GetValue<int32_t>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::UInt:
+                        {
+                            uint32_t value = field.GetValue<uint32_t>();
+                            if (Property(field.Name.c_str(), value, 1, 2048))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::Float:
+                        {
+                            float value = field.GetValue<float>();
+                            if (Property(field.Name.c_str(), value, 0.001f, 10.0f, 0.001f))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::Vec2:
+                        {
+                            glm::vec2 value = field.GetValue<glm::vec2>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::Vec3:
+                        {
+                            glm::vec3 value = field.GetValue<glm::vec3>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::Vec4:
+                        {
+                            glm::vec4 value = field.GetValue<glm::vec4>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+
+                        case FieldType::String:
+                        {
+                            char* value = field.GetValue<char*>();
+                            if (Property(field.Name.c_str(), value))
+                                field.SetValue(value);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (ImGui::Button("Run Script"))
+                ScriptEngine::OnCreateEntity(entity);
+            
+            EndPropertyGrid();
+            ImGui::TreePop();
+        }
+        ImGui::Separator();
+    }
 }
 
 } // Editor

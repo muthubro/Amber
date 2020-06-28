@@ -30,6 +30,7 @@ static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(con
 EditorLayer::EditorLayer()
     : Layer("Editor Layer")
 {
+    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll");
 }
 
 void EditorLayer::OnAttach()
@@ -87,17 +88,20 @@ void EditorLayer::OnAttach()
 
     m_Scene->SetEnvironment(environment);
 
-    auto entity = m_Scene->CreateEntity("M1911");
-    auto mesh = Ref<Mesh>::Create("assets/meshes/m1911/M1911Materials.fbx");
+    auto entity = m_Scene->CreateEntity("Test Model");
+    auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
     entity.AddComponent<MeshComponent>(mesh);
 
     entity = m_Scene->CreateEntity("Cerberus");
     mesh = Ref<Mesh>::Create("assets/meshes/cerberus/CerberusMaterials.fbx");
     entity.AddComponent<MeshComponent>(mesh);
     
-    entity = m_Scene->CreateEntity("Test Model");
-    mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
+    entity = m_Scene->CreateEntity("M1911");
+    mesh = Ref<Mesh>::Create("assets/meshes/m1911/M1911Materials.fbx");
     entity.AddComponent<MeshComponent>(mesh);
+
+    auto mapGenerator = m_Scene->CreateEntity("Map Generator");
+    mapGenerator.AddComponent<ScriptComponent>("Terrain.MapGenerator");
 
     auto& light = m_Scene->GetLight();
     light.Direction = { -0.5f, 0.5f, 1.0f };
@@ -150,7 +154,7 @@ void EditorLayer::OnUpdate(Timestep ts)
                 if (!selection.Mesh)
                     continue;
 
-                auto component = selection.Entity.GetComponentIfExists<BoxCollider>();
+                auto component = selection.Entity.GetComponentIfExists<BoxColliderComponent>();
                 Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
             }
         }
@@ -637,7 +641,7 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                     float t;
                     if (ray.IntersectsAABB(submesh.BoundingBox, t))
                     {
-                        Entity selectedEntity = *m_Scene->GetEntity(entity);
+                        Entity selectedEntity(entity, m_Scene.Raw());
 
                         // TODO: Triangle check for animated meshes?
                         if (mesh->IsAnimated())
@@ -745,7 +749,7 @@ std::pair<glm::vec3, glm::vec3> EditorLayer::CastRay(float x, float y)
 
 std::pair<float, float> EditorLayer::GetMousePosition()
 {
-    auto [x, y] = ImGui::GetMousePos();
+    auto [x, y] = Input::GetMousePosition();
     x -= m_ViewportBounds[0].x;
     y -= m_ViewportBounds[0].y;
 

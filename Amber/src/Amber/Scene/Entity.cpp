@@ -1,12 +1,18 @@
 #include "abpch.h"
 #include "Entity.h"
 
+#include "Amber/Script/ScriptEngine.h"
+
+#include "Scene.h"
+
 namespace Amber
 {
 
 void OnMeshConstruct(entt::registry& registry, entt::entity entity)
 {
     const Ref<Mesh> mesh = registry.get<MeshComponent>(entity);
+    if (!mesh)
+        return;
 
     glm::vec3 min = glm::vec3(std::numeric_limits<float>::max());
     glm::vec3 max = glm::vec3(-std::numeric_limits<float>::max());
@@ -26,13 +32,24 @@ void OnMeshConstruct(entt::registry& registry, entt::entity entity)
     }
     
     AABB aabb(min, max);
-    registry.emplace<BoxCollider>(entity, aabb);
+    registry.emplace<BoxColliderComponent>(entity, aabb);
+}
+
+void OnScriptConstruct(entt::registry& registry, entt::entity entity)
+{
+    uint32_t sceneID;
+    auto view = registry.view<SceneComponent>();
+    for (auto entity : view)
+        sceneID = registry.get<SceneComponent>(entity);
+
+    ScriptEngine::OnInitEntity(registry.get<ScriptComponent>(entity), (uint32_t)entity, sceneID);
 }
 
 Entity::Entity(entt::entity handle, Scene* scene)
     : m_EntityHandle(handle), m_Scene(scene)
 {
     m_Scene->m_Registry.on_construct<MeshComponent>().connect<&OnMeshConstruct>();
+    m_Scene->m_Registry.on_construct<ScriptComponent>().connect<&OnScriptConstruct>();
 }
 
 }

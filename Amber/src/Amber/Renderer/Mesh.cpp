@@ -271,196 +271,20 @@ Mesh::Mesh(const std::string& filepath)
     uint32_t materialCount = m_Scene->mNumMaterials;
     m_Materials.resize(materialCount);
     m_Textures.resize(materialCount);
+    std::unordered_map<uint32_t, bool> visited;
     for (uint32_t i = 0; i < m_Scene->mNumMeshes; i++)
     {
         auto& submesh = m_Submeshes[i];
         aiMaterial* material = m_Scene->mMaterials[submesh.MaterialIndex];
-        auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
-        m_Materials[i] = materialInstance;
-
-        AB_MESH_LOG("  {0} (Index = {1})", material->GetName().data, i);
-
-        aiColor3D diffuseColor;
-        float shininess, roughness, metalness;
-        material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
-        material->Get(AI_MATKEY_SHININESS, shininess);
-        material->Get(AI_MATKEY_REFLECTIVITY, metalness);
-        roughness = 1.0f - sqrt(shininess * 0.01f);
-
-        AB_MESH_LOG("    COLOR     = {0}, {1}, {2}", diffuseColor.r, diffuseColor.g, diffuseColor.b);
-        AB_MESH_LOG("    ROUGHNESS = {0}", roughness);
-        AB_MESH_LOG("    METALNESS = {0}", metalness);
-
-        uint32_t textureCount = material->GetTextureCount(aiTextureType_DIFFUSE);
-        AB_MESH_LOG("    {} diffuse textures found.", textureCount);
-
-        textureCount = material->GetTextureCount(aiTextureType_SPECULAR);
-        AB_MESH_LOG("    {} specular textures found.", textureCount);
-
-        aiString texturePath;
-        if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
-        {
-            std::string path = GetTexturePath(filepath, texturePath);
-            AB_MESH_LOG("    Albedo map path = {0}", path);
-
-            auto albedo = Texture2D::Create(path, true);
-            if (albedo->Loaded())
-            {
-                m_Textures[i] = albedo;
-                materialInstance->Set("u_AlbedoTexture", albedo);
-                materialInstance->Set("u_AlbedoTexToggle", 1);
-                submesh.HasAlbedoMap = true;
-            }
-            else
-            {
-                AB_CORE_ERROR("Could not load albedo texture {}.", path);
-                materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
-            }
-        }
-        else
-        {
-            AB_MESH_LOG("    No albedo textures found.");
-
-            materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
-        }
-
-        if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
-        {
-            std::string path = GetTexturePath(filepath, texturePath);
-            AB_MESH_LOG("    Normal map path = {0}", path);
-
-            auto normalMap = Texture2D::Create(path);
-            if (normalMap->Loaded())
-            {
-                materialInstance->Set("u_NormalTexture", normalMap);
-                materialInstance->Set("u_NormalTexToggle", 1);
-                submesh.HasNormalMap = true;
-            }
-            else
-            {
-                AB_CORE_ERROR("Could not load normal map {}", path);
-            }
-        }
-        else
-        {
-            AB_MESH_LOG("    No normal textures found.");
-        }
-
-        if (material->GetTexture(aiTextureType_SHININESS, 0, &texturePath) == AI_SUCCESS)
-        {
-            std::string path = GetTexturePath(filepath, texturePath);
-            AB_MESH_LOG("    Roughness(shininess) map path = {0}", path);
-
-            auto roughnessMap = Texture2D::Create(path);
-            if (roughnessMap->Loaded())
-            {
-                materialInstance->Set("u_RoughnessTexture", roughnessMap);
-                materialInstance->Set("u_RoughnessTexToggle", 1);
-                submesh.HasRoughnessMap = true;
-            }
-            else
-            {
-                AB_CORE_ERROR("Could not load roughness texture {}", path);
-            }
-        }
-        else
-        {
-            AB_MESH_LOG("    No roughness textures found.");
-            materialInstance->Set("u_Roughness", roughness);
-        }
-
-        bool metalnessFound = false;
-        for (uint32_t i = 0; i < material->mNumProperties; i++)
-        {
-            auto prop = material->mProperties[i];
-
-#if DEBUG_PRINT_ALL_PROPS
-            AB_MESH_LOG("Material Property:");
-            AB_MESH_LOG("  Name = {0}", prop->mKey.data);
-            // AB_MESH_LOG("  Type = {0}", prop->mType);
-            // AB_MESH_LOG("  Size = {0}", prop->mDataLength);
-            float data = *(float*)prop->mData;
-            AB_MESH_LOG("  Value = {0}", data);
-
-            switch (prop->mSemantic)
-            {
-                case aiTextureType_NONE:
-                    AB_MESH_LOG("  Semantic = aiTextureType_NONE");
-                    break;
-                case aiTextureType_DIFFUSE:
-                    AB_MESH_LOG("  Semantic = aiTextureType_DIFFUSE");
-                    break;
-                case aiTextureType_SPECULAR:
-                    AB_MESH_LOG("  Semantic = aiTextureType_SPECULAR");
-                    break;
-                case aiTextureType_AMBIENT:
-                    AB_MESH_LOG("  Semantic = aiTextureType_AMBIENT");
-                    break;
-                case aiTextureType_EMISSIVE:
-                    AB_MESH_LOG("  Semantic = aiTextureType_EMISSIVE");
-                    break;
-                case aiTextureType_HEIGHT:
-                    AB_MESH_LOG("  Semantic = aiTextureType_HEIGHT");
-                    break;
-                case aiTextureType_NORMALS:
-                    AB_MESH_LOG("  Semantic = aiTextureType_NORMALS");
-                    break;
-                case aiTextureType_SHININESS:
-                    AB_MESH_LOG("  Semantic = aiTextureType_SHININESS");
-                    break;
-                case aiTextureType_OPACITY:
-                    AB_MESH_LOG("  Semantic = aiTextureType_OPACITY");
-                    break;
-                case aiTextureType_DISPLACEMENT:
-                    AB_MESH_LOG("  Semantic = aiTextureType_DISPLACEMENT");
-                    break;
-                case aiTextureType_LIGHTMAP:
-                    AB_MESH_LOG("  Semantic = aiTextureType_LIGHTMAP");
-                    break;
-                case aiTextureType_REFLECTION:
-                    AB_MESH_LOG("  Semantic = aiTextureType_REFLECTION");
-                    break;
-                case aiTextureType_METALNESS:
-                    AB_MESH_LOG("  Semantic = aiTextureType_METALNESS");
-                    break;
-                case aiTextureType_UNKNOWN:
-                    AB_MESH_LOG("  Semantic = aiTextureType_UNKNOWN");
-                    AB_MESH_LOG("  Type = {}", prop->mType);
-                    break;
-            }
-#endif
-            // TODO: Try to improve this
-            if (prop->mType == aiPTI_String && std::string(prop->mKey.data) == "$raw.ReflectionFactor|file")
-            {
-                uint32_t strLength = *(uint32_t*)prop->mData;
-                std::string texturePath(prop->mData + 4, strLength);
-
-                std::string path = GetTexturePath(filepath, texturePath);
-                AB_MESH_LOG("    Metalness(reflection factor) map path = {0}", path);
-
-                auto metalnessMap = Texture2D::Create(path);
-                if (metalnessMap->Loaded())
-                {
-                    materialInstance->Set("u_MetalnessTexture", metalnessMap);
-                    materialInstance->Set("u_MetalnessTexToggle", 1);
-                    submesh.HasMetalnessMap = true;
-                }
-                else
-                {
-                    AB_CORE_ERROR("Could not load metalness texture {}", path);
-                }
-
-                metalnessFound = true;
-                break;
-            }
-        }
-        if (!metalnessFound)
-        {
-            AB_MESH_LOG("    No metalness textures found.");
-            materialInstance->Set("u_Metalness", metalness);
-        }
-
-        AB_MESH_LOG("");
+        SetMaterial(material, i, &submesh);
+        visited[submesh.MaterialIndex] = true;
+    }
+    for (uint32_t i = 0; i < m_Scene->mNumMaterials; i++)
+    {
+        if (visited[i])
+            continue;
+        aiMaterial* material = m_Scene->mMaterials[i];
+        SetMaterial(material, i + m_Scene->mNumMeshes);
     }
 
     AB_MESH_LOG("-----------------------------------------------");
@@ -634,6 +458,202 @@ void Mesh::SetMetalnessTexture(Submesh& submesh, bool use, Ref<Texture2D> metaln
         submesh.HasMetalnessMap = true;
     }
     materialInstance->Set("u_MetalnessTexToggle", (uint32_t)(use && submesh.HasMetalnessMap));
+}
+
+void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
+{
+    auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
+    m_Materials[index] = materialInstance;
+
+    AB_MESH_LOG("  {0} (Index = {1})", material->GetName().data, index);
+
+    aiColor3D diffuseColor;
+    float shininess, roughness, metalness;
+    material->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
+    material->Get(AI_MATKEY_SHININESS, shininess);
+    material->Get(AI_MATKEY_REFLECTIVITY, metalness);
+    roughness = 1.0f - sqrt(shininess * 0.01f);
+    metalness = glm::clamp(metalness, 0.0f, 1.0f);
+    roughness = glm::clamp(roughness, 0.0f, 1.0f);
+
+    AB_MESH_LOG("    COLOR     = {0}, {1}, {2}", diffuseColor.r, diffuseColor.g, diffuseColor.b);
+    AB_MESH_LOG("    ROUGHNESS = {0}", roughness);
+    AB_MESH_LOG("    METALNESS = {0}", metalness);
+
+    uint32_t textureCount = material->GetTextureCount(aiTextureType_DIFFUSE);
+    AB_MESH_LOG("    {} diffuse textures found.", textureCount);
+
+    textureCount = material->GetTextureCount(aiTextureType_SPECULAR);
+    AB_MESH_LOG("    {} specular textures found.", textureCount);
+
+    aiString texturePath;
+    if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
+    {
+        std::string path = GetTexturePath(m_FilePath, texturePath);
+        AB_MESH_LOG("    Albedo map path = {0}", path);
+
+        auto albedo = Texture2D::Create(path, true);
+        if (albedo->Loaded())
+        {
+            m_Textures[index] = albedo;
+            materialInstance->Set("u_AlbedoTexture", albedo);
+            materialInstance->Set("u_AlbedoTexToggle", 1);
+            if (submesh)
+                submesh->HasAlbedoMap = true;
+        }
+        else
+        {
+            AB_CORE_ERROR("Could not load albedo texture {}.", path);
+            materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
+        }
+    }
+    else
+    {
+        AB_MESH_LOG("    No albedo textures found.");
+
+        materialInstance->Set("u_Albedo", glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
+    }
+
+    if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
+    {
+        std::string path = GetTexturePath(m_FilePath, texturePath);
+        AB_MESH_LOG("    Normal map path = {0}", path);
+
+        auto normalMap = Texture2D::Create(path);
+        if (normalMap->Loaded())
+        {
+            materialInstance->Set("u_NormalTexture", normalMap);
+            materialInstance->Set("u_NormalTexToggle", 1);
+            if (submesh)
+                submesh->HasNormalMap = true;
+        }
+        else
+        {
+            AB_CORE_ERROR("Could not load normal map {}", path);
+        }
+    }
+    else
+    {
+        AB_MESH_LOG("    No normal textures found.");
+    }
+
+    if (material->GetTexture(aiTextureType_SHININESS, 0, &texturePath) == AI_SUCCESS)
+    {
+        std::string path = GetTexturePath(m_FilePath, texturePath);
+        AB_MESH_LOG("    Roughness(shininess) map path = {0}", path);
+
+        auto roughnessMap = Texture2D::Create(path);
+        if (roughnessMap->Loaded())
+        {
+            materialInstance->Set("u_RoughnessTexture", roughnessMap);
+            materialInstance->Set("u_RoughnessTexToggle", 1);
+            if (submesh)
+                submesh->HasRoughnessMap = true;
+        }
+        else
+        {
+            AB_CORE_ERROR("Could not load roughness texture {}", path);
+        }
+    }
+    else
+    {
+        AB_MESH_LOG("    No roughness textures found.");
+        materialInstance->Set("u_Roughness", roughness);
+    }
+
+    bool metalnessFound = false;
+    for (uint32_t i = 0; i < material->mNumProperties; i++)
+    {
+        auto prop = material->mProperties[i];
+
+#if DEBUG_PRINT_ALL_PROPS
+        AB_MESH_LOG("Material Property:");
+        AB_MESH_LOG("  Name = {0}", prop->mKey.data);
+        // AB_MESH_LOG("  Type = {0}", prop->mType);
+        // AB_MESH_LOG("  Size = {0}", prop->mDataLength);
+        float data = *(float*)prop->mData;
+        AB_MESH_LOG("  Value = {0}", data);
+
+        switch (prop->mSemantic)
+        {
+            case aiTextureType_NONE:
+                AB_MESH_LOG("  Semantic = aiTextureType_NONE");
+                break;
+            case aiTextureType_DIFFUSE:
+                AB_MESH_LOG("  Semantic = aiTextureType_DIFFUSE");
+                break;
+            case aiTextureType_SPECULAR:
+                AB_MESH_LOG("  Semantic = aiTextureType_SPECULAR");
+                break;
+            case aiTextureType_AMBIENT:
+                AB_MESH_LOG("  Semantic = aiTextureType_AMBIENT");
+                break;
+            case aiTextureType_EMISSIVE:
+                AB_MESH_LOG("  Semantic = aiTextureType_EMISSIVE");
+                break;
+            case aiTextureType_HEIGHT:
+                AB_MESH_LOG("  Semantic = aiTextureType_HEIGHT");
+                break;
+            case aiTextureType_NORMALS:
+                AB_MESH_LOG("  Semantic = aiTextureType_NORMALS");
+                break;
+            case aiTextureType_SHININESS:
+                AB_MESH_LOG("  Semantic = aiTextureType_SHININESS");
+                break;
+            case aiTextureType_OPACITY:
+                AB_MESH_LOG("  Semantic = aiTextureType_OPACITY");
+                break;
+            case aiTextureType_DISPLACEMENT:
+                AB_MESH_LOG("  Semantic = aiTextureType_DISPLACEMENT");
+                break;
+            case aiTextureType_LIGHTMAP:
+                AB_MESH_LOG("  Semantic = aiTextureType_LIGHTMAP");
+                break;
+            case aiTextureType_REFLECTION:
+                AB_MESH_LOG("  Semantic = aiTextureType_REFLECTION");
+                break;
+            case aiTextureType_METALNESS:
+                AB_MESH_LOG("  Semantic = aiTextureType_METALNESS");
+                break;
+            case aiTextureType_UNKNOWN:
+                AB_MESH_LOG("  Semantic = aiTextureType_UNKNOWN");
+                AB_MESH_LOG("  Type = {}", prop->mType);
+                break;
+        }
+#endif
+        // TODO: Try to improve this
+        if (prop->mType == aiPTI_String && std::string(prop->mKey.data) == "$raw.ReflectionFactor|file")
+        {
+            uint32_t strLength = *(uint32_t*)prop->mData;
+            std::string texturePath(prop->mData + 4, strLength);
+
+            std::string path = GetTexturePath(m_FilePath, texturePath);
+            AB_MESH_LOG("    Metalness(reflection factor) map path = {0}", path);
+
+            auto metalnessMap = Texture2D::Create(path);
+            if (metalnessMap->Loaded())
+            {
+                materialInstance->Set("u_MetalnessTexture", metalnessMap);
+                materialInstance->Set("u_MetalnessTexToggle", 1);
+                if (submesh)
+                    submesh->HasMetalnessMap = true;
+            }
+            else
+            {
+                AB_CORE_ERROR("Could not load metalness texture {}", path);
+            }
+
+            metalnessFound = true;
+            break;
+        }
+    }
+    if (!metalnessFound)
+    {
+        AB_MESH_LOG("    No metalness textures found.");
+        materialInstance->Set("u_Metalness", metalness);
+    }
+
+    AB_MESH_LOG("");
 }
 
 void Mesh::TraverseNodes(aiNode* node, const glm::mat4& parentTransform)

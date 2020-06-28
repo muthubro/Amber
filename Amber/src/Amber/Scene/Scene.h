@@ -48,9 +48,7 @@ public:
         return m_Registry.view<Types...>();
     }
 
-    std::vector<Entity> GetAllEntities();
-
-    Entity* GetEntity(const entt::entity handle) { return m_EntityMap.find(handle) == m_EntityMap.end() ? nullptr : m_EntityMap[handle].Raw(); }
+    std::vector<entt::entity> GetAllEntities();
 
     Light& GetLight() { return m_Light; }
     float GetSkyboxLOD() const { return m_SkyboxLOD; }
@@ -69,8 +67,6 @@ private:
     entt::registry m_Registry;
     entt::entity m_SceneEntity;
     uint32_t m_SceneID;
-
-    std::unordered_map<entt::entity, Ref<Entity>> m_EntityMap;
 
     Environment m_Environment;
     Light m_Light;

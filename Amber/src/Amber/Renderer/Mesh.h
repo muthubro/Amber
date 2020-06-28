@@ -7,7 +7,7 @@
 
 #include "Amber/Core/Time.h"
 
-#include "Amber/Core/Math/AABB.h"
+#include "Amber/Math/AABB.h"
 
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Shader.h"
@@ -18,6 +18,7 @@ struct aiAnimation;
 struct aiNode;
 struct aiNodeAnim;
 struct aiScene;
+struct aiMaterial;
 
 namespace Assimp
 {
@@ -190,6 +191,8 @@ private:
     std::vector<Ref<Texture2D>> m_Textures;
 
     inline static const uint32_t s_MaxBones = 100;
+
+    void SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh = nullptr);
 
     void TraverseNodes(aiNode* node, const glm::mat4& parentTransform = glm::mat4(1.0f));
 

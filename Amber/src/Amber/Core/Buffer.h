@@ -65,13 +65,13 @@ struct Buffer
             memset(Data, 0, Size);
     }
 
-    void Read(void* dest, size_t size, uint32_t offset = 0) const
+    void Read(void* dest, size_t size, size_t offset = 0) const
     {
         AB_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
         memcpy(dest, Data + offset, size);
     }
 
-    void Write(void* data, size_t size, uint32_t offset = 0)
+    void Write(void* data, size_t size, size_t offset = 0)
     {
         AB_CORE_ASSERT(offset + size <= Size, "Buffer overflow!");
         memcpy(Data + offset, data, size);

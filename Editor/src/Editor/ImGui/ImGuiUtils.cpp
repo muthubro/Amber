@@ -277,6 +277,11 @@ bool Property(const std::string& label, int& value, int min, int max, int speed)
     return modified;
 }
 
+bool Property(const std::string& label, uint32_t& value, uint32_t min, uint32_t max, int speed)
+{
+    return Property(label, *(int*)&value, (int)min, (int)max, speed);
+}
+
 bool Property(const std::string& label, float& value, float min, float max, float speed)
 {
     bool grid = s_ActivePropertyGrids;

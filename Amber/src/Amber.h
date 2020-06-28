@@ -14,9 +14,6 @@
 #include "Amber/Core/KeyCodes.h"
 #include "Amber/Core/MouseCodes.h"
 
-#include "Amber/Core/Math/AABB.h"
-#include "Amber/Core/Math/Ray.h"
-
 #include "Amber/Core/Events/ApplicationEvent.h"
 #include "Amber/Core/Events/Event.h"
 #include "Amber/Core/Events/KeyEvent.h"
@@ -28,9 +25,14 @@
 
 #include "Amber/ImGui/ImGuiLayer.h"
 
-#include "Amber/Utils/Random.h"
+#include "Amber/Math/AABB.h"
+#include "Amber/Math/Noise.h"
+#include "Amber/Math/Random.h"
+#include "Amber/Math/Ray.h"
 
 #include "Amber/Scene/Scene.h"
+
+#include "Amber/Script/ScriptEngine.h"
 
 //------------------Renderer----------------------//
 #include "Amber/Renderer/RenderCommand.h"

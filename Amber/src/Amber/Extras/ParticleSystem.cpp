@@ -5,7 +5,7 @@
 
 #include "Amber/Renderer/Renderer2D.h"
 
-#include "Amber/Utils/Random.h"
+#include "Amber/Math/Random.h"
 
 namespace Amber
 {
@@ -38,13 +38,13 @@ void ParticleSystem::Emit(const ParticleProps& properties, uint32_t particleCoun
 
         particle.Position = properties.Position;
         particle.Velocity = properties.Velocity;
-        particle.Velocity.x += properties.VelocityVariation.x * (Random::Float() - 0.5f);
-        particle.Velocity.y += properties.VelocityVariation.y * (Random::Float() - 0.5f);
+        particle.Velocity.x += properties.VelocityVariation.x * (Math::Random::Float() - 0.5f);
+        particle.Velocity.y += properties.VelocityVariation.y * (Math::Random::Float() - 0.5f);
         
         particle.ColorBegin = properties.ColorBegin;
         particle.ColorEnd = properties.ColorEnd;
 
-        particle.SizeBegin = properties.SizeBegin + properties.SizeVariation * (Random::Float() - 0.5f);
+        particle.SizeBegin = properties.SizeBegin + properties.SizeVariation * (Math::Random::Float() - 0.5f);
         particle.SizeEnd = properties.SizeEnd;
 
         particle.Lifetime = properties.Lifetime;
@@ -54,7 +54,7 @@ void ParticleSystem::Emit(const ParticleProps& properties, uint32_t particleCoun
 
         particle.DoesRotate = m_ParticleType == ParticleType::Square ? properties.DoesRotate : false;
         if (particle.DoesRotate)
-            particle.Rotation = (Random::Float() - 0.5f) * 45.0f;
+            particle.Rotation = (Math::Random::Float() - 0.5f) * 45.0f;
 
         switch (m_ParticleType)
         {

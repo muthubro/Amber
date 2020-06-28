@@ -5,6 +5,8 @@
 /bin-int/
 
 # Files
+Editor/assets/scripts/*.dll
+Editor/assets/scripts/*.pdb
 *.user
 *.vcxproj*
 *.sln

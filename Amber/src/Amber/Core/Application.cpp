@@ -9,7 +9,10 @@
 #include "Amber/Renderer/Framebuffer.h"
 #include "Amber/Renderer/Renderer.h"
 
-#include "Amber/Utils/Random.h"
+#include "Amber/Script/ScriptEngine.h"
+
+#include "Amber/Math/Noise.h"
+#include "Amber/Math/Random.h"
 
 namespace Amber 
 {
@@ -27,13 +30,16 @@ Application::Application(const ApplicationProps& props)
     m_Window->SetEventCallback(AB_BIND_EVENT_FN(Application::OnEvent));
     m_Window->SetVSync(true);
 
-    Random::Init();
+    Math::Random::Init();
+    Math::Noise::Init();
 
     m_ImGuiLayer = new ImGuiLayer();
     PushOverlay(m_ImGuiLayer);
 
     Renderer::Init();
     Renderer::WaitAndRender();
+
+    ScriptEngine::Init();
 }
 
 Application::~Application()

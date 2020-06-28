@@ -22,7 +22,11 @@ IncludeDir["Glad"] = "Amber/vendor/Glad/include"
 IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
 IncludeDir["glm"] = "Amber/vendor/glm"
 IncludeDir["ImGui"] = "Amber/vendor/ImGui"
+IncludeDir["mono"] = "Amber/vendor/mono/include"
 IncludeDir["stb"] = "Amber/vendor/stb/include"
+
+LibraryDir = {}
+LibraryDir["mono"] = "vendor/mono/lib"
 
 group "Dependencies"
     include "Amber/vendor/GLFW"
@@ -60,6 +64,7 @@ project "Amber"
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.ImGui}",
+        "%{IncludeDir.mono}",
         "%{IncludeDir.stb}"
     }
     links
@@ -84,15 +89,34 @@ project "Amber"
         runtime "Debug"
         symbols "on"
 
+        links "%{LibraryDir.mono}/Debug/mono-2.0-sgen.lib"
+
     filter "configurations:Release"
         defines "AB_RELEASE"
         runtime "Release"
         optimize "on"
 
+        links "%{LibraryDir.mono}/Release/mono-2.0-sgen.lib"
+
     filter "configurations:Dist"
         defines "AB_DIST"
         runtime "Release"
         optimize "on"
+
+        links "%{LibraryDir.mono}/Release/mono-2.0-sgen.lib"
+
+project "ScriptCore"
+    location "ScriptCore"
+    kind "SharedLib"
+    language "C#"
+
+    targetdir ("Editor/assets/scripts")
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+    files
+    {
+        "%{prj.name}/src/**.cs"
+    }
 
 group "Tools"
 project "Editor"
@@ -145,7 +169,8 @@ project "Editor"
 
 		postbuildcommands 
 		{
-			'{COPY} "../Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.dll" "%{cfg.targetdir}"'
+            '{COPY} "../Amber/vendor/Assimp/bin/Debug/assimp-vc142-mtd.dll" "%{cfg.targetdir}"',
+            '{COPY} "../Amber/vendor/mono/bin/Debug/mono-2.0-sgen.dll" "%{cfg.targetdir}"'
 		}
 
     filter "configurations:Release"
@@ -160,7 +185,8 @@ project "Editor"
 
 		postbuildcommands 
 		{
-			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"',
+            '{COPY} "../Amber/vendor/mono/bin/Release/mono-2.0-sgen.dll" "%{cfg.targetdir}"'
 		}
 
     filter "configurations:Dist"
@@ -175,10 +201,11 @@ project "Editor"
 
 		postbuildcommands 
 		{
-			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
+			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"',
+            '{COPY} "../Amber/vendor/mono/bin/Release/mono-2.0-sgen.dll" "%{cfg.targetdir}"'
 		}
 
-group ""
+group "Examples"
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
@@ -260,4 +287,22 @@ project "Sandbox"
 		postbuildcommands 
 		{
 			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
-		}
+        }
+        
+project "Terrain"
+    location "Examples/Terrain"
+    kind "SharedLib"
+    language "C#"
+
+    targetdir ("Editor/assets/scripts")
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+    files
+    {
+        "Examples/%{prj.name}/src/**.cs"
+    }
+
+    links
+    {
+        "ScriptCore"
+    }

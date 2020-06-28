@@ -1,4 +1,5 @@
 #include "abpch.h"
+#include "Amber/Core/FileSystem.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
@@ -7,7 +8,6 @@
 #include <Windows.h>
 
 #include "Amber/Core/Application.h"
-#include "Amber/Core/FileSystem.h"
 
 namespace Amber
 {
@@ -51,6 +51,41 @@ std::string FileSystem::OpenFileDialog(const std::string& filter, const std::str
         return ofn.lpstrFile;
 
     return std::string();
+}
+
+size_t FileSystem::ReadFile(const char* filepath, void** data)
+{
+    HANDLE file = CreateFileA(
+        filepath,
+        FILE_READ_DATA,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+    if (file == INVALID_HANDLE_VALUE)
+        return 0;
+
+    LARGE_INTEGER fileSize;
+    if (!GetFileSizeEx(file, &fileSize))
+    {
+        CloseHandle(file);
+        return 0;
+    }
+    size_t dataSize = fileSize.QuadPart;
+
+    *data = malloc(dataSize);
+    DWORD read = 0;
+    if (!::ReadFile(file, *data, fileSize.LowPart, &read, NULL) || fileSize.LowPart != read)
+    {
+        CloseHandle(file);
+        *data = nullptr;
+        return 0;
+    }
+
+    CloseHandle(file);
+    return dataSize;
 }
 
 }
