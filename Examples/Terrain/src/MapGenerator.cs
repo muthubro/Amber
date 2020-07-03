@@ -32,7 +32,7 @@ namespace Terrain
             MeshComponent meshComponent = GetComponent<MeshComponent>();
             if (meshComponent == null)
                 meshComponent = CreateComponent<MeshComponent>();
-            meshComponent.Mesh = MeshFactory.CreatePlane(1, 1);
+            meshComponent.Mesh = MeshFactory.CreatePlane(width, height);
             meshComponent.Mesh.SetAlbedoTexture(0, true, texture);
         }
 

@@ -66,6 +66,7 @@ public:
     static void LoadRuntimeAssembly(const std::string& assemblyPath);
 
     static void OnCreateEntity(const Entity& entity);
+    static void OnDestroyEntity(const Entity& entity);
     static void OnUpdateEntity(uint32_t entityID, Timestep ts);
 
     static void OnInitEntity(ScriptComponent& script, uint32_t entityID, uint32_t sceneID);

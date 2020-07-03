@@ -49,6 +49,8 @@ struct MeshComponent
 
     operator Ref<Amber::Mesh>() { return Mesh; }
     operator const Ref<Amber::Mesh>() const { return Mesh; }
+
+    operator bool() { return Mesh; }
 };
 
 struct BoxColliderComponent

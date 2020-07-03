@@ -70,7 +70,8 @@ namespace Amber
 
             set
             {
-                SetMesh_Native(Entity.SceneID, Entity.EntityID, value.m_UnmanagedInstance);
+                IntPtr ptr = value == null ? IntPtr.Zero : value.m_UnmanagedInstance;
+                SetMesh_Native(Entity.SceneID, Entity.EntityID, ptr);
             }
         }
 

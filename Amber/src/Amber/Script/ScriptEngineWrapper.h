@@ -60,7 +60,9 @@ uint32_t Amber_Mesh_GetSubmeshCount(Ref<Mesh>* _this);
 void Amber_Mesh_SetAlbedoTexture(Ref<Mesh>* _this, uint32_t submeshIndex, bool use, Ref<Texture2D>* albedo);
 
 // Mesh Factory
-void* Amber_MeshFactory_CreatePlane(uint32_t width, uint32_t height);
+void* Amber_MeshFactory_CreatePlane(float width, float height);
+void* Amber_MeshFactory_CreateCube(glm::vec3* center, float length);
+void* Amber_MeshFactory_CreateSphere(glm::vec3* center, float radius);
 
 } // Script
 } // Amber

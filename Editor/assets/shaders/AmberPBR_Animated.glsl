@@ -47,7 +47,8 @@ void main()
 		vec3 T = a_Tangent;
 		T = normalize(T - dot(T, N) * N);
 
-		vec3 B = cross(N, T);
+		vec3 B = a_Binormal;
+		B = normalize(B - dot(B, T) * T - dot(B, N) * N);
 
 		mat3 TBN = inverse(u_NormalTransform * mat3(boneTransform) * mat3(T, B, N));
 		vs_Output.FragPos = TBN * vec3(worldPos);

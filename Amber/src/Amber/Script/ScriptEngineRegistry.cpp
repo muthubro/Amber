@@ -82,6 +82,8 @@ void ScriptEngineRegistry::RegisterAll()
     mono_add_internal_call("Amber.Mesh::SetAlbedoTexture_Native", Amber::Script::Amber_Mesh_SetAlbedoTexture);
 
     mono_add_internal_call("Amber.MeshFactory::CreatePlane_Native", Amber::Script::Amber_MeshFactory_CreatePlane);
+    mono_add_internal_call("Amber.MeshFactory::CreateCube_Native", Amber::Script::Amber_MeshFactory_CreateCube);
+    mono_add_internal_call("Amber.MeshFactory::CreateSphere_Native", Amber::Script::Amber_MeshFactory_CreateSphere);
 }
 
 }

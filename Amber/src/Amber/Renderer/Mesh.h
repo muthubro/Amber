@@ -28,6 +28,8 @@ class Importer;
 namespace Amber
 {
 
+class MeshFactory;
+
 struct StaticVertex
 {
     glm::vec3 Position;
@@ -74,6 +76,9 @@ struct BoneInfo
 struct Index
 {
     uint32_t V0, V1, V2;
+
+    Index(uint32_t v0, uint32_t v1, uint32_t v2)
+        : V0(v0), V1(v1), V2(v2) {}
 };
 
 struct Triangle
@@ -107,6 +112,7 @@ struct Submesh : public RefCounted
 class Mesh : public RefCounted
 {
 public:
+    Mesh() = default;
     Mesh(const std::string& filepath);
     ~Mesh();
 
@@ -119,7 +125,6 @@ public:
 
     const std::string& GetFilePath() const { return m_FilePath; }
     Ref<Material> GetMaterial() { return m_BaseMaterial; }
-    Ref<Shader> GetMeshShader() { return m_MeshShader; }
     const std::vector<Ref<MaterialInstance>>& GetMaterials() const { return m_Materials; }
     const std::vector<Ref<Texture2D>>& GetTextures() const { return m_Textures; }
 
@@ -163,7 +168,7 @@ private:
     std::string m_FilePath;
 
     Scope<Assimp::Importer> m_Importer = nullptr;
-    const aiScene* m_Scene;
+    const aiScene* m_Scene = nullptr;
 
     std::vector<Submesh> m_Submeshes;
     std::unordered_map<uint32_t, std::vector<Triangle>> m_TriangleCache;
@@ -173,7 +178,7 @@ private:
     std::vector<Index> m_Indices;
     Ref<VertexArray> m_VertexArray;
 
-    glm::mat4 m_InverseRootTransform;
+    glm::mat4 m_InverseRootTransform = glm::mat4(1.0f);
 
     uint32_t m_BoneCount = 0;
     std::vector<BoneInfo> m_BoneInfo;
@@ -187,7 +192,6 @@ private:
 
     Ref<Material> m_BaseMaterial;
     std::vector<Ref<MaterialInstance>> m_Materials;
-    Ref<Shader> m_MeshShader;
     std::vector<Ref<Texture2D>> m_Textures;
 
     inline static const uint32_t s_MaxBones = 100;
@@ -207,6 +211,8 @@ private:
     glm::vec3 InterpolateTranslation(float time, const aiNodeAnim* nodeAnim);
     glm::quat InterpolateRotation(float time, const aiNodeAnim* nodeAnim);
     glm::vec3 InterpolateScale(float time, const aiNodeAnim* nodeAnim);
+
+    friend class MeshFactory;
 };
 
 }

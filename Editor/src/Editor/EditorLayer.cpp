@@ -180,8 +180,6 @@ void EditorLayer::OnImGuiRender()
     static bool fullscreen = true;
     static ImGuiDockNodeFlags dockNodeFlags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_NoDockingInCentralNode;
 
-    Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
-
     // Main window
     ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_MenuBar;
     if (fullscreen)
@@ -206,14 +204,31 @@ void EditorLayer::OnImGuiRender()
     // Dockspace
     ImGuiIO& io = ImGui::GetIO();
     AB_CORE_ASSERT(io.ConfigFlags & ImGuiConfigFlags_DockingEnable, "Docking must be enabled!");
-    ImGuiID dockspaceID = ImGui::GetID("Editor Dockspace");
-    ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
+    m_DockspaceID = ImGui::GetID("Editor Dockspace");
+    ImGui::DockSpace(m_DockspaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
 
     ImGui::AlignTextToFramePadding();
 
     // ---------------------------- Editor Panel ----------------------------
+    // Editor settings
+    DrawViewportSettingsPanel();
+    DrawEnvironmentSettingsPanel();
 
-    // Viewport settings
+    // Model settings
+    DrawAnimationPanel();
+    DrawMaterialsPanel();
+
+    DrawViewport();
+
+    DrawMenuBar();
+
+    m_SceneHierarchyPanel->OnImGuiRender();
+
+    ImGui::End();
+}
+
+void EditorLayer::DrawViewportSettingsPanel()
+{
     ImGui::Begin("Viewport##Settings");
 
     BeginPropertyGrid();
@@ -232,8 +247,10 @@ void EditorLayer::OnImGuiRender()
         m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
 
     ImGui::End();
+}
 
-    // Environment Settings
+void EditorLayer::DrawEnvironmentSettingsPanel()
+{
     ImGui::Begin("Environment");
 
     if (ImGui::Button("Load Environment Map"))
@@ -245,6 +262,7 @@ void EditorLayer::OnImGuiRender()
 
     BeginPropertyGrid();
 
+    Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
     Property("Environment Rotation", m_Scene->GetEnvironment().Rotation, -360.0f, 360.0f);
     Property("Skybox LOD", m_Scene->GetSkyboxLOD(), 0.0f, 11.0f);
     Property("Exposure", camera.GetExposure(), 0.0f, 5.0f);
@@ -259,10 +277,10 @@ void EditorLayer::OnImGuiRender()
     EndPropertyGrid();
 
     ImGui::End();
+}
 
-    // Model Settings
-
-    // Animation
+void EditorLayer::DrawAnimationPanel()
+{
     ImGui::Begin("Animation");
 
     if (!m_SelectionContext.empty())
@@ -281,8 +299,10 @@ void EditorLayer::OnImGuiRender()
     }
 
     ImGui::End();
+}
 
-    // Materials
+void EditorLayer::DrawMaterialsPanel()
+{
     ImGui::Begin("Materials");
 
     if (!m_SelectionContext.empty())
@@ -489,13 +509,16 @@ void EditorLayer::OnImGuiRender()
     }
 
     ImGui::End();
+}
 
-    // Viewport
-    ImGui::SetNextWindowDockID(dockspaceID);
+void EditorLayer::DrawViewport()
+{
+    ImGui::SetNextWindowDockID(m_DockspaceID);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Viewport");
 
+    Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
     auto viewportOffset = ImGui::GetCursorPos();
     auto viewportSize = ImGui::GetContentRegionAvail();
     SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
@@ -587,10 +610,12 @@ void EditorLayer::OnImGuiRender()
     ImGui::End();
     ImGui::PopStyleVar();
 
-    if (ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceID))
+    if (ImGuiDockNode* centralNode = ImGui::DockBuilderGetCentralNode(m_DockspaceID))
         centralNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+}
 
-    // Menu Bar
+void EditorLayer::DrawMenuBar()
+{
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -603,10 +628,6 @@ void EditorLayer::OnImGuiRender()
 
         ImGui::EndMenuBar();
     }
-
-    m_SceneHierarchyPanel->OnImGuiRender();
-
-    ImGui::End();
 }
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)

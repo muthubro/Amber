@@ -70,6 +70,8 @@ private:
 
     Ref<Texture2D> m_CheckerboardTexture;
 
+    uint32_t m_DockspaceID;
+
     glm::vec2 m_ViewportBounds[2];
     bool m_AllowViewportCameraEvents = true;
     bool m_EnableOverlay = true;
@@ -84,6 +86,13 @@ private:
     SelectionMode m_SelectionMode = SelectionMode::Entity;
 
     Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
+
+    void DrawViewportSettingsPanel();
+    void DrawEnvironmentSettingsPanel();
+    void DrawAnimationPanel();
+    void DrawMaterialsPanel();
+    void DrawViewport();
+    void DrawMenuBar();
 
     bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
     bool OnKeyPressed(KeyPressedEvent& e);

@@ -5,6 +5,7 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/attrdefs.h>
+#include <mono/metadata/mono-gc.h>
 
 #include "Amber/Core/FileSystem.h"
 
@@ -168,6 +169,8 @@ static MonoObject* CallMethod(MonoObject* object, MonoMethod* method, void** par
 
 void ScriptEngine::OnCreateEntity(const Entity& entity)
 {
+    mono_gc_collect(mono_gc_max_generation());
+
     auto& instance = s_EntityInstanceMap[entity];
     if (instance.ScriptClass->OnCreateMethod)
     {
@@ -176,9 +179,25 @@ void ScriptEngine::OnCreateEntity(const Entity& entity)
     }
 }
 
+void ScriptEngine::OnDestroyEntity(const Entity& entity)
+{
+    auto& instance = s_EntityInstanceMap[entity];
+    if (instance.ScriptClass->OnDestroyMethod)
+    {
+        MonoException* exception;
+        instance.ScriptClass->OnDestroyMethod(instance.GetInstance(), &exception);
+    }
+
+    mono_gc_collect(mono_gc_max_generation());
+    mono_gchandle_free(instance.Handle);
+    s_EntityInstanceMap.erase(entity);
+}
+
 void ScriptEngine::OnUpdateEntity(uint32_t entityID, Timestep ts)
 {
     AB_CORE_ASSERT(s_EntityInstanceMap.find(entityID) != s_EntityInstanceMap.end(), "Entity instance not found!");
+
+    mono_gc_collect(mono_gc_max_generation());
 
     auto& instance = s_EntityInstanceMap[entityID];
     if (instance.ScriptClass->OnUpdateMethod)

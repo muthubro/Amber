@@ -9,6 +9,8 @@
 
 #include "Amber/Math/Noise.h"
 
+#include "Amber/Renderer/MeshFactory.h"
+
 #include "Amber/Scene/Scene.h"
 #include "Amber/Scene/Entity.h"
 
@@ -137,7 +139,7 @@ void* Amber_Texture2D_Constructor(uint32_t width, uint32_t height)
 
 void Amber_Texture2D_Destructor(Ref<Texture2D>* _this)
 {
-    delete _this;
+    *_this = nullptr;
 }
 
 void Amber_Texture2D_SetData(Ref<Texture2D>* _this, MonoArray* inData, int32_t count)
@@ -172,7 +174,7 @@ void Amber_Texture2D_SetData(Ref<Texture2D>* _this, MonoArray* inData, int32_t c
 // Material
 void Amber_Material_Destructor(Ref<Material>* _this)
 {
-    delete _this;
+    *_this = nullptr;
 }
 
 void Amber_Material_SetFloat(Ref<Material>* _this, MonoString* uniform, float value)
@@ -189,7 +191,7 @@ void Amber_Material_SetTexture(Ref<Material>* _this, MonoString* uniform, Ref<Te
 
 void Amber_MaterialInstance_Destructor(Ref<MaterialInstance>* _this)
 {
-    delete _this;
+    *_this = nullptr;
 }
 
 void Amber_MaterialInstance_SetFloat(Ref<MaterialInstance>* _this, MonoString* uniform, float value)
@@ -218,7 +220,7 @@ void* Amber_Mesh_Constructor(MonoString* filepath)
 
 void Amber_Mesh_Destructor(Ref<Mesh>* _this)
 {
-    delete _this;
+    *_this = nullptr;
 }
 
 Ref<Material>* Amber_Mesh_GetMaterial(Ref<Mesh>* _this)
@@ -259,9 +261,19 @@ void Amber_Mesh_SetAlbedoTexture(Ref<Mesh>* _this, uint32_t submeshIndex, bool u
 }
 
 // Mesh Factory
-void* Amber_MeshFactory_CreatePlane(uint32_t width, uint32_t height)
+void* Amber_MeshFactory_CreatePlane(float width, float height)
 {
-    return new Ref<Mesh>(Ref<Mesh>::Create("assets/meshes/Plane1m.obj"));
+    return new Ref<Mesh>(MeshFactory::Plane(width, height));
+}
+
+void* Amber_MeshFactory_CreateCube(glm::vec3* center, float length)
+{
+    return new Ref<Mesh>(MeshFactory::Cube(*center, length));
+}
+
+void* Amber_MeshFactory_CreateSphere(glm::vec3* center, float radius)
+{
+    return new Ref<Mesh>(MeshFactory::Sphere(*center, radius));
 }
 
 } // Script
