@@ -17,26 +17,21 @@ namespace Amber
 namespace Editor
 {
 
-static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform)
+SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
 {
-    glm::vec3 translationVector, skew, scaleVector;
-    glm::vec4 perspective;
-    glm::quat rotationVector;
-    
-    glm::decompose(transform, scaleVector, rotationVector, translationVector, skew, perspective);
-
-    return { translationVector, rotationVector, scaleVector };
+    SetContext(context);
 }
 
-SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
-    : m_Context(context)
+void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
 {
-    for (auto& entityID : context->GetAllEntities())
+    m_Context = context;
+    m_EntityMap.clear();
+    for (auto& entityID : m_Context->GetAllEntities())
     {
-        Entity entity(entityID, context.Raw());
-
+        Entity entity(entityID, m_Context.Raw());
         m_EntityMap[(uint32_t)entity] = EntityData();
-        auto [translation, orientation, scale] = GetTransformDecomposition(entity.GetComponent<TransformComponent>());
+        
+        auto [translation, orientation, scale] = Math::DecomposeTransform(entity.GetComponent<TransformComponent>());
         m_EntityMap[entity].Orientation = glm::degrees(glm::eulerAngles(orientation));
     }
 }
@@ -44,9 +39,7 @@ SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
 void SceneHierarchyPanel::SetOrientation(const Entity& entity, const glm::quat& orientation)
 {
     auto& prevOrientation = m_EntityMap[entity].Orientation;
-    prevOrientation += glm::eulerAngles(orientation);
-
-    prevOrientation = glm::degrees(prevOrientation);
+    prevOrientation += glm::degrees(glm::eulerAngles(orientation));
 
     if (glm::abs(prevOrientation.x) > 360.0f)
         prevOrientation.x -= std::copysign(360.0f, prevOrientation.x);
@@ -54,8 +47,6 @@ void SceneHierarchyPanel::SetOrientation(const Entity& entity, const glm::quat& 
         prevOrientation.y -= std::copysign(360.0f, prevOrientation.y);
     if (glm::abs(prevOrientation.z) > 360.0f)
         prevOrientation.z -= std::copysign(360.0f, prevOrientation.z);
-
-    prevOrientation = glm::radians(prevOrientation);
 }
 
 void SceneHierarchyPanel::SetSelection(std::vector<SelectedSubmesh>& selection)
@@ -81,7 +72,7 @@ void SceneHierarchyPanel::OnImGuiRender()
         Entity entity(entity, m_Context.Raw());
         if (m_EntityMap.find(entity) == m_EntityMap.end())
         {
-            auto [translation, orientation, scale] = GetTransformDecomposition(entity.GetComponent<TransformComponent>());
+            auto [translation, orientation, scale] = Math::DecomposeTransform(entity.GetComponent<TransformComponent>());
             m_EntityMap[entity] = EntityData{ false, glm::degrees(glm::eulerAngles(orientation)) };
         }
         entityClicked |= DrawEntityNode(entity, i++);
@@ -117,10 +108,7 @@ void SceneHierarchyPanel::OnImGuiRender()
 
 bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 {
-    const char* name = "Unnamed Entity";
-    auto tag = entity.GetComponentIfExists<TagComponent>();
-    if (tag)
-        name = tag->Tag.c_str();
+    const char* name = entity.GetComponent<TagComponent>().Tag.c_str();
 
     static int32_t selectionStart = -1;
     static int32_t selectionEnd = -1;
@@ -132,7 +120,7 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
     {
         SelectedSubmesh selection{ entity, nullptr, 0.0f };
         auto mesh = entity.GetComponentIfExists<MeshComponent>();
-        if (mesh)
+        if (mesh && *mesh)
             selection.Mesh = &mesh->Mesh->GetSubmeshes()[0];
 
         if (m_SelectionContext->empty())
@@ -164,7 +152,7 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
                     Entity entity_i(entities[i], m_Context.Raw());
                     SelectedSubmesh entitySelection{ entity_i, nullptr, 0.0f };
                     auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
-                    if (mesh)
+                    if (mesh && *mesh)
                         entitySelection.Mesh = &meshComponent->Mesh->GetSubmeshes()[0];
                     
                     m_SelectionContext->push_back(entitySelection);
@@ -219,7 +207,7 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
     {
         m_EntityMap.erase(entity);
         m_SelectionContext->clear();
-        m_Context->DeleteEntity(entity);
+        m_Context->DestroyEntity(entity);
     }
 
     return clicked;
@@ -227,37 +215,32 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 
 void SceneHierarchyPanel::DrawComponents(Entity& entity)
 {
-    auto tag = entity.GetComponentIfExists<TagComponent>();
-    if (tag)
-    {
-        BeginPropertyGrid();
-        
-        Property("", tag->Tag);
+    auto tag = entity.GetComponent<TagComponent>();
+    Property("", tag.Tag);
 
-        EndPropertyGrid();
-        ImGui::Separator();
-    }
+    ImGui::SameLine();
+
+    ImGui::TextDisabled("%llx", entity.GetComponent<IDComponent>().ID);
+
+    ImGui::Separator();
 
     auto& transform = entity.GetComponent<TransformComponent>();
     if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(TransformComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
     {
         BeginPropertyGrid();
-            
-        auto [translation, orientationQuat, scale] = GetTransformDecomposition(transform);
-        glm::vec3 orientation = glm::degrees(m_EntityMap[entity].Orientation);
+
+        auto [translation, orientationQuat, scale] = Math::DecomposeTransform(transform);
+        glm::vec3 orientation = m_EntityMap[entity].Orientation;
 
         bool changed = false;
-        changed |= Property("Translation", translation, -100.0f, 100.0f);
+        changed |= Property("Translation", translation, -10000.0f, 10000.0f);
         changed |= Property("Rotation", orientation, -360.0f, 360.0f);
-        changed |= Property("Scale", scale, 0.001f, 100.0f);
+        changed |= Property("Scale", scale, 0.001f, 10000.0f);
 
         if (changed)
         {
-            orientation = glm::radians(orientation);
-            glm::quat rotation(orientation);
-
+            glm::quat rotation(glm::radians(orientation));
             transform.Transform = glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
-
             m_EntityMap[entity].Orientation = orientation;
         }
 
@@ -271,12 +254,20 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
     {
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(MeshComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Mesh"))
         {
-            BeginPropertyGrid();
+            BeginPropertyGrid(3);
             
             if (mesh->Mesh)
                 Property("File Path", (const char*)mesh->Mesh->GetFilePath().c_str());
             else
                 Property("File Path", (const char*)"NULL");
+
+            if (ImGui::Button("...##MeshOpen"))
+            {
+                std::string filepath = FileSystem::OpenFileDialog("FBX:(*.fbx)", "Select Mesh");
+                if (!filepath.empty())
+                    mesh->Mesh = Ref<Mesh>::Create(filepath);
+            }
+            ImGui::NextColumn();
 
             EndPropertyGrid();
             ImGui::TreePop();
@@ -284,12 +275,46 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         ImGui::Separator();
     }
 
-    auto camera = entity.GetComponentIfExists<CameraComponent>();
-    if (camera)
+    auto cameraComponent = entity.GetComponentIfExists<CameraComponent>();
+    if (cameraComponent)
     {
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(CameraComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
         {
+            auto& camera = cameraComponent->Camera;
+
+            int type = (int)camera.GetProjectionType();
+            ImGui::RadioButton("Perspective##Projection", &type, 0);
+            ImGui::SameLine();
+            ImGui::RadioButton("Orthographic##Projection", &type, 1);
+
             BeginPropertyGrid();
+            switch (type)
+            {
+                case 0:
+                {
+                    auto data = camera.GetPerspectiveData();
+                    data.FOV = glm::degrees(data.FOV);
+                    Property("Vertical FOV", data.FOV, 0.0f, 90.0f);
+                    Property("Width", data.Width, 0.1f, 10000.0f);
+                    Property("Height", data.Height, 0.1f, 10000.0f);
+                    Property("Near Clip", data.Near, 0.1f, 100.0f);
+                    Property("Far Clip", data.Far, data.Near, 100000.0f);
+                    data.FOV = glm::radians(data.FOV);
+                    camera.SetPerspective(data);
+                    break;
+                }
+
+                case 1:
+                {
+                    auto data = camera.GetOrthographicData();
+                    Property("Size", data.Size, 0.1f, 10000.0f);
+                    Property("Aspect Ratio", data.AspectRatio, 0.1f, 10.0f);
+                    Property("Near Clip", data.Near, -1.0f, 1.0f);
+                    Property("Far Clip", data.Far, data.Near, 1.0f);
+                    camera.SetOrthographic(data);
+                    break;
+                }
+            }
             EndPropertyGrid();
             ImGui::TreePop();
         }
@@ -302,78 +327,118 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(ScriptComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Script"))
         {
             BeginPropertyGrid();
-            Property("", script->ModuleName.c_str());
-
-            auto& fieldMap = ScriptEngine::GetFieldMap();
-            if (fieldMap.find(script->ModuleName) != fieldMap.end())
+            std::string oldName = script->ModuleName;
+            if (Property("Module Name", script->ModuleName, !ScriptEngine::ModuleExists(script->ModuleName)))
             {
-                auto& fields = fieldMap.at(script->ModuleName);
-                for (auto& field : fields)
+                if (ScriptEngine::ModuleExists(oldName))
+                    ScriptEngine::ShutdownScriptEntity(entity, oldName);
+
+                if (ScriptEngine::ModuleExists(script->ModuleName))
+                    ScriptEngine::InitScriptEntity(entity);
+            }
+
+            if (ScriptEngine::ModuleExists(script->ModuleName))
+            {
+                auto& instanceData = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID());
+                auto& moduleFieldMap = instanceData.ModuleFieldMap;
+                if (moduleFieldMap.find(script->ModuleName) != moduleFieldMap.end())
                 {
-                    switch (field.Type)
+                    auto& fields = moduleFieldMap.at(script->ModuleName);
+                    for (auto& [fieldName, field] : fields)
                     {
-                        case FieldType::Bool:
+                        bool isRuntime = m_Context->IsPlaying() && field.IsRuntimeAvailable();
+                        switch (field.Type)
                         {
-                            bool value = field.GetValue<bool>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::Bool:
+                            {
+                                bool value = isRuntime ? field.GetRuntimeValue<bool>() : field.GetStoredValue<bool>();
+                                if (Property(field.Name.c_str(), value))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::Int:
-                        {
-                            int32_t value = field.GetValue<int32_t>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::Int:
+                            {
+                                int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
+                                if (Property(field.Name.c_str(), value))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::UInt:
-                        {
-                            uint32_t value = field.GetValue<uint32_t>();
-                            if (Property(field.Name.c_str(), value, 1, 2048))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::UInt:
+                            {
+                                int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
+                                if (Property(field.Name.c_str(), value, 1, 2048))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::Float:
-                        {
-                            float value = field.GetValue<float>();
-                            if (Property(field.Name.c_str(), value, 0.001f, 10.0f, 0.001f))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::Float:
+                            {
+                                float value = isRuntime ? field.GetRuntimeValue<float>() : field.GetStoredValue<float>();
+                                if (Property(field.Name.c_str(), value, 0.001f, 10.0f, 0.001f))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::Vec2:
-                        {
-                            glm::vec2 value = field.GetValue<glm::vec2>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::Vec2:
+                            {
+                                glm::vec2 value = isRuntime ? field.GetRuntimeValue<glm::vec2>() : field.GetStoredValue<glm::vec2>();
+                                if (Property(field.Name.c_str(), value))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::Vec3:
-                        {
-                            glm::vec3 value = field.GetValue<glm::vec3>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
-                        }
+                            case FieldType::Vec3:
+                            {
+                                glm::vec3 value = isRuntime ? field.GetRuntimeValue<glm::vec3>() : field.GetStoredValue<glm::vec3>();
+                                if (Property(field.Name.c_str(), value))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
 
-                        case FieldType::Vec4:
-                        {
-                            glm::vec4 value = field.GetValue<glm::vec4>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
-                        }
-
-                        case FieldType::String:
-                        {
-                            char* value = field.GetValue<char*>();
-                            if (Property(field.Name.c_str(), value))
-                                field.SetValue(value);
-                            break;
+                            case FieldType::Vec4:
+                            {
+                                glm::vec4 value = isRuntime ? field.GetRuntimeValue<glm::vec4>() : field.GetStoredValue<glm::vec4>();
+                                if (Property(field.Name.c_str(), value))
+                                {
+                                    if (isRuntime)
+                                        field.SetRuntimeValue(value);
+                                    else
+                                        field.SetStoredValue(value);
+                                }
+                                break;
+                            }
                         }
                     }
                 }
@@ -386,6 +451,41 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             ImGui::TreePop();
         }
         ImGui::Separator();
+    }
+
+    if (ImGui::Button("+ Add Component"))
+        ImGui::OpenPopup("AddComponentPanel");
+
+    if (ImGui::BeginPopup("AddComponentPanel"))
+    {
+        if (!entity.HasComponent<MeshComponent>())
+        {
+            if (ImGui::Button("Mesh"))
+            {
+                entity.AddComponent<MeshComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<CameraComponent>())
+        {
+            if (ImGui::Button("Camera"))
+            {
+                entity.AddComponent<CameraComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<ScriptComponent>())
+        {
+            if (ImGui::Button("Script"))
+            {
+                entity.AddComponent<ScriptComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        ImGui::EndPopup();
     }
 }
 

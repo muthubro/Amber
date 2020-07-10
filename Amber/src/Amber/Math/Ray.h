@@ -6,6 +6,8 @@
 
 namespace Amber
 {
+namespace Math
+{
 
 struct Ray
 {
@@ -80,4 +82,5 @@ struct Ray
     }
 };
 
-}
+} // Math
+} // Amber

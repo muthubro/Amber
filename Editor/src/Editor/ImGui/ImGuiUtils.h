@@ -15,13 +15,13 @@ enum class PropertyFlags
 };
 
 void PushID(int id = 0);
-void BeginPropertyGrid(int id = 0);
+void BeginPropertyGrid(uint32_t columns = 2, int id = 0);
 
-bool Property(const std::string& label, std::string& value);
-bool Property(const std::string& label, const std::string& value);
+bool Property(const std::string& label, std::string& value, bool error = false);
+bool Property(const std::string& label, const std::string& value, bool error = false);
 
-bool Property(const std::string& label, char* value);
-bool Property(const std::string& label, const char* value);
+bool Property(const std::string& label, char* value, bool error = false);
+bool Property(const std::string& label, const char* value, bool error = false);
 
 bool Property(const std::string& label, bool& value);
 

@@ -4,7 +4,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Amber/Renderer/Material.h"
-#include "Amber/Renderer/OrthographicCamera.h"
 #include "Amber/Renderer/Texture.h"
 
 namespace Amber

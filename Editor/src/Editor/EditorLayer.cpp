@@ -28,9 +28,8 @@ static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(con
 }
 
 EditorLayer::EditorLayer()
-    : Layer("Editor Layer")
+    : Layer("Editor Layer"), m_EditorCamera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 1000.0f))
 {
-    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll");
 }
 
 void EditorLayer::OnAttach()
@@ -80,38 +79,15 @@ void EditorLayer::OnAttach()
     colors[ImGuiCol_NavHighlight] = ImVec4(0.60f, 0.6f, 0.6f, 1.0f);
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
 
-    auto environment = Environment::Load("assets/env/birchwood_4k.hdr");
-
-    m_Scene = Ref<Scene>::Create("Model Scene");
-    m_CameraEntity = m_Scene->CreateEntity("Camera");
-    m_CameraEntity.AddComponent<CameraComponent>(Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
-
-    m_Scene->SetEnvironment(environment);
-
-    auto entity = m_Scene->CreateEntity("Test Model");
-    auto mesh = Ref<Mesh>::Create("assets/meshes/TestScene.fbx");
-    entity.AddComponent<MeshComponent>(mesh);
-
-    entity = m_Scene->CreateEntity("Cerberus");
-    mesh = Ref<Mesh>::Create("assets/meshes/cerberus/CerberusMaterials.fbx");
-    entity.AddComponent<MeshComponent>(mesh);
-    
-    entity = m_Scene->CreateEntity("M1911");
-    mesh = Ref<Mesh>::Create("assets/meshes/m1911/M1911Materials.fbx");
-    entity.AddComponent<MeshComponent>(mesh);
-
-    auto mapGenerator = m_Scene->CreateEntity("Map Generator");
-    mapGenerator.AddComponent<ScriptComponent>("Terrain.MapGenerator");
-
-    auto& light = m_Scene->GetLight();
-    light.Direction = { -0.5f, 0.5f, 1.0f };
-    light.Radiance = { 1.0f, 1.0f, 1.0f };
+    m_EditorScene = Ref<Scene>::Create("Model Scene");
+    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll", *m_EditorScene);
 
     m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
 
-    m_CheckerboardTexture = Texture2D::Create("assets/textures/Checkerboard.png");
+    m_CheckerboardTexture = Texture2D::Create("assets/editor/Checkerboard.png");
+    m_PlayButton = Texture2D::Create("assets/editor/PlayButton.png");
 
-    m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_Scene);
+    m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
     m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
 }
 
@@ -122,7 +98,7 @@ void EditorLayer::OnDetach()
 void EditorLayer::OnEvent(Event& e)
 {
     if (m_AllowViewportCameraEvents)
-        m_Scene->OnEvent(e);
+        m_EditorCamera.OnEvent(e);
 
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<MouseButtonPressedEvent>(AB_BIND_EVENT_FN(EditorLayer::OnMouseButtonPressed));
@@ -140,37 +116,53 @@ void EditorLayer::OnUpdate(Timestep ts)
     options.GridScale = m_GridScale;
     options.GridSize = m_GridSize;
 
-    m_Scene->OnUpdate(ts);
-
-    if (m_EnableOverlay && !m_SelectionContext.empty())
+    switch (m_SceneState)
     {
-        Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
-        Renderer2D::BeginScene(m_CameraEntity.GetComponent<CameraComponent>().Camera.GetViewProjection());
-
-        if (m_SelectionMode == SelectionMode::Entity)
+        case SceneState::Edit:
         {
-            for (auto& selection : m_SelectionContext)
+            m_EditorCamera.OnUpdate(ts);
+            m_EditorScene->OnRenderEditor(ts, m_EditorCamera);
+
+            if (m_EnableOverlay && !m_SelectionContext.empty())
             {
-                if (!selection.Mesh)
-                    continue;
+                Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                Renderer2D::BeginScene(m_EditorCamera.GetViewProjection());
 
-                auto component = selection.Entity.GetComponentIfExists<BoxColliderComponent>();
-                Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+                if (m_SelectionMode == SelectionMode::Entity)
+                {
+                    for (auto& selection : m_SelectionContext)
+                    {
+                        if (!selection.Mesh)
+                            continue;
+
+                        auto component = selection.Entity.GetComponentIfExists<BoxColliderComponent>();
+                        Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+                    }
+                }
+                else if (m_SelectionMode == SelectionMode::Submesh)
+                {
+                    for (auto& selection : m_SelectionContext)
+                    {
+                        if (!selection.Mesh)
+                            continue;
+
+                        Renderer::DrawAABB(selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>().Transform * selection.Mesh->Transform);
+                    }
+                }
+
+                Renderer2D::EndScene();
+                Renderer::EndRenderPass();
             }
-        }
-        else if (m_SelectionMode == SelectionMode::Submesh)
-        {
-            for (auto& selection : m_SelectionContext)
-            {
-                if (!selection.Mesh)
-                    continue;
-
-                Renderer::DrawAABB(selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>().Transform * selection.Mesh->Transform);
-            }
+            break;
         }
 
-        Renderer2D::EndScene();
-        Renderer::EndRenderPass();
+        case SceneState::Play:
+            m_RuntimeScene->OnUpdate(ts);
+            m_RuntimeScene->OnRenderRuntime(ts);
+            break;
+
+        case SceneState::Pause:
+            break;
     }
 }
 
@@ -220,9 +212,11 @@ void EditorLayer::OnImGuiRender()
 
     DrawViewport();
 
+    DrawToolbar();
     DrawMenuBar();
 
     m_SceneHierarchyPanel->OnImGuiRender();
+    ScriptEngine::OnImGuiRender();
 
     ImGui::End();
 }
@@ -257,22 +251,25 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
     {
         std::string filename = FileSystem::OpenFileDialog("HDR:*.hdr", "Select Environment Map");
         if (!filename.empty())
-            m_Scene->SetEnvironment(Environment::Load(filename));
+            m_EditorScene->SetEnvironment(Environment::Load(filename));
     }
 
     BeginPropertyGrid();
 
-    Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
-    Property("Environment Rotation", m_Scene->GetEnvironment().Rotation, -360.0f, 360.0f);
-    Property("Skybox LOD", m_Scene->GetSkyboxLOD(), 0.0f, 11.0f);
-    Property("Exposure", camera.GetExposure(), 0.0f, 5.0f);
+    auto& environment = m_EditorScene->GetEnvironment();
+    if (!environment.Filepath.empty())
+    {
+        Property("Environment Rotation", environment.Rotation, -360.0f, 360.0f);
+        Property("Skybox LOD", m_EditorScene->GetSkyboxLOD(), 0.0f, 11.0f);
+        Property("Exposure", m_EditorCamera.Exposure(), 0.0f, 5.0f);
 
-    ImGui::Separator();
+        ImGui::Separator();
 
-    auto& light = m_Scene->GetLight();
-    Property("Light Direction", light.Direction);
-    Property("Light Radiance", light.Radiance, PropertyFlags::ColorProperty);
-    Property("Light Multiplier", light.Multiplier, 0.0f, 10.0f);
+        auto& light = m_EditorScene->GetLight();
+        Property("Light Direction", light.Direction);
+        Property("Light Radiance", light.Radiance, PropertyFlags::ColorProperty);
+        Property("Light Multiplier", light.Multiplier, 0.0f, 10.0f);
+    }
 
     EndPropertyGrid();
 
@@ -287,7 +284,7 @@ void EditorLayer::DrawAnimationPanel()
     {
         auto& topSelection = *m_SelectionContext.rbegin();
         auto mesh = topSelection.Entity.GetComponentIfExists<MeshComponent>();
-        if (mesh && mesh->Mesh->IsAnimated())
+        if (mesh && *mesh && mesh->Mesh->IsAnimated())
         {
             BeginPropertyGrid();
 
@@ -311,7 +308,7 @@ void EditorLayer::DrawMaterialsPanel()
 
         auto& topSelection = *m_SelectionContext.rbegin();
         auto mesh = topSelection.Entity.GetComponentIfExists<MeshComponent>();
-        if (mesh)
+        if (mesh && *mesh)
         {
             // Albedo
             if (ImGui::CollapsingHeader("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
@@ -518,12 +515,19 @@ void EditorLayer::DrawViewport()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("Viewport");
 
-    Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
+    m_ViewportPanelFocused = ImGui::IsWindowFocused();
+    m_ViewportPanelMouseOver = ImGui::IsWindowHovered();
+
     auto viewportOffset = ImGui::GetCursorPos();
     auto viewportSize = ImGui::GetContentRegionAvail();
+
+    m_EditorCamera.SetProjectionMatrix(glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
+    
     SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-    camera.SetProjectionMatrix(glm::perspectiveFov(glm::radians(45.0f), viewportSize.x, viewportSize.y, 0.1f, 10000.0f));
-    camera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    m_EditorScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    if (m_RuntimeScene)
+        m_RuntimeScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 
     ImGui::Image((void*)(size_t)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
 
@@ -565,8 +569,8 @@ void EditorLayer::DrawViewport()
 
         glm::mat4 delta;
         ImGuizmo::Manipulate(
-            glm::value_ptr(camera.GetViewMatrix()),
-            glm::value_ptr(camera.GetProjectionMatrix()),
+            glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+            glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
             (ImGuizmo::OPERATION)m_GizmoMode,
             ImGuizmo::MODE::LOCAL,
             glm::value_ptr(centroidTransform),
@@ -614,12 +618,57 @@ void EditorLayer::DrawViewport()
         centralNode->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
 }
 
+void EditorLayer::DrawToolbar()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 4));
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.8f, 0.8f, 0.1f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+    ImGui::Begin("Toolbar");
+
+    switch (m_SceneState)
+    {
+        case SceneState::Edit:
+            if (ImGui::ImageButton((ImTextureID)(size_t)(m_PlayButton->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(0.9f, 0.9f, 0.9f, 1.0f)))
+                OnScenePlay();
+            break;
+
+        case SceneState::Play:
+            if (ImGui::ImageButton((ImTextureID)(size_t)(m_PlayButton->GetRendererID()), ImVec2(32, 32), ImVec2(0, 0), ImVec2(1, 1), -1, ImVec4(0, 0, 0, 0), ImVec4(1.0f, 1.0f, 1.0f, 0.2f)))
+                OnSceneStop();
+            break;
+    }
+
+    ImGui::End();
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar(2);
+}
+
 void EditorLayer::DrawMenuBar()
 {
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
+                OpenScene();
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+                SaveScene(m_EditorScene->GetAssetPath());
+
+            if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+                SaveScene();
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Reload C# Assembly"))
+                ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll", *m_EditorScene);
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Exit", "Alt+F4"))
                 Shutdown();
 
@@ -628,6 +677,57 @@ void EditorLayer::DrawMenuBar()
 
         ImGui::EndMenuBar();
     }
+}
+
+void EditorLayer::OpenScene()
+{
+    std::string filepath = FileSystem::OpenFileDialog("Amber Scene (*.asc):*.asc", "Open Scene");
+    if (!filepath.empty())
+    {
+        Ref<Scene> scene = Ref<Scene>::Create("", filepath);
+        SceneSerializer serializer(scene);
+        serializer.Deserialize(filepath);
+
+        m_EditorScene = scene;
+        m_SceneHierarchyPanel->SetContext(scene);
+        ScriptEngine::SetSceneContext(scene);
+        m_SelectionContext.clear();
+    }
+}
+
+void EditorLayer::SaveScene(const std::string& path)
+{
+    std::string filepath = path.empty() ? FileSystem::SaveFileDialog("Amber Scene (*.asc):*.asc", "Save Scene") : path;
+    if (!filepath.empty())
+    {
+        SceneSerializer serializer(m_EditorScene);
+        serializer.Serialize(filepath);
+        m_EditorScene->SetAssetPath(filepath);
+    }
+}
+
+void EditorLayer::OnScenePlay()
+{
+    m_SelectionContext.clear();
+    m_SceneState = SceneState::Play;
+
+    m_RuntimeScene = Ref<Scene>::Create();
+    m_EditorScene->CopyTo(m_RuntimeScene);
+
+    m_RuntimeScene->OnRuntimeStart();
+    m_SceneHierarchyPanel->SetContext(m_RuntimeScene);
+}
+
+void EditorLayer::OnSceneStop()
+{
+    m_RuntimeScene->OnRuntimeStop();
+    m_SceneState = SceneState::Edit;
+
+    m_RuntimeScene = nullptr;
+
+    m_SelectionContext.clear();
+    ScriptEngine::SetSceneContext(m_EditorScene);
+    m_SceneHierarchyPanel->SetContext(m_EditorScene);
 }
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
@@ -641,7 +741,7 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 m_SelectionContext.clear();
 
             auto [origin, direction] = CastRay(mouseX, mouseY);
-            auto entities = m_Scene->GetAllEntitiesWith<MeshComponent, TransformComponent>();
+            auto entities = m_EditorScene->GetAllEntitiesWith<MeshComponent, TransformComponent>();
 
             float minT = std::numeric_limits<float>::max();
             SelectedSubmesh selected(Entity(), nullptr, 0.0f);
@@ -654,7 +754,7 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 {
                     auto& submesh = submeshes[i];
                     const glm::mat4& transform = entities.get<TransformComponent>(entity);
-                    Ray ray = {
+                    Math::Ray ray = {
                         glm::inverse(transform * submesh.Transform) * glm::vec4(origin, 1.0f),
                         glm::inverse(glm::mat3(transform) * glm::mat3(submesh.Transform)) * direction
                     };
@@ -662,7 +762,7 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                     float t;
                     if (ray.IntersectsAABB(submesh.BoundingBox, t))
                     {
-                        Entity selectedEntity(entity, m_Scene.Raw());
+                        Entity selectedEntity(entity, m_EditorScene.Raw());
 
                         // TODO: Triangle check for animated meshes?
                         if (mesh->IsAnimated())
@@ -723,43 +823,62 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 
 bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 {
-    switch (e.GetKeyCode())
+    if (m_ViewportPanelFocused)
     {
-        case AB_KEY_Q:
-            m_GizmoMode = -1;
-            break;
-        case AB_KEY_T:
-            m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
-            break;
-        case AB_KEY_R:
-            m_GizmoMode = ImGuizmo::OPERATION::ROTATE;
-            break;
-        case AB_KEY_S:
-            m_GizmoMode = ImGuizmo::OPERATION::SCALE;
-            break;
-        case AB_KEY_B:
-            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
-                m_EnableOverlay = !m_EnableOverlay;
-            break;
-        case AB_KEY_G:
-            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
-                m_ShowGrid = !m_ShowGrid;
-            break;
-        case AB_KEY_TAB:
-            if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
-                m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
-            break;
+        switch (e.GetKeyCode())
+        {
+            case AB_KEY_Q:
+                m_GizmoMode = -1;
+                break;
+            case AB_KEY_T:
+                m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+                break;
+            case AB_KEY_R:
+                m_GizmoMode = ImGuizmo::OPERATION::ROTATE;
+                break;
+            case AB_KEY_S:
+                m_GizmoMode = ImGuizmo::OPERATION::SCALE;
+                break;
+        }
     }
+
+    if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL))
+    {
+        switch (e.GetKeyCode())
+        {
+            case AB_KEY_B:
+                m_EnableOverlay = !m_EnableOverlay;
+                break;
+            case AB_KEY_G:
+                m_ShowGrid = !m_ShowGrid;
+                break;
+            case AB_KEY_TAB:
+                m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
+                break;
+
+            // Menu shortcuts
+            case AB_KEY_O:
+                OpenScene();
+                break;
+
+            case AB_KEY_S:
+                if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+                    SaveScene();
+                else
+                    SaveScene(m_EditorScene->GetAssetPath());
+                break;
+        }
+    }
+
     return false;
 }
 
 std::pair<glm::vec3, glm::vec3> EditorLayer::CastRay(float x, float y)
 {
-    const Camera& camera = m_CameraEntity.GetComponent<CameraComponent>();
-    glm::vec3 origin = camera.GetPosition();
+    glm::vec3 origin = m_EditorCamera.GetPosition();
 
-    glm::mat4 invProj = glm::inverse(camera.GetProjectionMatrix());
-    glm::mat3 invView = glm::inverse(glm::mat3(camera.GetViewMatrix()));
+    glm::mat4 invProj = glm::inverse(m_EditorCamera.GetProjectionMatrix());
+    glm::mat3 invView = glm::inverse(glm::mat3(m_EditorCamera.GetViewMatrix()));
 
     glm::vec4 mouseClipPos(x, y, -1.0f, 1.0f);
     glm::vec4 ray = invProj * mouseClipPos;

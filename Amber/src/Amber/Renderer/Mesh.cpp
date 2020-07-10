@@ -680,7 +680,7 @@ void Mesh::UpdateBones(float time)
         const aiMesh* mesh = m_Scene->mMeshes[m];
         Submesh& submesh = m_Submeshes[m];
         auto& aabb = submesh.BoundingBox;
-        aabb = AABB();
+        aabb = Math::AABB();
 
         for (uint32_t i = 0; i < mesh->mNumBones; i++)
         {

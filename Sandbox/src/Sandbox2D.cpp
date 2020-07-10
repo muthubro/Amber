@@ -5,14 +5,15 @@
 #include <ImGui/imgui.h>
 
 Sandbox2D::Sandbox2D()
-    : Layer("Sandbox 2D"), m_CameraController(1280.0f / 720.0f) {}
+    : Layer("Sandbox 2D") {}
 
 void Sandbox2D::OnAttach()
 {
     AB_PROFILE_FUNCTION();
 
     m_CheckerboardTexture = Amber::Texture2D::Create("assets/textures/Checkerboard.png", true, true, Amber::TextureWrap::Repeat, Amber::TextureFilter::Nearest);
-
+    m_Camera->SetProjectionType(Amber::SceneCamera::ProjectionType::Orthographic);
+    
     Amber::RenderCommand::SetViewPort(0, 0, Amber::Application::Get().GetWindow().GetWidth(), Amber::Application::Get().GetWindow().GetHeight());
 }
 
@@ -24,11 +25,6 @@ void Sandbox2D::OnDetach()
 void Sandbox2D::OnUpdate(Amber::Timestep ts)
 {
     AB_PROFILE_FUNCTION();
-    // Update
-    {
-        AB_PROFILE_SCOPE("CameraController::OnUpdate");
-        m_CameraController.OnUpdate(ts);
-    }
 
     // Render
     {
@@ -45,7 +41,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         static float rotation = 0.0f;
         rotation += ts * 50.0f;
 
-        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
+        Amber::Renderer2D::BeginScene(m_Camera->GetProjectionMatrix());
 
         Amber::Renderer2D::DrawQuad({ { 0.5f, -0.5f }, { 0.5f, 0.75f }, glm::radians(30.0f), { 0.2f, 0.3f, 0.8f, 1.0f } });
 
@@ -81,7 +77,7 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
         Amber::Renderer2D::EndScene();
         Amber::Renderer::WaitAndRender();
 
-        Amber::Renderer2D::BeginScene(m_CameraController.GetCamera().GetViewProjectionMatrix());
+        Amber::Renderer2D::BeginScene(m_Camera->GetProjectionMatrix());
         for (float y = -5.0f; y < 5.0f; y += 0.5f)
         {
             for (float x = -5.0f; x < 5.0f; x += 0.5f)
@@ -96,7 +92,6 @@ void Sandbox2D::OnUpdate(Amber::Timestep ts)
 
 void Sandbox2D::OnEvent(Amber::Event& e)
 {
-    m_CameraController.OnEvent(e);
 }
 
 void Sandbox2D::OnImGuiRender()

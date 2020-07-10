@@ -46,6 +46,7 @@ Application::~Application()
 {
     AB_PROFILE_FUNCTION();
 
+    ScriptEngine::Shutdown();
     Renderer::Shutdown();
 }
 

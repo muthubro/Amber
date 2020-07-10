@@ -9,6 +9,7 @@ Editor/assets/scripts/*.dll
 Editor/assets/scripts/*.pdb
 *.user
 *.vcxproj*
+*.csproj*
 *.sln
 *.json
 *.log

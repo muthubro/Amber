@@ -2,20 +2,32 @@
 
 #include <glm/glm.hpp>
 
+#include "Amber/Core/UUID.h"
+
 #include "Amber/Math/AABB.h"
 
 #include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/Mesh.h"
 
+#include "Amber/Scene/SceneCamera.h"
+
 namespace Amber
 {
 
+struct IDComponent
+{
+    UUID ID = 0;
+
+    operator UUID& () { return ID; }
+    operator const UUID& () const { return ID; }
+};
+
 struct SceneComponent
 {
-    uint32_t SceneID;
+    UUID SceneID;
 
-    operator uint32_t& () { return SceneID; }
-    operator const uint32_t& () const { return SceneID; }
+    operator UUID& () { return SceneID; }
+    operator const UUID& () const { return SceneID; }
 };
 
 struct TagComponent
@@ -36,11 +48,11 @@ struct TransformComponent
 
 struct CameraComponent
 {
-    Amber::Camera Camera;
+    SceneCamera Camera;
     bool Primary = true;
 
-    operator Amber::Camera& () { return Camera; }
-    operator const Amber::Camera& () const { return Camera; }
+    operator SceneCamera& () { return Camera; }
+    operator const SceneCamera& () const { return Camera; }
 };
 
 struct MeshComponent
@@ -51,14 +63,15 @@ struct MeshComponent
     operator const Ref<Amber::Mesh>() const { return Mesh; }
 
     operator bool() { return Mesh; }
+    operator bool() const { return Mesh; }
 };
 
 struct BoxColliderComponent
 {
-    AABB BoundingBox;
+    Math::AABB BoundingBox;
 
-    operator AABB&() { return BoundingBox; }
-    operator const AABB&() const { return BoundingBox; }
+    operator Math::AABB&() { return BoundingBox; }
+    operator const Math::AABB&() const { return BoundingBox; }
 };
 
 struct ScriptComponent
@@ -66,7 +79,7 @@ struct ScriptComponent
     std::string ModuleName;
 
     operator std::string& () { return ModuleName; }
-    operator const std::string& () { return ModuleName; }
+    operator const std::string& () const { return ModuleName; }
 };
 
 }

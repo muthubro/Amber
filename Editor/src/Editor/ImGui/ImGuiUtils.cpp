@@ -21,34 +21,33 @@ void PushID(int id)
     s_PropertyCount = 0;
 }
 
-void BeginPropertyGrid(int id)
+void BeginPropertyGrid(uint32_t columns, int id)
 {
     PushID(id);
-    ImGui::Columns(2);
+    ImGui::Columns(columns);
     s_ActivePropertyGrids++;
 }
 
-bool Property(const std::string& label, std::string& value)
+bool Property(const std::string& label, std::string& value, bool error)
 {
     bool grid = s_ActivePropertyGrids;
 
-    if (label.empty())
+    if (grid)
     {
-        ImGui::Columns();
+        if (label.empty())
+        {
+            ImGui::Columns();
+        }
+        else
+        {
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+        }
         ImGui::PushItemWidth(-1);
     }
     else
     {
-        ImGui::Text(label.c_str());
-        if (grid)
-        {
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-        }
-        else
-        {
-            ImGui::SameLine();
-        }
+        ImGui::SameLine();
     }
 
     s_PropertyID[0] = s_PropertyID[1] = '#';
@@ -57,6 +56,9 @@ bool Property(const std::string& label, std::string& value)
 
     char buffer[256];
     strcpy_s(buffer, value.c_str());
+
+    if (error)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
 
     bool modified = false;
     if (ImGui::InputText(s_PropertyID, buffer, 256))
@@ -65,41 +67,41 @@ bool Property(const std::string& label, std::string& value)
         modified = true;
     }
 
-    if (label.empty())
+    if (error)
+        ImGui::PopStyleColor();
+
+    if (grid)
     {
         ImGui::PopItemWidth();
-        ImGui::Columns(2);
-    }
-    else if (grid)
-    {
-        ImGui::PopItemWidth();
-        ImGui::NextColumn();
+        if (label.empty())
+            ImGui::Columns(2);
+        else
+            ImGui::NextColumn();
     }
 
     return modified;
 }
 
-bool Property(const std::string& label, const std::string& value)
+bool Property(const std::string& label, const std::string& value, bool error)
 {
     bool grid = s_ActivePropertyGrids;
 
-    if (label.empty())
+    if (grid)
     {
-        ImGui::Columns();
+        if (label.empty())
+        {
+            ImGui::Columns();
+        }
+        else
+        {
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+        }
         ImGui::PushItemWidth(-1);
     }
     else
     {
-        ImGui::Text(label.c_str());
-        if (grid)
-        {
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-        }
-        else
-        {
-            ImGui::SameLine();
-        }
+        ImGui::SameLine();
     }
 
     s_PropertyID[0] = s_PropertyID[1] = '#';
@@ -109,7 +111,13 @@ bool Property(const std::string& label, const std::string& value)
     char buffer[256];
     strcpy_s(buffer, value.c_str());
 
+    if (error)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+
     ImGui::InputText(s_PropertyID, buffer, 256, ImGuiInputTextFlags_ReadOnly);
+
+    if (error)
+        ImGui::PopStyleColor();
 
     if (label.empty())
     {
@@ -125,36 +133,41 @@ bool Property(const std::string& label, const std::string& value)
     return false;
 }
 
-bool Property(const std::string& label, char* value)
+bool Property(const std::string& label, char* value, bool error)
 {
     bool grid = s_ActivePropertyGrids;
 
-    if (label.empty())
+    if (grid)
     {
-        ImGui::Columns();
+        if (label.empty())
+        {
+            ImGui::Columns();
+        }
+        else
+        {
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+        }
         ImGui::PushItemWidth(-1);
     }
     else
     {
-        ImGui::Text(label.c_str());
-        if (grid)
-        {
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-        }
-        else
-        {
-            ImGui::SameLine();
-        }
+        ImGui::SameLine();
     }
 
     s_PropertyID[0] = s_PropertyID[1] = '#';
     memset(s_PropertyID + 2, 0, 14);
     sprintf_s(s_PropertyID + 2, 14, "%x", s_PropertyCount++);
 
+    if (error)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+
     bool modified = false;
     if (ImGui::InputText(s_PropertyID, value, 256))
         modified = true;
+
+    if (error)
+        ImGui::PopStyleColor();
 
     if (label.empty())
     {
@@ -170,34 +183,39 @@ bool Property(const std::string& label, char* value)
     return modified;
 }
 
-bool Property(const std::string& label, const char* value)
+bool Property(const std::string& label, const char* value, bool error)
 {
     bool grid = s_ActivePropertyGrids;
 
-    if (label.empty())
+    if (grid)
     {
-        ImGui::Columns();
+        if (label.empty())
+        {
+            ImGui::Columns();
+        }
+        else
+        {
+            ImGui::Text(label.c_str());
+            ImGui::NextColumn();
+        }
         ImGui::PushItemWidth(-1);
     }
     else
     {
-        ImGui::Text(label.c_str());
-        if (grid)
-        {
-            ImGui::NextColumn();
-            ImGui::PushItemWidth(-1);
-        }
-        else
-        {
-            ImGui::SameLine();
-        }
+        ImGui::SameLine();
     }
 
     s_PropertyID[0] = s_PropertyID[1] = '#';
     memset(s_PropertyID + 2, 0, 14);
     sprintf_s(s_PropertyID + 2, 14, "%x", s_PropertyCount++);
 
+    if (error)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+
     ImGui::InputText(s_PropertyID, (char*)value, 256, ImGuiInputTextFlags_ReadOnly);
+
+    if (error)
+        ImGui::PopStyleColor();
 
     if (label.empty())
     {

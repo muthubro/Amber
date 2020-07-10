@@ -20,7 +20,7 @@ struct SceneRendererData
     const Scene* ActiveScene = nullptr;
     struct SceneInfo
     {
-        Camera SceneCamera;
+        SceneRendererCamera SceneCamera;
 
         Ref<MaterialInstance> SkyboxMaterial;
         Environment SceneEnvironment;
@@ -93,7 +93,7 @@ void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
     s_Data.CompositePass->GetSpecification().TargetFramebuffer->Resize(width, height);
 }
 
-void SceneRenderer::BeginScene(Scene* scene, const Camera& camera)
+void SceneRenderer::BeginScene(Scene* scene, const SceneRendererCamera& camera)
 {
     AB_CORE_ASSERT(!s_Data.ActiveScene, "Another scene is still active!");
 
@@ -123,7 +123,8 @@ void SceneRenderer::GeometryPass()
 {
     Renderer::BeginRenderPass(s_Data.GeometryPass);
 
-    auto& viewProj = s_Data.SceneData.SceneCamera.GetViewProjection();
+    auto viewProj = s_Data.SceneData.SceneCamera.Camera.GetProjectionMatrix() * s_Data.SceneData.SceneCamera.ViewMatrix;
+    glm::vec3 cameraPosition = glm::inverse(s_Data.SceneData.SceneCamera.ViewMatrix)[3];
     
     // Skybox
     s_Data.SceneData.SkyboxMaterial->Set("u_InverseVP", glm::inverse(viewProj));
@@ -136,7 +137,7 @@ void SceneRenderer::GeometryPass()
         auto baseMaterial = drawCommand.Mesh->GetMaterial();
 
         baseMaterial->Set("u_ViewProjection", viewProj);
-        baseMaterial->Set("u_ViewPosition", s_Data.SceneData.SceneCamera.GetPosition());
+        baseMaterial->Set("u_ViewPosition", cameraPosition);
 
         baseMaterial->Set("u_IrradianceTexture", s_Data.SceneData.SceneEnvironment.IrradianceMap);
         baseMaterial->Set("u_RadianceTexture", s_Data.SceneData.SceneEnvironment.RadianceMap);
@@ -176,7 +177,7 @@ void SceneRenderer::CompositePass()
     Renderer::BeginRenderPass(s_Data.CompositePass);
 
     auto material = Ref<MaterialInstance>::Create(s_Data.CompositeBaseMaterial);
-    material->Set("u_Exposure", s_Data.SceneData.SceneCamera.GetExposure());
+    material->Set("u_Exposure", s_Data.SceneData.SceneCamera.Camera.GetExposure());
     material->Set("u_Texture", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetColorAttachments()[0]);
     material->Set("u_TextureSamples", s_Data.GeometryPass->GetSpecification().TargetFramebuffer->GetSpecification().Samples);
 

@@ -29,8 +29,10 @@
 #include "Amber/Math/Noise.h"
 #include "Amber/Math/Random.h"
 #include "Amber/Math/Ray.h"
+#include "Amber/Math/Transforms.h"
 
 #include "Amber/Scene/Scene.h"
+#include "Amber/Scene/SceneSerializer.h"
 
 #include "Amber/Script/ScriptEngine.h"
 
@@ -48,6 +50,4 @@
 #include "Amber/Renderer/VertexArray.h"
 
 #include "Amber/Renderer/Camera.h"
-#include "Amber/Renderer/OrthographicCamera.h"
-#include "Amber/Renderer/OrthographicCameraController.h"
 //------------------------------------------------//

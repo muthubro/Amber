@@ -24,6 +24,7 @@ IncludeDir["glm"] = "Amber/vendor/glm"
 IncludeDir["ImGui"] = "Amber/vendor/ImGui"
 IncludeDir["mono"] = "Amber/vendor/mono/include"
 IncludeDir["stb"] = "Amber/vendor/stb/include"
+IncludeDir["yaml_cpp"] = "Amber/vendor/yaml-cpp/include"
 
 LibraryDir = {}
 LibraryDir["mono"] = "vendor/mono/lib"
@@ -52,7 +53,9 @@ project "Amber"
         "%{prj.name}/src/**.h",
         "%{prj.name}/src/**.c",
         "%{prj.name}/src/**.hpp",
-        "%{prj.name}/src/**.cpp"
+        "%{prj.name}/src/**.cpp",
+        "Amber/vendor/yaml-cpp/src/**.h",
+        "Amber/vendor/yaml-cpp/src/**.cpp"
     }
     includedirs
     {
@@ -65,7 +68,8 @@ project "Amber"
         "%{IncludeDir.glm}",
         "%{IncludeDir.ImGui}",
         "%{IncludeDir.mono}",
-        "%{IncludeDir.stb}"
+        "%{IncludeDir.stb}",
+        "%{IncludeDir.yaml_cpp}"
     }
     links
     {
@@ -80,6 +84,9 @@ project "Amber"
         "_CRT_SECURE_NO_WARNINGS",
         "GLFW_INCLUDE_NONE"
     }
+
+    filter "files:Amber/src/Amber/Vendor/**.cpp or files:Amber/vendor/**.cpp"
+        flags "NoPCH"
 
     filter "system:windows"
         systemversion "latest"

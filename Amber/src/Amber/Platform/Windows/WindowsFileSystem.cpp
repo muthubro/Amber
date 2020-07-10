@@ -12,12 +12,9 @@
 namespace Amber
 {
 
-std::string FileSystem::OpenFileDialog(const std::string& filter, const std::string& title)
+static std::string ParseFilter(const std::string& filter)
 {
     using namespace std::string_literals;
-
-    OPENFILENAMEA ofn;
-    CHAR szFile[260] = { 0 };
     
     size_t filterSplit = filter.find(':');
     std::string filterName, filterValue;
@@ -33,6 +30,15 @@ std::string FileSystem::OpenFileDialog(const std::string& filter, const std::str
     }
 
     std::string filterText = filterName + "\0"s + filterValue + "\0All\0*.*\0"s;
+    return filterText;
+}
+
+std::string FileSystem::OpenFileDialog(const std::string& filter, const std::string& title)
+{
+    OPENFILENAMEA ofn;
+    CHAR szFile[260] = { 0 };
+    
+    std::string filterText = ParseFilter(filter);
 
     ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(OPENFILENAME);
@@ -45,9 +51,35 @@ std::string FileSystem::OpenFileDialog(const std::string& filter, const std::str
     ofn.lpstrFileTitle = NULL;
     ofn.nMaxFileTitle = 0;
     ofn.lpstrInitialDir = NULL;
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
     if (GetOpenFileNameA(&ofn) == TRUE)
+        return ofn.lpstrFile;
+
+    return std::string();
+}
+
+std::string FileSystem::SaveFileDialog(const std::string& filter, const std::string& title)
+{
+    OPENFILENAMEA ofn;
+    CHAR szFile[260] = { 0 };    
+    
+    std::string filterText = ParseFilter(filter);
+
+    ZeroMemory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.hwndOwner = glfwGetWin32Window((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow());
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = sizeof(szFile);
+    ofn.lpstrFilter = filterText.c_str();
+    ofn.nFilterIndex = 1;
+    ofn.lpstrTitle = title.c_str();
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+    if (GetSaveFileNameA(&ofn) == TRUE)
         return ofn.lpstrFile;
 
     return std::string();

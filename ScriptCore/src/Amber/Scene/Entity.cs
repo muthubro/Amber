@@ -9,17 +9,15 @@ namespace Amber
 {
     public class Entity
     {
-        public uint EntityID { get; private set; }
-        public uint SceneID { get; private set; }
+        public ulong ID { get; private set; }
 
         ~Entity()
         {
-            Console.WriteLine("Destroyed Entity {0}:{1}", SceneID, EntityID);
         }
 
         public T CreateComponent<T>() where T : Component, new()
         {
-            CreateComponent_Native(SceneID, EntityID, typeof(T));
+            CreateComponent_Native(ID, typeof(T));
             T component = new T();
             component.Entity = this;
             return component;
@@ -27,7 +25,7 @@ namespace Amber
 
         public bool HasComponent<T>() where T : Component
         {
-            return HasComponent_Native(SceneID, EntityID, typeof(T));
+            return HasComponent_Native(ID, typeof(T));
         }
 
         public T GetComponent<T>() where T : Component, new()
@@ -42,9 +40,9 @@ namespace Amber
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern void CreateComponent_Native(uint sceneID, uint entityID, Type type);
+        private static extern void CreateComponent_Native(ulong ID, Type type);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern bool HasComponent_Native(uint sceneID, uint entityID, Type type);
+        private static extern bool HasComponent_Native(ulong ID, Type type);
     }
 }

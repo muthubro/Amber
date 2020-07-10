@@ -20,7 +20,7 @@ void Sandbox3D::OnAttach()
 
     m_Scene = Ref<Scene>::Create("Model Scene");
     m_CameraEntity = m_Scene->CreateEntity("Camera");
-    m_CameraEntity.AddComponent<CameraComponent>(Camera(glm::perspectiveFov(glm::radians(45.0f), 1280.0f, 720.0f, 0.1f, 10000.0f)));
+    m_CameraEntity.AddComponent<CameraComponent>();
     m_Scene->SetEnvironment(environment);
 
     m_MeshEntity = m_Scene->CreateEntity("Test entity");
@@ -51,7 +51,7 @@ void Sandbox3D::OnUpdate(Amber::Timestep ts)
 
     auto& camera = m_CameraEntity.GetComponent<Amber::CameraComponent>().Camera;
 
-    Amber::Renderer2D::BeginScene(camera.GetViewProjection());
+    Amber::Renderer2D::BeginScene(camera.GetProjectionMatrix() * glm::inverse(m_CameraEntity.GetComponent<Amber::TransformComponent>().Transform));
 
     auto material = Amber::Ref<Amber::MaterialInstance>::Create(Amber::Ref<Amber::Material>::Create(m_FinalShader));
     material->Set("u_Exposure", camera.GetExposure());

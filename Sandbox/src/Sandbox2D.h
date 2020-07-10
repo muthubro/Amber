@@ -16,6 +16,6 @@ public:
     void OnImGuiRender() override;
 
 private:
-    Amber::OrthographicCameraController m_CameraController;
+    Amber::Ref<Amber::SceneCamera> m_Camera;
     Amber::Ref<Amber::Texture2D> m_CheckerboardTexture;
 };

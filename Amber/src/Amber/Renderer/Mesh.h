@@ -68,7 +68,7 @@ struct AnimatedVertex
 
 struct BoneInfo
 {
-    AABB BoundingBox;
+    Math::AABB BoundingBox;
     glm::mat4 FinalTransform = glm::mat4(1.0f);
     glm::mat4 Offset = glm::mat4(1.0f);
 };
@@ -102,7 +102,7 @@ struct Submesh : public RefCounted
     bool HasMetalnessMap = false;
 
     glm::mat4 Transform = glm::mat4(1.0f);
-    AABB BoundingBox;
+    Math::AABB BoundingBox;
 
     Submesh() = default;
     Submesh(uint32_t baseVertex, uint32_t baseIndex, uint32_t indexCount, uint32_t materialIndex)

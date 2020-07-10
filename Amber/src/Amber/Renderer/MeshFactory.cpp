@@ -67,7 +67,7 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
     mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, 6, 0);
-    submesh.BoundingBox = AABB(bottomLeft.Position, topRight.Position);
+    submesh.BoundingBox = Math::AABB(bottomLeft.Position, topRight.Position);
     
     mesh->m_TriangleCache[0].emplace_back(bottomLeft.Position, bottomRight.Position, topRight.Position);
     mesh->m_TriangleCache[0].emplace_back(topRight.Position, topLeft.Position, bottomLeft.Position);
@@ -159,7 +159,7 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
     mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, 36, 0);
-    submesh.BoundingBox = AABB(mesh->m_StaticVertices[0].Position, mesh->m_StaticVertices[6].Position);
+    submesh.BoundingBox = Math::AABB(mesh->m_StaticVertices[0].Position, mesh->m_StaticVertices[6].Position);
 
     for (uint32_t i = 0; i < 12; i++)
         mesh->m_TriangleCache[0].emplace_back(
@@ -246,7 +246,7 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
     mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, (uint32_t)mesh->m_Indices.size() * 3, 0);
-    submesh.BoundingBox = AABB(center - glm::vec3(radius), center + glm::vec3(radius));
+    submesh.BoundingBox = Math::AABB(center - glm::vec3(radius), center + glm::vec3(radius));
 
     mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get("Static_Lighting"));
     Ref<MaterialInstance> material = Ref<MaterialInstance>::Create(mesh->m_BaseMaterial);

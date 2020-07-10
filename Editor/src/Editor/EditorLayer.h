@@ -65,15 +65,25 @@ private:
         None = 0, Entity, Submesh
     };
 
-    Ref<Scene> m_Scene;
-    Entity m_CameraEntity;
+    enum class SceneState
+    {
+        Edit = 0, Play, Pause
+    };
+
+    Ref<Scene> m_EditorScene, m_RuntimeScene;
+    EditorCamera m_EditorCamera;
 
     Ref<Texture2D> m_CheckerboardTexture;
+    Ref<Texture2D> m_PlayButton;
+
+    SceneState m_SceneState = SceneState::Edit;
 
     uint32_t m_DockspaceID;
 
     glm::vec2 m_ViewportBounds[2];
-    bool m_AllowViewportCameraEvents = true;
+    bool m_AllowViewportCameraEvents = false;
+    bool m_ViewportPanelMouseOver = false;
+    bool m_ViewportPanelFocused = false;
     bool m_EnableOverlay = true;
     bool m_ShowGrid = true;
     float m_GridResolution = 0.025f;
@@ -92,7 +102,14 @@ private:
     void DrawAnimationPanel();
     void DrawMaterialsPanel();
     void DrawViewport();
+    void DrawToolbar();
     void DrawMenuBar();
+
+    void OpenScene();
+    void SaveScene(const std::string& path = "");
+
+    void OnScenePlay();
+    void OnSceneStop();
 
     bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
     bool OnKeyPressed(KeyPressedEvent& e);

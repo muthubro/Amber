@@ -5,7 +5,7 @@
 
 #include "Amber/Scene/Entity.h"
 
-#include "ScriptEngineWrapper.h"
+#include "ScriptWrappers.h"
 
 namespace Amber
 {

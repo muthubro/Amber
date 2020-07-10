@@ -20,13 +20,19 @@ struct SceneRendererOptions
     float GridSize = 16.025f;
 };
 
+struct SceneRendererCamera
+{
+    Amber::Camera Camera;
+    glm::mat4 ViewMatrix;
+};
+
 class SceneRenderer
 {
 public:
     static void Init();
     static void SetViewportSize(uint32_t width, uint32_t height);
 
-    static void BeginScene(Scene* scene, const Camera& camera);
+    static void BeginScene(Scene* scene, const SceneRendererCamera& camera);
     static void EndScene();
 
     static void SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), const Ref<MaterialInstance> = nullptr);

@@ -107,7 +107,7 @@ void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<Ma
     }
 }
 
-void Renderer::DrawAABB(const AABB& aabb, const glm::mat4& transform, const glm::vec4& color)
+void Renderer::DrawAABB(const Math::AABB& aabb, const glm::mat4& transform, const glm::vec4& color)
 {
     glm::vec4 corners[8] = {
         transform * glm::vec4(aabb.Min.x, aabb.Min.y, aabb.Max.z, 1.0f),

@@ -35,9 +35,14 @@ public:
         return dist(s_RandomEngine);
     }
 
+    static uint64_t UInt()
+    {
+        std::uniform_int_distribution<uint64_t> dist;
+        return dist(s_RandomEngine);
+    }
+
 private:
     inline static std::mt19937 s_RandomEngine;
-    inline static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
 };
 
 } // Math
