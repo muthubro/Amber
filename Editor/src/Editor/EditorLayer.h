@@ -74,7 +74,7 @@ private:
     EditorCamera m_EditorCamera;
 
     Ref<Texture2D> m_CheckerboardTexture;
-    Ref<Texture2D> m_PlayButton;
+    Ref<Texture2D> m_PlayButton, m_PauseButton;
 
     SceneState m_SceneState = SceneState::Edit;
 

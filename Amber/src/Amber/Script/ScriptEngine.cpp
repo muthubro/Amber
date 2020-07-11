@@ -204,7 +204,6 @@ void ScriptEngine::OnCreateEntity(UUID sceneID, UUID entityID)
 {
     EntityInstance& instance = GetEntityInstanceData(sceneID, entityID).Instance;
     
-    mono_gc_collect(mono_gc_max_generation());
     if (instance.ScriptClass->OnCreateMethod)
     {
         MonoException* exception;
@@ -222,6 +221,7 @@ void ScriptEngine::OnDestroyEntity(UUID sceneID, UUID entityID)
     }
 
     mono_gc_collect(mono_gc_max_generation());
+    while (mono_gc_pending_finalizers());
     mono_gchandle_free(instance.Handle);
     s_EntityInstanceMap[sceneID].erase(entityID);
 }
@@ -230,7 +230,6 @@ void ScriptEngine::OnUpdateEntity(UUID sceneID, UUID entityID, Timestep ts)
 {
     EntityInstance& instance = GetEntityInstanceData(sceneID, entityID).Instance;
 
-    mono_gc_collect(mono_gc_max_generation());
     if (instance.ScriptClass->OnUpdateMethod)
     {
         MonoException* exception;
@@ -421,7 +420,7 @@ void ScriptEngine::CopyEntityScriptData(UUID dstScene, UUID srcScene)
             {
                 auto& dstFieldMap = dstModuleFieldMap[moduleName];
                 AB_CORE_ASSERT(dstFieldMap.find(fieldName) != dstFieldMap.end());
-                dstFieldMap.at(fieldName).StoredValue.Data = field.StoredValue.Data;
+                dstFieldMap.at(fieldName).StoredValue = field.StoredValue;
             }
         }
     }

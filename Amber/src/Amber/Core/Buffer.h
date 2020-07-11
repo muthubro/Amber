@@ -83,6 +83,8 @@ struct Buffer
     {
         Allocate(other.Size);
         Write(other.Data, Size);
+
+        return *this;
     }
 
     Buffer& operator=(Buffer&& other) noexcept

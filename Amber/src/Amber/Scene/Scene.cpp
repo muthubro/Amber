@@ -163,6 +163,14 @@ void Scene::OnRuntimeStart()
 
 void Scene::OnRuntimeStop()
 {
+    auto entities = GetAllEntitiesWith<ScriptComponent>();
+    for (auto entity : entities)
+    {
+        Entity e = { entity, this };
+        if (ScriptEngine::ModuleExists(e.GetComponent<ScriptComponent>().ModuleName))
+            ScriptEngine::OnDestroyEntity(m_SceneID, e.GetUUID());
+    }
+    
     m_IsPlaying = false;
 }
 

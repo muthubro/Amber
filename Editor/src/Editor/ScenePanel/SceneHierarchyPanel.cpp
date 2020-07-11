@@ -215,12 +215,15 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 
 void SceneHierarchyPanel::DrawComponents(Entity& entity)
 {
-    auto tag = entity.GetComponent<TagComponent>();
+    auto& tag = entity.GetComponent<TagComponent>();
+
+    BeginPropertyGrid(2);
+    ImGui::PushItemWidth(-1);
     Property("", tag.Tag);
-
-    ImGui::SameLine();
-
+    ImGui::NextColumn();
     ImGui::TextDisabled("%llx", entity.GetComponent<IDComponent>().ID);
+    ImGui::NextColumn();
+    EndPropertyGrid();
 
     ImGui::Separator();
 
@@ -263,7 +266,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
 
             if (ImGui::Button("...##MeshOpen"))
             {
-                std::string filepath = FileSystem::OpenFileDialog("FBX:(*.fbx)", "Select Mesh");
+                std::string filepath = FileSystem::OpenFileDialog("FBX (*.fbx):*.fbx", "Select Mesh");
                 if (!filepath.empty())
                     mesh->Mesh = Ref<Mesh>::Create(filepath);
             }
@@ -295,8 +298,6 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                     auto data = camera.GetPerspectiveData();
                     data.FOV = glm::degrees(data.FOV);
                     Property("Vertical FOV", data.FOV, 0.0f, 90.0f);
-                    Property("Width", data.Width, 0.1f, 10000.0f);
-                    Property("Height", data.Height, 0.1f, 10000.0f);
                     Property("Near Clip", data.Near, 0.1f, 100.0f);
                     Property("Far Clip", data.Far, data.Near, 100000.0f);
                     data.FOV = glm::radians(data.FOV);
@@ -308,9 +309,8 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                 {
                     auto data = camera.GetOrthographicData();
                     Property("Size", data.Size, 0.1f, 10000.0f);
-                    Property("Aspect Ratio", data.AspectRatio, 0.1f, 10.0f);
-                    Property("Near Clip", data.Near, -1.0f, 1.0f);
-                    Property("Far Clip", data.Far, data.Near, 1.0f);
+                    Property("Near Clip", data.Near, 0.1f, 100.0f);
+                    Property("Far Clip", data.Far, data.Near, 100000.0f);
                     camera.SetOrthographic(data);
                     break;
                 }

@@ -51,14 +51,4 @@ void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
     }
 }
 
-void SceneCamera::SetProjectionType(ProjectionType type)
-{
-    m_ProjectionType = type;
-    switch (type)
-    {
-        case ProjectionType::Perspective: SetPerspective(m_PerspectiveData); break;
-        case ProjectionType::Orthographic: SetOrthographic(m_OrthographicData); break;
-    }
-}
-
 }

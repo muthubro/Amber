@@ -39,13 +39,12 @@ public:
     ProjectionType GetProjectionType() const { return m_ProjectionType; }
 
     void SetPerspective(const PerspectiveData& data);
-    void SetOrthographic(const OrthographicData& data);
-
     void SetPerspectiveData(const PerspectiveData& data) { m_PerspectiveData = data; }
+    void SetOrthographic(const OrthographicData& data);
     void SetOrthographicData(const OrthographicData& data) { m_OrthographicData = data; }
-    void SetViewportSize(uint32_t width, uint32_t height);
 
-    void SetProjectionType(ProjectionType type);
+    void SetProjectionType(ProjectionType type) { m_ProjectionType = type; }
+    void SetViewportSize(uint32_t width, uint32_t height);
 
 private:
     ProjectionType m_ProjectionType = ProjectionType::Perspective;
