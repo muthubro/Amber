@@ -64,7 +64,7 @@ void EditorCamera::CalculateViewMatrix()
     m_ViewProjection = m_ProjectionMatrix * m_ViewMatrix;
 }
 
-void EditorCamera::SetDirections()
+void EditorCamera::CalculateDirections()
 {
     m_UpDirection = glm::rotate(m_Orientation, glm::vec3(0.0f, 1.0f, 0.0f));
     m_RightDirection = glm::rotate(m_Orientation, glm::vec3(1.0f, 0.0f, 0.0f));
@@ -74,7 +74,7 @@ void EditorCamera::SetDirections()
 void EditorCamera::UpdateCamera()
 {
     CalculateOrientation();
-    SetDirections();
+    CalculateDirections();
     CalculatePosition();
     CalculateViewMatrix();
 }

@@ -27,12 +27,14 @@ public:
     struct OrthographicData
     {
         float Size = 10.0f;
-        float Near = -1.0f;
-        float Far = 1.0f;
+        float Near = 0.1f;
+        float Far = 1000.0f;
         float AspectRatio = 1280.0f / 720.0f;
     };
 
     SceneCamera();
+
+    void Update();
 
     const PerspectiveData& GetPerspectiveData() const { return m_PerspectiveData; }
     const OrthographicData& GetOrthographicData() const { return m_OrthographicData; }

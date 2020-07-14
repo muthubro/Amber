@@ -4,13 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Amber;
+using Amber.Editor;
 
 namespace Terrain
 {
     public class MapGenerator : Entity
     {
+        [EditorField("Width", 1, 2048, 1)]
         public uint width = 512;
+
+        [EditorField("Height", 1, 2048, 1)]
         public uint height = 512;
+
+        [EditorField("Scale", 0.01f, 10.0f, 0.01f)]
         public float scale = 0.3f;
 
         private void GenerateMap()

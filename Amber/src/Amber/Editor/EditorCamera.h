@@ -29,6 +29,8 @@ public:
     const glm::vec3& GetPosition() const { return m_Position; }
     const glm::quat& GetOrientation() const { return m_Orientation; }
     const glm::vec3& GetFocalPoint() const { return m_FocalPoint; }
+    
+    std::pair<uint32_t, uint32_t> GetViewportSize() const { return { m_ViewportWidth, m_ViewportHeight }; }
 
     float GetDistance() const { return m_Distance; }
     float GetPitch() const { return m_Pitch; }
@@ -41,7 +43,6 @@ public:
     void SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
 
     void SetFocalPoint(const glm::vec3& focalPoint) { m_FocalPoint = focalPoint; }
-
     void SetDistance(float distance) { m_Distance = distance; }
     void SetPitch(float pitch) { m_Pitch = pitch; }
     void SetYaw(float yaw) { m_Yaw = yaw; }
@@ -62,7 +63,7 @@ private:
     void CalculateOrientation();
     void CalculatePosition();
     void CalculateViewMatrix();
-    void SetDirections();
+    void CalculateDirections();
 
     bool OnMouseScroll(MouseScrolledEvent& e);
 

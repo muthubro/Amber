@@ -114,34 +114,45 @@ void ScriptEngine::Init()
     g_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
 }
 
-void ScriptEngine::LoadRuntimeAssembly(const std::string& assemblyPath, const Scene& scene)
+void ScriptEngine::LoadRuntimeAssembly(const std::string& assemblyPath)
 {
-    if (s_AppAssembly)
+    MonoDomain* domain = nullptr;
+    bool cleanup = false;
+    if (g_MonoDomain)
     {
-        mono_domain_unload(g_MonoDomain);
-        mono_assembly_close(s_AppAssembly);
+        domain = mono_domain_create_appdomain("Amber Runtime", nullptr);
+        mono_domain_set(domain, false);
 
-        mono_domain_create_appdomain("AmberRuntime", nullptr);
-
-        s_CoreAssembly = LoadAssembly("assets/scripts/ScriptCore.dll");
-        g_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
+        cleanup = true;
     }
 
-    s_AssemblyPath = assemblyPath;
+    s_CoreAssembly = LoadAssembly("assets/scripts/ScriptCore.dll");
+    g_CoreAssemblyImage = GetAssemblyImage(s_CoreAssembly);
 
+    s_AssemblyPath = assemblyPath;
     s_AppAssembly = LoadAssembly(s_AssemblyPath);
     s_AppAssemblyImage = GetAssemblyImage(s_AppAssembly);
-
     ScriptEngineRegistry::RegisterAll();
 
-    if (!s_EntityInstanceMap.empty())
+    if (cleanup)
     {
-        if (s_EntityInstanceMap.find(scene.GetUUID()) != s_EntityInstanceMap.end())
+        mono_domain_unload(g_MonoDomain);
+        g_MonoDomain = domain;
+    }
+}
+
+void ScriptEngine::ReloadAssembly(const std::string& assemblyPath)
+{
+    LoadRuntimeAssembly(assemblyPath);
+    if (s_EntityInstanceMap.size())
+    {
+        AB_CORE_ASSERT(s_SceneContext, "No active scene!");
+        if (s_EntityInstanceMap.find(s_SceneContext->GetUUID()) != s_EntityInstanceMap.end())
         {
-            auto& instanceMap = s_EntityInstanceMap[scene.GetUUID()];
-            for (auto& [entityID, instanceData] : instanceMap)
+            auto& entityMap = s_EntityInstanceMap.at(s_SceneContext->GetUUID());
+            for (auto& [entityID, entityInstanceData] : entityMap)
             {
-                const EntityMap& entityMap = scene.GetEntityMap();
+                const auto& entityMap = s_SceneContext->GetEntityMap();
                 AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
                 InitScriptEntity(entityMap.at(entityID));
             }
@@ -352,8 +363,6 @@ void ScriptEngine::InitScriptEntity(const Entity& entity)
         MonoType* monoType = mono_field_get_type(field);
         FieldType type = MonoTypeToFieldType(monoType);
 
-        MonoCustomAttrInfo* attributes = mono_custom_attrs_from_field(scriptClass.Class, field);
-
         if (oldFields.find(name) != oldFields.end())
         {
             fieldMap.emplace(name, std::move(oldFields.at(name)));
@@ -361,6 +370,7 @@ void ScriptEngine::InitScriptEntity(const Entity& entity)
         else
         {
             PublicField publicField = { name, type };
+            publicField.Initialize();
             publicField.Entity = &instance;
             publicField.ClassField = field;
             fieldMap.emplace(name, std::move(publicField));
@@ -519,6 +529,83 @@ bool PublicField::IsRuntimeAvailable() const
     return Entity && Entity->Handle;
 }
 
+PublicField::EditorData PublicField::GetEditorData(const std::string& moduleName)
+{
+    EditorData data;
+    auto& scriptClass = s_EntityClassMap[moduleName];
+    MonoCustomAttrInfo* attributes = mono_custom_attrs_from_field(scriptClass.Class, ClassField);
+    if (attributes)
+    {
+        MonoClass* editorField = mono_class_from_name(g_CoreAssemblyImage, "Amber.Editor", "EditorField");
+        AB_CORE_ASSERT(editorField, "EditorField not found!");
+
+        MonoClassField* nameField = mono_class_get_field_from_name(editorField, "Name");
+        MonoClassField* minField = mono_class_get_field_from_name(editorField, "Min");
+        MonoClassField* maxField = mono_class_get_field_from_name(editorField, "Max");
+        MonoClassField* stepField = mono_class_get_field_from_name(editorField, "Step");
+
+        if (mono_custom_attrs_has_attr(attributes, editorField))
+        {
+            MonoObject* attribute = mono_custom_attrs_get_attr(attributes, editorField);
+
+            MonoString* nameValue = nullptr;
+            mono_field_get_value(attribute, nameField, &nameValue);
+            if (nameValue)
+                data.Name = mono_string_to_utf8(nameValue);
+            else
+                AB_CORE_WARN("No name value found.");
+
+            float minValue;
+            mono_field_get_value(attribute, minField, &minValue);
+            data.Min = minValue;
+
+            float maxValue;
+            mono_field_get_value(attribute, maxField, &maxValue);
+            data.Max = maxValue;
+
+            float stepValue;
+            mono_field_get_value(attribute, stepField, &stepValue);
+            data.Step = stepValue;
+        }
+    }
+
+    return data;
+}
+
+void PublicField::Initialize()
+{
+    switch (Type)
+    {
+        case FieldType::Bool:
+            SetStoredValue<bool>(false);
+            break;
+
+        case FieldType::Int:
+            SetStoredValue<int32_t>(0);
+            break;
+
+        case FieldType::UInt:
+            SetStoredValue<uint32_t>(0);
+            break;
+
+        case FieldType::Float:
+            SetStoredValue<float>(0.0f);
+            break;
+
+        case FieldType::Vec2:
+            SetStoredValue<glm::vec2>(glm::vec2(0.0f));
+            break;
+
+        case FieldType::Vec3:
+            SetStoredValue<glm::vec3>(glm::vec3(0.0f));
+            break;
+
+        case FieldType::Vec4:
+            SetStoredValue<glm::vec4>(glm::vec4(0.0f));
+            break;
+    }
+}
+
 uint32_t PublicField::GetFieldSize(FieldType type)
 {
     switch (type)
@@ -540,8 +627,8 @@ PublicField& PublicField::operator=(PublicField&& other)
 {
     Name = std::move(other.Name);
     Type = other.Type;
-    Entity = other.Entity;
-    ClassField = other.ClassField;
+    Entity = other.Entity ? other.Entity : Entity;
+    ClassField = other.ClassField ? other.ClassField : ClassField;
     StoredValue = std::move(other.StoredValue);
 
     other.Entity = nullptr;

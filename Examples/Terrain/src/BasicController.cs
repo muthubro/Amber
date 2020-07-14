@@ -5,20 +5,25 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Amber;
+using Amber.Editor;
 
 namespace Terrain
 {
     class BasicController : Entity
     {
-        public float Speed = 50.0f;
+        [EditorField(Name = "Translation Speed")]
+        public float translationSpeed = 50.0f;
+
+        [EditorField(Name = "Rotation Speed")]
+        public float rotationSpeed = 10.0f;
 
         public void OnUpdate(float ts)
         {
             TransformComponent component = GetComponent<TransformComponent>();
             Vector3 translation = new Vector3(0.0f);
+            float rotation = 0.0f;
 
-            float speed = Speed * ts;
-
+            float speed = translationSpeed * ts;
             if (Input.IsKeyPressed(KeyCode.D))
                 translation.X += speed;
             else if (Input.IsKeyPressed(KeyCode.A))
@@ -32,8 +37,14 @@ namespace Terrain
             else if (Input.IsKeyPressed(KeyCode.Down))
                 translation.Z += speed;
 
+            speed = rotationSpeed * ts;
+            if (Input.IsKeyPressed(KeyCode.Q))
+                rotation -= speed;
+            else if (Input.IsKeyPressed(KeyCode.E))
+                rotation += speed;
+
             Matrix4 transform = component.Transform;
-            transform[3] += new Vector4(translation.X, translation.Y, translation.Z, 0.0f);
+            transform = Matrix4.Translate(translation) * Matrix4.Rotate(rotation, new Vector3(0.0f, 1.0f, 0.0f)) * transform;
             component.Transform = transform;
         }
     }

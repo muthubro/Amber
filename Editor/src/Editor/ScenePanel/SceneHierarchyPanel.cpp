@@ -33,6 +33,28 @@ void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
         
         auto [translation, orientation, scale] = Math::DecomposeTransform(entity.GetComponent<TransformComponent>());
         m_EntityMap[entity].Orientation = glm::degrees(glm::eulerAngles(orientation));
+
+        auto scriptComponent = entity.GetComponentIfExists<ScriptComponent>();
+        if (scriptComponent)
+        {
+            auto& moduleName = scriptComponent->ModuleName;
+            auto& fieldMap = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID()).ModuleFieldMap[moduleName];
+            auto& editorFieldMap = m_EntityMap[entity].ScriptFields[moduleName];
+
+            for (auto& [fieldName, field] : fieldMap)
+            {
+                auto& editorData = editorFieldMap[fieldName];
+                auto data = field.GetEditorData(moduleName);
+
+                if (!data.Name.empty())
+                    editorData.Name = data.Name;
+                else
+                    editorData.Name = fieldName;
+                editorData.Min = data.Min;
+                editorData.Max = data.Max;
+                editorData.Step = data.Step;
+            }
+        }
     }
 }
 
@@ -215,11 +237,11 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
 
 void SceneHierarchyPanel::DrawComponents(Entity& entity)
 {
-    auto& tag = entity.GetComponent<TagComponent>();
+    auto& tagComponent = entity.GetComponent<TagComponent>();
 
     BeginPropertyGrid(2);
     ImGui::PushItemWidth(-1);
-    Property("", tag.Tag);
+    Property("", tagComponent.Tag);
     ImGui::NextColumn();
     ImGui::TextDisabled("%llx", entity.GetComponent<IDComponent>().ID);
     ImGui::NextColumn();
@@ -227,12 +249,12 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
 
     ImGui::Separator();
 
-    auto& transform = entity.GetComponent<TransformComponent>();
+    auto& transformComponent = entity.GetComponent<TransformComponent>();
     if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(TransformComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Transform"))
     {
         BeginPropertyGrid();
 
-        auto [translation, orientationQuat, scale] = Math::DecomposeTransform(transform);
+        auto [translation, orientationQuat, scale] = Math::DecomposeTransform(transformComponent);
         glm::vec3 orientation = m_EntityMap[entity].Orientation;
 
         bool changed = false;
@@ -243,7 +265,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         if (changed)
         {
             glm::quat rotation(glm::radians(orientation));
-            transform.Transform = glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
+            transformComponent.Transform = glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(rotation) * glm::scale(glm::mat4(1.0f), scale);
             m_EntityMap[entity].Orientation = orientation;
         }
 
@@ -252,15 +274,15 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
     }
     ImGui::Separator();
 
-    auto mesh = entity.GetComponentIfExists<MeshComponent>();
-    if (mesh)
+    auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
+    if (meshComponent)
     {
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(MeshComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Mesh"))
         {
             BeginPropertyGrid(3);
             
-            if (mesh->Mesh)
-                Property("File Path", (const char*)mesh->Mesh->GetFilePath().c_str());
+            if (meshComponent->Mesh)
+                Property("File Path", (const char*)meshComponent->Mesh->GetFilePath().c_str());
             else
                 Property("File Path", (const char*)"NULL");
 
@@ -268,7 +290,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             {
                 std::string filepath = FileSystem::OpenFileDialog("FBX (*.fbx):*.fbx", "Select Mesh");
                 if (!filepath.empty())
-                    mesh->Mesh = Ref<Mesh>::Create(filepath);
+                    meshComponent->Mesh = Ref<Mesh>::Create(filepath);
             }
             ImGui::NextColumn();
 
@@ -298,6 +320,8 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                     auto data = camera.GetPerspectiveData();
                     data.FOV = glm::degrees(data.FOV);
                     Property("Vertical FOV", data.FOV, 0.0f, 90.0f);
+                    Property("Width", data.Width, 0.1f, 10000.0f);
+                    Property("Height", data.Height, 0.1f, 10000.0f);
                     Property("Near Clip", data.Near, 0.1f, 100.0f);
                     Property("Far Clip", data.Far, data.Near, 100000.0f);
                     data.FOV = glm::radians(data.FOV);
@@ -309,6 +333,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                 {
                     auto data = camera.GetOrthographicData();
                     Property("Size", data.Size, 0.1f, 10000.0f);
+                    Property("Aspect Ratio", data.AspectRatio, 0.1f, 10.0f);
                     Property("Near Clip", data.Near, 0.1f, 100.0f);
                     Property("Far Clip", data.Far, data.Near, 100000.0f);
                     camera.SetOrthographic(data);
@@ -321,38 +346,60 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         ImGui::Separator();
     }
 
-    auto script = entity.GetComponentIfExists<ScriptComponent>();
-    if (script)
+    auto scriptComponent = entity.GetComponentIfExists<ScriptComponent>();
+    if (scriptComponent)
     {
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(ScriptComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Script"))
         {
             BeginPropertyGrid();
-            std::string oldName = script->ModuleName;
-            if (Property("Module Name", script->ModuleName, !ScriptEngine::ModuleExists(script->ModuleName)))
+            std::string oldName = scriptComponent->ModuleName;
+            if (Property("Module Name", scriptComponent->ModuleName, !ScriptEngine::ModuleExists(scriptComponent->ModuleName)))
             {
                 if (ScriptEngine::ModuleExists(oldName))
                     ScriptEngine::ShutdownScriptEntity(entity, oldName);
 
-                if (ScriptEngine::ModuleExists(script->ModuleName))
+                if (ScriptEngine::ModuleExists(scriptComponent->ModuleName))
+                {
                     ScriptEngine::InitScriptEntity(entity);
+
+                    auto& moduleName = scriptComponent->ModuleName;
+                    auto& fieldMap = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID()).ModuleFieldMap[moduleName];
+                    auto& editorFieldMap = m_EntityMap[entity].ScriptFields[moduleName];
+
+                    for (auto& [fieldName, field] : fieldMap)
+                    {
+                        auto& editorData = editorFieldMap[fieldName];
+                        auto data = field.GetEditorData(moduleName);
+
+                        if (!data.Name.empty())
+                            editorData.Name = data.Name;
+                        else
+                            editorData.Name = fieldName;
+                        editorData.Min = data.Min;
+                        editorData.Max = data.Max;
+                        editorData.Step = data.Step;
+                    }
+                }
             }
 
-            if (ScriptEngine::ModuleExists(script->ModuleName))
+            if (ScriptEngine::ModuleExists(scriptComponent->ModuleName))
             {
                 auto& instanceData = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID());
                 auto& moduleFieldMap = instanceData.ModuleFieldMap;
-                if (moduleFieldMap.find(script->ModuleName) != moduleFieldMap.end())
+                if (moduleFieldMap.find(scriptComponent->ModuleName) != moduleFieldMap.end())
                 {
-                    auto& fields = moduleFieldMap.at(script->ModuleName);
+                    auto& fields = moduleFieldMap.at(scriptComponent->ModuleName);
+                    auto& editorFieldMap = m_EntityMap[entity].ScriptFields[scriptComponent->ModuleName];
                     for (auto& [fieldName, field] : fields)
                     {
                         bool isRuntime = m_Context->IsPlaying() && field.IsRuntimeAvailable();
+                        auto& fieldData = editorFieldMap[fieldName];
                         switch (field.Type)
                         {
                             case FieldType::Bool:
                             {
                                 bool value = isRuntime ? field.GetRuntimeValue<bool>() : field.GetStoredValue<bool>();
-                                if (Property(field.Name.c_str(), value))
+                                if (Property(fieldData.Name.c_str(), value))
                                 {
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
@@ -365,8 +412,9 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                             case FieldType::Int:
                             {
                                 int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
-                                if (Property(field.Name.c_str(), value))
+                                if (Property(fieldData.Name.c_str(), value, (int32_t)fieldData.Min, (int32_t)fieldData.Max, (int32_t)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (int32_t)fieldData.Min, (int32_t)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -377,9 +425,10 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
 
                             case FieldType::UInt:
                             {
-                                int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
-                                if (Property(field.Name.c_str(), value, 1, 2048))
+                                uint32_t value = isRuntime ? field.GetRuntimeValue<uint32_t>() : field.GetStoredValue<uint32_t>();
+                                if (Property(fieldData.Name.c_str(), value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max, (uint32_t)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -391,8 +440,9 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                             case FieldType::Float:
                             {
                                 float value = isRuntime ? field.GetRuntimeValue<float>() : field.GetStoredValue<float>();
-                                if (Property(field.Name.c_str(), value, 0.001f, 10.0f, 0.001f))
+                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -404,8 +454,9 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                             case FieldType::Vec2:
                             {
                                 glm::vec2 value = isRuntime ? field.GetRuntimeValue<glm::vec2>() : field.GetStoredValue<glm::vec2>();
-                                if (Property(field.Name.c_str(), value))
+                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -417,8 +468,9 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                             case FieldType::Vec3:
                             {
                                 glm::vec3 value = isRuntime ? field.GetRuntimeValue<glm::vec3>() : field.GetStoredValue<glm::vec3>();
-                                if (Property(field.Name.c_str(), value))
+                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -430,8 +482,9 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                             case FieldType::Vec4:
                             {
                                 glm::vec4 value = isRuntime ? field.GetRuntimeValue<glm::vec4>() : field.GetStoredValue<glm::vec4>();
-                                if (Property(field.Name.c_str(), value))
+                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                                 {
+                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
                                     if (isRuntime)
                                         field.SetRuntimeValue(value);
                                     else
@@ -443,9 +496,6 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                     }
                 }
             }
-
-            if (ImGui::Button("Run Script"))
-                ScriptEngine::OnCreateEntity(entity);
             
             EndPropertyGrid();
             ImGui::TreePop();

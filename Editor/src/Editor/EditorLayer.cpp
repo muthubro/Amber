@@ -81,8 +81,10 @@ void EditorLayer::OnAttach()
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
     }
 
-    m_EditorScene = Ref<Scene>::Create("Model Scene");
-    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll", *m_EditorScene);
+    m_EditorScene = Ref<Scene>::Create("Default Scene");
+
+    ScriptEngine::SetSceneContext(m_EditorScene);
+    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll");
 
     m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
 
@@ -254,7 +256,10 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
     {
         std::string filename = FileSystem::OpenFileDialog("HDR (*.hdr):*.hdr", "Select Environment Map");
         if (!filename.empty())
+        {
             m_EditorScene->SetEnvironment(Environment::Load(filename));
+            m_EditorScene->SetLight({ glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f), 1.0f });
+        }
     }
 
     BeginPropertyGrid();
@@ -269,9 +274,11 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
         ImGui::Separator();
 
         auto& light = m_EditorScene->GetLight();
-        Property("Light Direction", light.Direction);
+        glm::vec3 direction = light.Direction;
+        Property("Light Direction", direction);
         Property("Light Radiance", light.Radiance, PropertyFlags::ColorProperty);
         Property("Light Multiplier", light.Multiplier, 0.0f, 10.0f);
+        light.Direction = glm::normalize(direction);
     }
 
     EndPropertyGrid();
@@ -528,9 +535,9 @@ void EditorLayer::DrawViewport()
     
     SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
     m_EditorScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
     if (m_RuntimeScene)
         m_RuntimeScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
-    m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 
     ImGui::Image((void*)(size_t)SceneRenderer::GetFinalColorBuffer()->GetRendererID(), viewportSize, { 0, 1 }, { 1, 0 });
 
@@ -655,6 +662,9 @@ void EditorLayer::DrawMenuBar()
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("New Scene...", "Ctrl+N"))
+                NewScene();
+
             if (ImGui::MenuItem("Open Scene...", "Ctrl+O"))
                 OpenScene();
 
@@ -669,7 +679,7 @@ void EditorLayer::DrawMenuBar()
             ImGui::Separator();
 
             if (ImGui::MenuItem("Reload C# Assembly"))
-                ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll", *m_EditorScene);
+                ScriptEngine::ReloadAssembly("assets/scripts/Terrain.dll");
 
             ImGui::Separator();
 
@@ -681,6 +691,20 @@ void EditorLayer::DrawMenuBar()
 
         ImGui::EndMenuBar();
     }
+}
+
+void EditorLayer::NewScene()
+{
+    m_EditorScene = Ref<Scene>::Create("Unnamed Scene");
+
+    auto cameraEntity = m_EditorScene->CreateEntity("Camera");
+    auto& camera = cameraEntity.AddComponent<CameraComponent>();
+    auto [width, height] = m_EditorCamera.GetViewportSize();
+    camera.Camera.SetViewportSize(width, height);
+
+    m_SceneHierarchyPanel->SetContext(m_EditorScene);
+    ScriptEngine::SetSceneContext(m_EditorScene);
+    m_SelectionContext.clear();
 }
 
 void EditorLayer::OpenScene()
@@ -861,6 +885,10 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
                 break;
 
             // Menu shortcuts
+            case AB_KEY_N:
+                NewScene();
+                break;
+
             case AB_KEY_O:
                 OpenScene();
                 break;
@@ -873,6 +901,9 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
                 break;
         }
     }
+
+    if (m_RuntimeScene && m_RuntimeScene->IsPlaying())
+        ImGui::CaptureKeyboardFromApp(false);
 
     return false;
 }

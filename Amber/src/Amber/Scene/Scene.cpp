@@ -128,7 +128,7 @@ void Scene::OnRenderRuntime(Timestep ts)
 
     glm::mat4 viewMatrix = glm::inverse(cameraEntity.GetComponent<TransformComponent>().Transform);
     SceneCamera& camera = cameraEntity.GetComponent<CameraComponent>();
-    camera.SetViewportSize(m_ViewportWidth, m_ViewportHeight);
+    camera.Update();
 
     SceneRenderer::BeginScene(this, { camera, viewMatrix });
 

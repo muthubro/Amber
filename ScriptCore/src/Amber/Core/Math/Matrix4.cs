@@ -31,6 +31,64 @@ namespace Amber
             Col3 = col3;
         }
 
+        public static Matrix4 operator +(Matrix4 left, Matrix4 right)
+        {
+            return new Matrix4(left.Col0 + right.Col0, 
+                left.Col1 + right.Col1, 
+                left.Col2 + right.Col2, 
+                left.Col3 + right.Col3);
+        }
+
+        public static Matrix4 operator -(Matrix4 left, Matrix4 right)
+        {
+            return new Matrix4(left.Col0 - right.Col0, 
+                left.Col1 - right.Col1, 
+                left.Col2 - right.Col2, 
+                left.Col3 - right.Col3);
+        }
+
+        public static Matrix4 operator *(Matrix4 left, float scalar)
+        {
+            return new Matrix4(left.Col0 * scalar, 
+                left.Col1 * scalar, 
+                left.Col2 * scalar, 
+                left.Col3 * scalar);
+        }
+
+        public static Matrix4 operator *(float scalar, Matrix4 right)
+        {
+            return new Matrix4(right.Col0 * scalar, 
+                right.Col1 * scalar, 
+                right.Col2 * scalar, 
+                right.Col3 * scalar);
+        }
+
+        public static Vector4 operator *(Matrix4 left, Vector4 right)
+        {
+            return left.Col0 * right.X + left.Col1 + right.Y + left.Col2 * right.Z + left.Col3 * right.W;
+        }
+
+        public static Matrix4 operator *(Matrix4 left, Matrix4 right)
+        {
+            Vector4 A0 = left.Col0;
+            Vector4 A1 = left.Col1;
+            Vector4 A2 = left.Col2;
+            Vector4 A3 = left.Col3;
+
+            Vector4 B0 = right.Col0;
+            Vector4 B1 = right.Col1;
+            Vector4 B2 = right.Col2;
+            Vector4 B3 = right.Col3;
+
+            Matrix4 result = new Matrix4(0.0f);
+            result.Col0 = A0 * B0.X + A1 * B0.Y + A2 * B0.Z + A3 * B0.W;
+            result.Col1 = A0 * B1.X + A1 * B1.Y + A2 * B1.Z + A3 * B1.W;
+            result.Col2 = A0 * B2.X + A1 * B2.Y + A2 * B2.Z + A3 * B2.W;
+            result.Col3 = A0 * B3.X + A1 * B3.Y + A2 * B3.Z + A3 * B3.W;
+
+            return result;
+        }
+
         public Vector4 this[int index]
         {
             get

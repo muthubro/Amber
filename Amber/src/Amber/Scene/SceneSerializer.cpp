@@ -866,11 +866,13 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
                 if (ScriptEngine::ModuleExists(script.ModuleName))
                 {
                     auto& fieldMap = script.FieldMap;
-
                     auto& instanceData = ScriptEngine::GetEntityInstanceData(sceneID, entityID);
                     auto& fields = instanceData.ModuleFieldMap[script.ModuleName];
                     for (auto& [fieldName, field] : fieldMap)
-                        fields[fieldName] = std::move(field);
+                    {
+                        if (fields.find(fieldName) != fields.end())
+                            fields[fieldName] = std::move(field);
+                    }
                 }
             }
         }

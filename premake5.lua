@@ -211,8 +211,8 @@ project "Editor"
 			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"',
             '{COPY} "../Amber/vendor/mono/bin/Release/mono-2.0-sgen.dll" "%{cfg.targetdir}"'
 		}
-
-group "Examples"
+        
+group ""
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
@@ -295,6 +295,32 @@ project "Sandbox"
 		{
 			'{COPY} "../Amber/vendor/Assimp/bin/Release/assimp-vc142-mt.dll" "%{cfg.targetdir}"'
         }
+
+workspace "Sandbox"
+    architecture "x86_64"
+    configurations
+    {
+        "Debug",
+        "Release",
+        "Dist"
+    }
+    flags
+    {
+        "MultiProcessorCompile"
+    }
+
+project "ScriptCore"
+    location "ScriptCore"
+    kind "SharedLib"
+    language "C#"
+
+    targetdir ("Editor/assets/scripts")
+    objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+
+    files
+    {
+        "%{prj.name}/src/**.cs"
+    }
         
 project "Terrain"
     location "Examples/Terrain"

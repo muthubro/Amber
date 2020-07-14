@@ -95,7 +95,7 @@ private:
     int m_GizmoMode = -1;
     SelectionMode m_SelectionMode = SelectionMode::Entity;
 
-    Scope<SceneHierarchyPanel> m_SceneHierarchyPanel;
+    Scope<SceneHierarchyPanel> m_SceneHierarchyPanel = nullptr;
 
     void DrawViewportSettingsPanel();
     void DrawEnvironmentSettingsPanel();
@@ -105,6 +105,7 @@ private:
     void DrawToolbar();
     void DrawMenuBar();
 
+    void NewScene();
     void OpenScene();
     void SaveScene(const std::string& path = "");
 

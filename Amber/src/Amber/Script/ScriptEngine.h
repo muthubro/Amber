@@ -35,6 +35,16 @@ struct EntityInstance
 
 struct PublicField
 {
+private:
+    struct EditorData
+    {
+        std::string Name;
+        float Min = 0.01f;
+        float Max = 100.0f;
+        float Step = 0.01f;
+    };
+
+public:
     std::string Name;
     FieldType Type;
 
@@ -79,9 +89,13 @@ struct PublicField
         SetStoredValue_Internal(value);
     }
 
-    static uint32_t GetFieldSize(FieldType type);
+    EditorData GetEditorData(const std::string& moduleName);
+
+    void Initialize();
 
     PublicField& operator=(PublicField&& other);
+
+    static uint32_t GetFieldSize(FieldType type);
 
 private:
     EntityInstance* Entity = nullptr;
@@ -113,7 +127,8 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void LoadRuntimeAssembly(const std::string& assemblyPath, const Scene& scene);
+    static void LoadRuntimeAssembly(const std::string& assemblyPath);
+    static void ReloadAssembly(const std::string& assemblyPath);
 
     static void OnSceneDestruct(UUID sceneID);
     static void OnScriptComponentDestroyed(UUID sceneID, UUID entityID);
