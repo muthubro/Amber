@@ -31,6 +31,25 @@ void Material::Bind()
     BindTextures();
 }
 
+void Material::Reset(Ref<Shader> shader)
+{
+    if (shader)
+        m_Shader = shader;
+
+    m_VSUniformStorageBuffer.Clear();
+    m_PSUniformStorageBuffer.Clear();
+    AllocateStorage();
+    for (auto instance : m_MaterialInstances)
+    {
+        instance->m_Material = this;
+        instance->m_VSUniformStorageBuffer.Clear();
+        instance->m_PSUniformStorageBuffer.Clear();
+        instance->AllocateStorage();
+        instance->m_Textures.clear();
+    }
+    m_Textures.clear();
+}
+
 void Material::AllocateStorage()
 {
     if (m_Shader->HasVSMaterialUniformBuffer())

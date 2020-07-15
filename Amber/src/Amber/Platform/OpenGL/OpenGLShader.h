@@ -18,7 +18,7 @@ namespace Amber
 class OpenGLShader : public Shader
 {
 public:
-    OpenGLShader(const std::string& filepath);
+    OpenGLShader(const std::string& filepath, ShaderType type = ShaderType::None);
     OpenGLShader(const std::string& name, const std::string& source);
     ~OpenGLShader();
 
@@ -26,6 +26,7 @@ public:
     void Unbind() const override;
 
     const std::string& GetName() const override { return m_Name; }
+    ShaderType GetType() const override { return m_Type; }
     RendererID GetRendererID() const override { return m_RendererID; }
 
     bool HasVSMaterialUniformBuffer() const override { return (bool)m_VSMaterialUniformBuffer; }
@@ -43,6 +44,7 @@ private:
     std::unordered_map<std::string, int32_t> m_LocationMap;
     RendererID m_RendererID = 0;
     std::string m_Name, m_AssetPath;
+    ShaderType m_Type;
     bool m_IsCompute = false;
 
     Scope<OpenGLShaderUniformBuffer> m_VSMaterialUniformBuffer;

@@ -15,6 +15,7 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
 {
     auto mesh = Ref<Mesh>::Create();
 
+    mesh->m_FilePath = "Plane";
     mesh->m_IsAnimated = false;
 
     StaticVertex bottomLeft;
@@ -72,11 +73,8 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
     mesh->m_TriangleCache[0].emplace_back(bottomLeft.Position, bottomRight.Position, topRight.Position);
     mesh->m_TriangleCache[0].emplace_back(topRight.Position, topLeft.Position, bottomLeft.Position);
 
-    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get("Static_Lighting"));
+    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get(ShaderType::UnlitColor));
     Ref<MaterialInstance> material = Ref<MaterialInstance>::Create(mesh->m_BaseMaterial);
-    material->Set("u_Albedo", glm::vec3(1.0f));
-    material->Set("u_Roughness", 1.0f);
-    material->Set("u_Metalness", 0.0f);
     mesh->m_Materials.push_back(material);
 
     return mesh;
@@ -86,6 +84,7 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
 {
     Ref<Mesh> mesh = Ref<Mesh>::Create();
 
+    mesh->m_FilePath = "Cube";
     mesh->m_IsAnimated = false;
 
     glm::vec3 points[] = {
@@ -167,7 +166,7 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
             mesh->m_StaticVertices[mesh->m_Indices[i].V1].Position, 
             mesh->m_StaticVertices[mesh->m_Indices[i].V2].Position);
 
-    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get("Static_Lighting"));
+    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get(ShaderType::StandardStatic));
     Ref<MaterialInstance> material = Ref<MaterialInstance>::Create(mesh->m_BaseMaterial);
     material->Set("u_Albedo", glm::vec3(1.0f));
     material->Set("u_Roughness", 1.0f);
@@ -181,6 +180,7 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
 {
     Ref<Mesh> mesh = Ref<Mesh>::Create();
 
+    mesh->m_FilePath = "Sphere";
     mesh->m_IsAnimated = false;
 
     const uint32_t X_SEGMENTS = 64, Y_SEGMENTS = 64;
@@ -248,7 +248,7 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, (uint32_t)mesh->m_Indices.size() * 3, 0);
     submesh.BoundingBox = Math::AABB(center - glm::vec3(radius), center + glm::vec3(radius));
 
-    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get("Static_Lighting"));
+    mesh->m_BaseMaterial = Ref<Material>::Create(Renderer::GetShaderLibrary()->Get(ShaderType::StandardStatic));
     Ref<MaterialInstance> material = Ref<MaterialInstance>::Create(mesh->m_BaseMaterial);
     material->Set("u_Albedo", glm::vec3(1.0f));
     material->Set("u_Roughness", 1.0f);

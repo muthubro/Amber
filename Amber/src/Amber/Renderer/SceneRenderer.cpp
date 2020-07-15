@@ -135,24 +135,28 @@ void SceneRenderer::GeometryPass()
     for (auto& drawCommand : s_Data.DrawList)
     {
         auto baseMaterial = drawCommand.Mesh->GetMaterial();
+        auto shaderType = baseMaterial->GetShader()->GetType();
 
         baseMaterial->Set("u_ViewProjection", viewProj);
-        baseMaterial->Set("u_ViewPosition", cameraPosition);
-
-        baseMaterial->Set("u_IrradianceTexture", s_Data.SceneData.SceneEnvironment.IrradianceMap);
-        baseMaterial->Set("u_RadianceTexture", s_Data.SceneData.SceneEnvironment.RadianceMap);
-        baseMaterial->Set("u_BRDFLUT", s_Data.BRDFLUT);
-        baseMaterial->Set("u_EnvironmentRotation", s_Data.SceneData.SceneEnvironment.Rotation);
-
-        struct LightUniform
+        if (shaderType == ShaderType::StandardStatic || shaderType == ShaderType::StandardAnimated)
         {
-            glm::vec3 Radiance;
-            float Multiplier;
-        };
-        LightUniform light{ s_Data.SceneData.ActiveLight.Radiance, s_Data.SceneData.ActiveLight.Multiplier };
+            baseMaterial->Set("u_ViewPosition", cameraPosition);
 
-        baseMaterial->Set("u_LightDirection", s_Data.SceneData.ActiveLight.Direction);
-        baseMaterial->Set("u_Light", light);
+            baseMaterial->Set("u_IrradianceTexture", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+            baseMaterial->Set("u_RadianceTexture", s_Data.SceneData.SceneEnvironment.RadianceMap);
+            baseMaterial->Set("u_BRDFLUT", s_Data.BRDFLUT);
+            baseMaterial->Set("u_EnvironmentRotation", s_Data.SceneData.SceneEnvironment.Rotation);
+
+            struct LightUniform
+            {
+                glm::vec3 Radiance;
+                float Multiplier;
+            };
+            LightUniform light{ s_Data.SceneData.ActiveLight.Radiance, s_Data.SceneData.ActiveLight.Multiplier };
+
+            baseMaterial->Set("u_LightDirection", s_Data.SceneData.ActiveLight.Direction);
+            baseMaterial->Set("u_Light", light);
+        }
 
         Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Material);
     }

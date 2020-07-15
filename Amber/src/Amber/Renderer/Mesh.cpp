@@ -263,7 +263,7 @@ Mesh::Mesh(const std::string& filepath)
     auto indexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
     m_VertexArray->SetIndexBuffer(indexBuffer);
 
-    auto meshShader = Renderer::GetShaderLibrary()->Get(m_IsAnimated ? "Animated_Lighting" : "Static_Lighting");
+    auto meshShader = Renderer::GetShaderLibrary()->Get(m_IsAnimated ? ShaderType::StandardAnimated : ShaderType::StandardStatic);
     m_BaseMaterial = Ref<Material>::Create(meshShader);
 
     AB_MESH_LOG("------------------ Materials ------------------");
@@ -423,7 +423,9 @@ void Mesh::SetAlbedoTexture(Submesh& submesh, bool use, Ref<Texture2D> albedo)
         materialInstance->Set("u_AlbedoTexture", albedo);
         submesh.HasAlbedoMap = true;
     }
-    materialInstance->Set("u_AlbedoTexToggle", (uint32_t)(use && submesh.HasAlbedoMap));
+    if (m_BaseMaterial->GetShader()->GetType() == ShaderType::StandardStatic ||
+        m_BaseMaterial->GetShader()->GetType() == ShaderType::StandardAnimated)
+        materialInstance->Set("u_AlbedoTexToggle", (uint32_t)(use && submesh.HasAlbedoMap));
 }
 
 void Mesh::SetNormalTexture(Submesh& submesh, bool use, Ref<Texture2D> normal)

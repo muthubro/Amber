@@ -25,13 +25,36 @@ uint32_t OpenGLShader::ShaderTypeFromString(const std::string& type)
     return 0;
 }
 
-OpenGLShader::OpenGLShader(const std::string& filepath)
-    : m_AssetPath(filepath)
+OpenGLShader::OpenGLShader(const std::string& filepath, ShaderType type)
+    : m_AssetPath(filepath), m_Type(type)
 {
-    auto loc = filepath.find_last_of("/\\");
-    m_Name = loc != std::string::npos ? filepath.substr(loc + 1) : filepath;
-    loc = m_Name.rfind(".");
-    m_Name = loc != std::string::npos ? m_Name.substr(0, loc) : m_Name;
+    switch (m_Type)
+    {
+        case ShaderType::None:
+        {
+            auto loc = filepath.find_last_of("/\\");
+            m_Name = loc != std::string::npos ? filepath.substr(loc + 1) : filepath;
+            loc = m_Name.rfind(".");
+            m_Name = loc != std::string::npos ? m_Name.substr(0, loc) : m_Name;
+            break;
+        }
+
+        case ShaderType::StandardStatic:
+            m_Name = "Standard Static";
+            break;
+
+        case ShaderType::StandardAnimated:
+            m_Name = "Standard Animated";
+            break;
+
+        case ShaderType::UnlitColor:
+            m_Name = "Unlit - Color";
+            break;
+
+        case ShaderType::UnlitTexture:
+            m_Name = "Unlit - Texture";
+            break;
+    }
 
     Reload();
 }

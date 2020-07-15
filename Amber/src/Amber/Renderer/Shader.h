@@ -12,6 +12,14 @@
 namespace Amber 
 {
 
+enum class ShaderType
+{
+    None = 0,
+    StandardStatic, StandardAnimated,
+    UnlitColor, UnlitTexture,
+    Count
+};
+
 class Shader : public RefCounted
 {
 public:
@@ -21,6 +29,7 @@ public:
     virtual void Unbind() const = 0;
 
     virtual const std::string& GetName() const = 0;
+    virtual ShaderType GetType() const = 0;
     virtual uint32_t GetRendererID() const = 0;
 
     virtual bool HasVSMaterialUniformBuffer() const = 0;
@@ -34,7 +43,7 @@ public:
 
     virtual const ShaderResourceList& GetResources() const = 0;
 
-    static Ref<Shader> Create(const std::string& filepath);
+    static Ref<Shader> Create(const std::string& filepath, ShaderType type = ShaderType::None);
     static Ref<Shader> CreateFromString(const std::string& name, const std::string& source);
 
 protected:
@@ -49,8 +58,10 @@ public:
 
     Ref<Shader> Load(const std::string& filepath);
     Ref<Shader> Load(const std::string& name, const std::string& filepath);
+    Ref<Shader> Load(ShaderType type, const std::string& filepath);
 
     Ref<Shader> Get(const std::string& name);
+    Ref<Shader> Get(ShaderType type);
 
 private:
     std::unordered_map<std::string, Ref<Shader>> m_Shaders;

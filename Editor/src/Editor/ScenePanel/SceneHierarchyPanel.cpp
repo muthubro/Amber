@@ -109,8 +109,31 @@ void SceneHierarchyPanel::OnImGuiRender()
 
     if (ImGui::BeginPopupContextWindow(nullptr, ImGuiMouseButton_Right, false))
     {
-        if (ImGui::MenuItem("Create Entity"))
-            m_Context->CreateEntity("Unnamed Entity");
+        if (ImGui::BeginMenu("Add Entity"))
+        {
+            if (ImGui::MenuItem("Empty"))
+                m_Context->CreateEntity("Unnamed Entity");
+
+            if (ImGui::MenuItem("Cube"))
+            {
+                auto entity = m_Context->CreateEntity("Cube");
+                entity.AddComponent<MeshComponent>(MeshFactory::Cube(glm::vec3(0.0f), 1.0f));
+            }
+
+            if (ImGui::MenuItem("Sphere"))
+            {
+                auto entity = m_Context->CreateEntity("Sphere");
+                entity.AddComponent<MeshComponent>(MeshFactory::Sphere(glm::vec3(0.0f), 1.0f));
+            }
+
+            if (ImGui::MenuItem("Plane"))
+            {
+                auto entity = m_Context->CreateEntity("Plane");
+                entity.AddComponent<MeshComponent>(MeshFactory::Plane(1.0f, 1.0f));
+            }
+
+            ImGui::EndMenu();
+        }
 
         ImGui::EndPopup();
     }
@@ -213,24 +236,20 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
         }
     }
 
-    bool entityDeleted = false;
     if (ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem("Delete"))
-            entityDeleted = true;
+        {
+            m_EntityMap.erase(entity);
+            m_SelectionContext->clear();
+            m_Context->DestroyEntity(entity);
+        }
 
         ImGui::EndPopup();
     }
 
     if (opened)
         ImGui::TreePop();
-
-    if (entityDeleted)
-    {
-        m_EntityMap.erase(entity);
-        m_SelectionContext->clear();
-        m_Context->DestroyEntity(entity);
-    }
 
     return clicked;
 }
@@ -242,9 +261,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
     BeginPropertyGrid(2);
     ImGui::PushItemWidth(-1);
     Property("", tagComponent.Tag);
-    ImGui::NextColumn();
     ImGui::TextDisabled("%llx", entity.GetComponent<IDComponent>().ID);
-    ImGui::NextColumn();
     EndPropertyGrid();
 
     ImGui::Separator();
@@ -277,8 +294,17 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
     auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
     if (meshComponent)
     {
+        bool remove = false;
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(MeshComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Mesh"))
         {
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove"))
+                    remove = true;
+
+                ImGui::EndPopup();
+            }
+
             BeginPropertyGrid(3);
             
             if (meshComponent->Mesh)
@@ -297,14 +323,26 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             EndPropertyGrid();
             ImGui::TreePop();
         }
+        if (remove)
+            entity.RemoveComponent<MeshComponent>();
+
         ImGui::Separator();
     }
 
     auto cameraComponent = entity.GetComponentIfExists<CameraComponent>();
     if (cameraComponent)
     {
+        bool remove = false;
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(CameraComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
         {
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove"))
+                    remove = true;
+
+                ImGui::EndPopup();
+            }
+
             auto& camera = cameraComponent->Camera;
 
             int type = (int)camera.GetProjectionType();
@@ -343,14 +381,26 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             EndPropertyGrid();
             ImGui::TreePop();
         }
+        if (remove)
+            entity.RemoveComponent<CameraComponent>();
+
         ImGui::Separator();
     }
 
     auto scriptComponent = entity.GetComponentIfExists<ScriptComponent>();
     if (scriptComponent)
     {
+        bool remove = false;
         if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(ScriptComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Script"))
         {
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove"))
+                    remove = true;
+
+                ImGui::EndPopup();
+            }
+
             BeginPropertyGrid();
             std::string oldName = scriptComponent->ModuleName;
             if (Property("Module Name", scriptComponent->ModuleName, !ScriptEngine::ModuleExists(scriptComponent->ModuleName)))
@@ -496,10 +546,13 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                     }
                 }
             }
-            
+
             EndPropertyGrid();
             ImGui::TreePop();
         }
+        if (remove)
+            entity.RemoveComponent<ScriptComponent>();
+
         ImGui::Separator();
     }
 

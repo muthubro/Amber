@@ -45,6 +45,7 @@
 #include "Amber/Renderer/Buffer.h"
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Mesh.h"
+#include "Amber/Renderer/MeshFactory.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/Texture.h"
 #include "Amber/Renderer/VertexArray.h"

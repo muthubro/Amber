@@ -84,15 +84,13 @@ OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t 
             glCreateTextures(GL_TEXTURE_2D, 1, &instance->m_RendererID);
             glBindTexture(GL_TEXTURE_2D, instance->m_RendererID);
 
-            uint32_t levels = instance->GetMipLevelCount();
-
-            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter, levels > 1));
+            glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MIN_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter));
             glTextureParameteri(instance->m_RendererID, GL_TEXTURE_MAG_FILTER, AmberToOpenGLTextureFilter(instance->m_Filter));
             glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_S, AmberToOpenGLTextureWrap(instance->m_Wrap));
             glTextureParameteri(instance->m_RendererID, GL_TEXTURE_WRAP_T, AmberToOpenGLTextureWrap(instance->m_Wrap));
 
             glTextureStorage2D(
-                instance->m_RendererID, levels, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
+                instance->m_RendererID, 1, AmberToOpenGLInternalTextureFormat(instance->m_Format), 
                 instance->m_Width, instance->m_Height);
         }
     });

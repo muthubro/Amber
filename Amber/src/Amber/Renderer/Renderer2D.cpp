@@ -380,4 +380,10 @@ Renderer2D::Statistics Renderer2D::GetStats()
     return s_Data.Stats;
 }
 
+// TODO: Do this in a better way (a texture factory of some kind)
+Ref<Texture2D> Renderer2D::WhiteTexture()
+{
+    return s_Data.WhiteTexture;
+}
+
 }

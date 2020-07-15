@@ -11,9 +11,14 @@ namespace Amber
     {
         internal IntPtr m_UnmanagedInstance;
 
+        public Texture2D(string filepath)
+        {
+            m_UnmanagedInstance = Constructor_Filepath_Native(filepath);
+        }
+
         public Texture2D(uint width, uint height)
         {
-            m_UnmanagedInstance = Constructor_Native(width, height);
+            m_UnmanagedInstance = Constructor_Size_Native(width, height);
         }
 
         ~Texture2D()
@@ -27,7 +32,10 @@ namespace Amber
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern IntPtr Constructor_Native(uint width, uint height);
+        private static extern IntPtr Constructor_Filepath_Native(string filepath);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern IntPtr Constructor_Size_Native(uint width, uint height);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void Destructor_Native(IntPtr unmanagedInstance);

@@ -10,6 +10,8 @@
 
 #include "Amber/Math/Transforms.h"
 
+#include "Amber/Renderer/MeshFactory.h"
+
 #include "Amber/Scene/Components.h"
 #include "Amber/Scene/Entity.h"
 
@@ -462,7 +464,16 @@ struct convert<MeshComponent>
         if (!node.IsMap() || !node["AssetPath"])
             return false;
 
-        rhs.Mesh = Ref<Mesh>::Create(node["AssetPath"].as<std::string>());
+        // TODO: Find a better way to do this
+        std::string filepath = node["AssetPath"].as<std::string>();
+        if (filepath == "Cube")
+            rhs.Mesh = MeshFactory::Cube(glm::vec3(0.0f), 1.0f);
+        else if (filepath == "Sphere")
+            rhs.Mesh = MeshFactory::Sphere(glm::vec3(0.0f), 1.0f);
+        else if (filepath == "Plane")
+            rhs.Mesh = MeshFactory::Plane(1.0f, 1.0f);
+        else
+            rhs.Mesh = Ref<Mesh>::Create(filepath);
         return true;
     }
 };

@@ -252,7 +252,11 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
 {
     ImGui::Begin("Environment");
 
-    if (ImGui::Button("Load Environment Map"))
+    auto& environment = m_EditorScene->GetEnvironment();
+    
+    BeginPropertyGrid();
+    Property("", environment.Filepath.empty() ? "NULL" : environment.Filepath.c_str());
+    if (ImGui::Button("..."))
     {
         std::string filename = FileSystem::OpenFileDialog("HDR (*.hdr):*.hdr", "Select Environment Map");
         if (!filename.empty())
@@ -261,10 +265,11 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
             m_EditorScene->SetLight({ glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f), 1.0f });
         }
     }
+    EndPropertyGrid();
+
+    ImGui::Separator();
 
     BeginPropertyGrid();
-
-    auto& environment = m_EditorScene->GetEnvironment();
     if (!environment.Filepath.empty())
     {
         Property("Environment Rotation", environment.Rotation, -360.0f, 360.0f);
@@ -280,7 +285,6 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
         Property("Light Multiplier", light.Multiplier, 0.0f, 10.0f);
         light.Direction = glm::normalize(direction);
     }
-
     EndPropertyGrid();
 
     ImGui::End();
@@ -310,6 +314,13 @@ void EditorLayer::DrawAnimationPanel()
 
 void EditorLayer::DrawMaterialsPanel()
 {
+    static std::array<const char*, (size_t)ShaderType::Count - 1> shaders = {
+        "Standard Static",
+        "Standard Animated",
+        "Unlit - Color",
+        "Unlit - Texture"
+    };
+
     ImGui::Begin("Materials");
 
     if (!m_SelectionContext.empty())
@@ -318,199 +329,295 @@ void EditorLayer::DrawMaterialsPanel()
 
         auto& topSelection = *m_SelectionContext.rbegin();
         auto mesh = topSelection.Entity.GetComponentIfExists<MeshComponent>();
-        if (topSelection.Mesh)
+        if (topSelection.Mesh && mesh)
         {
-            // Albedo
-            if (ImGui::CollapsingHeader("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
+            auto baseMaterial = mesh->Mesh->GetMaterial();
+
+            auto currentShader = baseMaterial->GetShader()->GetType();
+            uint8_t shaderIndex = (uint8_t)currentShader - 1;
+
+            ImGui::Text("Shader");
+            ImGui::SameLine();
+            if (ImGui::BeginCombo("##ShaderList", shaders[shaderIndex]))
             {
-                bool hasAlbedo = topSelection.Mesh->HasAlbedoMap;
-                bool usingAlbedoMap = mesh->Mesh->UsingAlbedoTexture(*topSelection.Mesh);
-                auto albedoMap = mesh->Mesh->GetAlbedoTexture(*topSelection.Mesh);
-                glm::vec3 albedo = mesh->Mesh->GetAlbedo(*topSelection.Mesh);
-
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                ImGui::Image((void*)(size_t)(hasAlbedo ? albedoMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
-                             ImVec2(64, 64));
-                ImGui::PopStyleVar();
-
-                if (ImGui::IsItemHovered())
+                for (uint8_t i = 0; i < shaders.size(); i++)
                 {
-                    if (hasAlbedo)
+                    bool selected = i == shaderIndex;
+                    if (ImGui::Selectable(shaders[i], &selected))
                     {
-                        ImGui::BeginTooltip();
-                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(albedoMap->GetPath().c_str());
-                        ImGui::PopTextWrapPos();
-                        ImGui::Image((void*)(size_t)albedoMap->GetRendererID(), ImVec2(384, 384));
-                        ImGui::EndTooltip();
-                    }
-
-                    if (ImGui::IsItemClicked())
-                    {
-                        std::string filename = FileSystem::OpenFileDialog("", "Select Albedo Texture");
-                        if (!filename.empty())
+                        if (i != shaderIndex)
                         {
-                            mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, usingAlbedoMap, Texture2D::Create(filename, true));
-                            usingAlbedoMap = true;
+                            baseMaterial->Reset(Renderer::GetShaderLibrary()->Get((ShaderType)(i + 1)));
+
+                            switch (i)
+                            {
+                                case 2:
+                                    mesh->Mesh->SetAlbedo(*topSelection.Mesh, glm::vec3(1.0f));
+                                    break;
+
+                                case 3:
+                                    mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, true, Renderer2D::WhiteTexture());
+                                    break;
+                            }
                         }
                     }
                 }
-
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-                BeginPropertyGrid(2, (int)stringHasher("albedo"));
-                Property("Use Albedo Texture", usingAlbedoMap);
-                Property("Albedo Color", albedo, PropertyFlags::ColorProperty);
-                EndPropertyGrid();
-                ImGui::EndGroup();
-
-                mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, usingAlbedoMap);
-                mesh->Mesh->SetAlbedo(*topSelection.Mesh, albedo);
+                if (ImGui::Selectable("Custom..."))
+                {
+                    std::string filepath = FileSystem::OpenFileDialog("GLSL (*.glsl):*.glsl", "Select Shader");
+                    if (!filepath.empty())
+                        baseMaterial->Reset(Shader::Create(filepath));
+                }
+                ImGui::EndCombo();
             }
 
-            // Normal
-            if (ImGui::CollapsingHeader("Normal", ImGuiTreeNodeFlags_DefaultOpen))
+            ImGui::Separator();
+
+            switch (baseMaterial->GetShader()->GetType())
             {
-                bool hasNormal = topSelection.Mesh->HasNormalMap;
-                bool usingNormalMap = mesh->Mesh->UsingNormalTexture(*topSelection.Mesh);
-                auto normalMap = mesh->Mesh->GetNormalTexture(*topSelection.Mesh);
-
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                ImGui::Image((void*)(size_t)(hasNormal ? normalMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
-                             ImVec2(64, 64));
-                ImGui::PopStyleVar();
-
-                if (ImGui::IsItemHovered())
+                case ShaderType::StandardStatic:
+                case ShaderType::StandardAnimated:
                 {
-                    if (hasNormal)
+                    // Albedo
+                    if (ImGui::CollapsingHeader("Albedo", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        ImGui::BeginTooltip();
-                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(normalMap->GetPath().c_str());
-                        ImGui::PopTextWrapPos();
-                        ImGui::Image((void*)(size_t)normalMap->GetRendererID(), ImVec2(384, 384));
-                        ImGui::EndTooltip();
+                        bool hasAlbedo = topSelection.Mesh->HasAlbedoMap;
+                        bool usingAlbedoMap = mesh->Mesh->UsingAlbedoTexture(*topSelection.Mesh);
+                        auto albedoMap = mesh->Mesh->GetAlbedoTexture(*topSelection.Mesh);
+                        glm::vec3 albedo = mesh->Mesh->GetAlbedo(*topSelection.Mesh);
+
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
+                        ImGui::Image((void*)(size_t)(hasAlbedo ? albedoMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
+                                     ImVec2(64, 64));
+                        ImGui::PopStyleVar();
+
+                        if (ImGui::IsItemHovered())
+                        {
+                            if (hasAlbedo)
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                                ImGui::TextUnformatted(albedoMap->GetPath().c_str());
+                                ImGui::PopTextWrapPos();
+                                ImGui::Image((void*)(size_t)albedoMap->GetRendererID(), ImVec2(384, 384));
+                                ImGui::EndTooltip();
+                            }
+
+                            if (ImGui::IsItemClicked())
+                            {
+                                std::string filename = FileSystem::OpenFileDialog("", "Select Albedo Texture");
+                                if (!filename.empty())
+                                {
+                                    mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, usingAlbedoMap, Texture2D::Create(filename, true));
+                                    usingAlbedoMap = true;
+                                }
+                            }
+                        }
+
+                        ImGui::SameLine();
+
+                        ImGui::BeginGroup();
+                        BeginPropertyGrid(2, (int)stringHasher("albedo"));
+                        Property("Use Albedo Texture", usingAlbedoMap);
+                        Property("Albedo Color", albedo, PropertyFlags::ColorProperty);
+                        EndPropertyGrid();
+                        ImGui::EndGroup();
+
+                        mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, usingAlbedoMap);
+                        mesh->Mesh->SetAlbedo(*topSelection.Mesh, albedo);
                     }
 
-                    if (ImGui::IsItemClicked())
+                    // Normal
+                    if (ImGui::CollapsingHeader("Normal", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        std::string filename = FileSystem::OpenFileDialog("", "Select Normal Texture");
-                        if (!filename.empty())
+                        bool hasNormal = topSelection.Mesh->HasNormalMap;
+                        bool usingNormalMap = mesh->Mesh->UsingNormalTexture(*topSelection.Mesh);
+                        auto normalMap = mesh->Mesh->GetNormalTexture(*topSelection.Mesh);
+
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
+                        ImGui::Image((void*)(size_t)(hasNormal ? normalMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
+                                     ImVec2(64, 64));
+                        ImGui::PopStyleVar();
+
+                        if (ImGui::IsItemHovered())
                         {
-                            mesh->Mesh->SetNormalTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
-                            usingNormalMap = true;
+                            if (hasNormal)
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                                ImGui::TextUnformatted(normalMap->GetPath().c_str());
+                                ImGui::PopTextWrapPos();
+                                ImGui::Image((void*)(size_t)normalMap->GetRendererID(), ImVec2(384, 384));
+                                ImGui::EndTooltip();
+                            }
+
+                            if (ImGui::IsItemClicked())
+                            {
+                                std::string filename = FileSystem::OpenFileDialog("", "Select Normal Texture");
+                                if (!filename.empty())
+                                {
+                                    mesh->Mesh->SetNormalTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
+                                    usingNormalMap = true;
+                                }
+                            }
                         }
+
+                        ImGui::SameLine();
+
+                        ImGui::BeginGroup();
+                        BeginPropertyGrid(2, (int)stringHasher("normal"));
+                        Property("Use Normal Texture", usingNormalMap);
+                        EndPropertyGrid();
+                        ImGui::EndGroup();
+
+                        mesh->Mesh->SetNormalTexture(*topSelection.Mesh, usingNormalMap);
                     }
+
+                    // Roughness
+                    if (ImGui::CollapsingHeader("Roughness", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        bool hasRoughness = topSelection.Mesh->HasRoughnessMap;
+                        bool usingRoughnessMap = mesh->Mesh->UsingRoughnessTexture(*topSelection.Mesh);
+                        auto roughnessMap = mesh->Mesh->GetRoughnessTexture(*topSelection.Mesh);
+                        float roughness = mesh->Mesh->GetRoughness(*topSelection.Mesh);
+
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
+                        ImGui::Image((void*)(size_t)(hasRoughness ? roughnessMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
+                                     ImVec2(64, 64));
+                        ImGui::PopStyleVar();
+
+                        if (ImGui::IsItemHovered())
+                        {
+                            if (hasRoughness)
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                                ImGui::TextUnformatted(roughnessMap->GetPath().c_str());
+                                ImGui::PopTextWrapPos();
+                                ImGui::Image((void*)(size_t)roughnessMap->GetRendererID(), ImVec2(384, 384));
+                                ImGui::EndTooltip();
+                            }
+
+                            if (ImGui::IsItemClicked())
+                            {
+                                std::string filename = FileSystem::OpenFileDialog("", "Select Roughness Texture");
+                                if (!filename.empty())
+                                {
+                                    mesh->Mesh->SetRoughnessTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
+                                    usingRoughnessMap = true;
+                                }
+                            }
+                        }
+
+                        ImGui::SameLine();
+
+                        ImGui::BeginGroup();
+                        BeginPropertyGrid(2, (int)stringHasher("roughness"));
+                        Property("Use Roughness Texture", usingRoughnessMap);
+                        Property("Roughness", roughness, 0.0f, 1.0f, 0.01f);
+                        EndPropertyGrid();
+                        ImGui::EndGroup();
+
+                        mesh->Mesh->SetRoughnessTexture(*topSelection.Mesh, usingRoughnessMap);
+                        mesh->Mesh->SetRoughness(*topSelection.Mesh, roughness);
+                    }
+
+                    // Metalness
+                    if (ImGui::CollapsingHeader("Metalness", ImGuiTreeNodeFlags_DefaultOpen))
+                    {
+                        bool hasMetalness = topSelection.Mesh->HasMetalnessMap;
+                        bool usingMetalnessMap = mesh->Mesh->UsingMetalnessTexture(*topSelection.Mesh);
+                        auto metalnessMap = mesh->Mesh->GetMetalnessTexture(*topSelection.Mesh);
+                        float metalness = mesh->Mesh->GetMetalness(*topSelection.Mesh);
+
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
+                        ImGui::Image((void*)(size_t)(hasMetalness ? metalnessMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
+                                     ImVec2(64, 64));
+                        ImGui::PopStyleVar();
+
+                        if (ImGui::IsItemHovered())
+                        {
+                            if (hasMetalness)
+                            {
+                                ImGui::BeginTooltip();
+                                ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                                ImGui::TextUnformatted(metalnessMap->GetPath().c_str());
+                                ImGui::PopTextWrapPos();
+                                ImGui::Image((void*)(size_t)metalnessMap->GetRendererID(), ImVec2(384, 384));
+                                ImGui::EndTooltip();
+                            }
+
+                            if (ImGui::IsItemClicked())
+                            {
+                                std::string filename = FileSystem::OpenFileDialog("", "Select Metalness Texture");
+                                if (!filename.empty())
+                                {
+                                    mesh->Mesh->SetMetalnessTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
+                                    usingMetalnessMap = true;
+                                }
+                            }
+                        }
+
+                        ImGui::SameLine();
+
+                        ImGui::BeginGroup();
+                        BeginPropertyGrid(2, (int)stringHasher("metalness"));
+                        Property("Use Metalness Texture", usingMetalnessMap);
+                        Property("Metalness", metalness, 0.0f, 1.0f, 0.01f);
+                        EndPropertyGrid();
+                        ImGui::EndGroup();
+
+                        mesh->Mesh->SetMetalnessTexture(*topSelection.Mesh, usingMetalnessMap);
+                        mesh->Mesh->SetMetalness(*topSelection.Mesh, metalness);
+                    }
+
+                    break;
                 }
 
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-                BeginPropertyGrid(2, (int)stringHasher("normal"));
-                Property("Use Normal Texture", usingNormalMap);
-                EndPropertyGrid();
-                ImGui::EndGroup();
-
-                mesh->Mesh->SetNormalTexture(*topSelection.Mesh, usingNormalMap);
-            }
-
-            // Roughness
-            if (ImGui::CollapsingHeader("Roughness", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                bool hasRoughness = topSelection.Mesh->HasRoughnessMap;
-                bool usingRoughnessMap = mesh->Mesh->UsingRoughnessTexture(*topSelection.Mesh);
-                auto roughnessMap = mesh->Mesh->GetRoughnessTexture(*topSelection.Mesh);
-                float roughness = mesh->Mesh->GetRoughness(*topSelection.Mesh);
-
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                ImGui::Image((void*)(size_t)(hasRoughness ? roughnessMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
-                             ImVec2(64, 64));
-                ImGui::PopStyleVar();
-
-                if (ImGui::IsItemHovered())
+                case ShaderType::UnlitColor:
                 {
-                    if (hasRoughness)
-                    {
-                        ImGui::BeginTooltip();
-                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(roughnessMap->GetPath().c_str());
-                        ImGui::PopTextWrapPos();
-                        ImGui::Image((void*)(size_t)roughnessMap->GetRendererID(), ImVec2(384, 384));
-                        ImGui::EndTooltip();
-                    }
-
-                    if (ImGui::IsItemClicked())
-                    {
-                        std::string filename = FileSystem::OpenFileDialog("", "Select Roughness Texture");
-                        if (!filename.empty())
-                        {
-                            mesh->Mesh->SetRoughnessTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
-                            usingRoughnessMap = true;
-                        }
-                    }
+                    glm::vec3 color = mesh->Mesh->GetAlbedo(*topSelection.Mesh);
+                    if (Property("Color", color, PropertyFlags::ColorProperty))
+                        mesh->Mesh->SetAlbedo(*topSelection.Mesh, color);
+                    
+                    break;
                 }
 
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-                BeginPropertyGrid(2, (int)stringHasher("roughness"));
-                Property("Use Roughness Texture", usingRoughnessMap);
-                Property("Roughness", roughness, 0.0f, 1.0f, 0.01f);
-                EndPropertyGrid();
-                ImGui::EndGroup();
-
-                mesh->Mesh->SetRoughnessTexture(*topSelection.Mesh, usingRoughnessMap);
-                mesh->Mesh->SetRoughness(*topSelection.Mesh, roughness);
-            }
-
-            // Metalness
-            if (ImGui::CollapsingHeader("Metalness", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                bool hasMetalness = topSelection.Mesh->HasMetalnessMap;
-                bool usingMetalnessMap = mesh->Mesh->UsingMetalnessTexture(*topSelection.Mesh);
-                auto metalnessMap = mesh->Mesh->GetMetalnessTexture(*topSelection.Mesh);
-                float metalness = mesh->Mesh->GetMetalness(*topSelection.Mesh);
-
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
-                ImGui::Image((void*)(size_t)(hasMetalness ? metalnessMap->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
-                             ImVec2(64, 64));
-                ImGui::PopStyleVar();
-
-                if (ImGui::IsItemHovered())
+                case ShaderType::UnlitTexture:
                 {
-                    if (hasMetalness)
-                    {
-                        ImGui::BeginTooltip();
-                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                        ImGui::TextUnformatted(metalnessMap->GetPath().c_str());
-                        ImGui::PopTextWrapPos();
-                        ImGui::Image((void*)(size_t)metalnessMap->GetRendererID(), ImVec2(384, 384));
-                        ImGui::EndTooltip();
-                    }
+                    bool hasTexture = topSelection.Mesh->HasAlbedoMap;
+                    auto texture = mesh->Mesh->GetAlbedoTexture(*topSelection.Mesh);
 
-                    if (ImGui::IsItemClicked())
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 10));
+                    ImGui::Image((void*)(size_t)(hasTexture ? texture->GetRendererID() : m_CheckerboardTexture->GetRendererID()),
+                                 ImVec2(64, 64));
+                    ImGui::PopStyleVar();
+
+                    if (ImGui::IsItemHovered())
                     {
-                        std::string filename = FileSystem::OpenFileDialog("", "Select Metalness Texture");
-                        if (!filename.empty())
+                        if (hasTexture)
                         {
-                            mesh->Mesh->SetMetalnessTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
-                            usingMetalnessMap = true;
+                            ImGui::BeginTooltip();
+                            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+                            ImGui::TextUnformatted(texture->GetPath().c_str());
+                            ImGui::PopTextWrapPos();
+                            ImGui::Image((void*)(size_t)texture->GetRendererID(), ImVec2(384, 384));
+                            ImGui::EndTooltip();
+                        }
+
+                        if (ImGui::IsItemClicked())
+                        {
+                            std::string filename = FileSystem::OpenFileDialog("", "Select Texture");
+                            if (!filename.empty())
+                                mesh->Mesh->SetAlbedoTexture(*topSelection.Mesh, true, Texture2D::Create(filename));
                         }
                     }
+
+                    ImGui::SameLine();
+                    ImGui::Text("Texture");
+                    
+                    break;
                 }
-
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-                BeginPropertyGrid(2, (int)stringHasher("metalness"));
-                Property("Use Metalness Texture", usingMetalnessMap);
-                Property("Metalness", metalness, 0.0f, 1.0f, 0.01f);
-                EndPropertyGrid();
-                ImGui::EndGroup();
-
-                mesh->Mesh->SetMetalnessTexture(*topSelection.Mesh, usingMetalnessMap);
-                mesh->Mesh->SetMetalness(*topSelection.Mesh, metalness);
             }
         }
     }

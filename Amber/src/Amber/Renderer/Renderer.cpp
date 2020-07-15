@@ -25,9 +25,11 @@ void Renderer::Init()
 
     s_Data.ShaderLibrary = CreateScope<ShaderLibrary>();
 
-    s_Data.ShaderLibrary->Load("assets/shaders/MeshShader.glsl");
-    s_Data.ShaderLibrary->Load("Animated_Lighting", "assets/shaders/AmberPBR_Animated.glsl");
-    s_Data.ShaderLibrary->Load("Static_Lighting", "assets/shaders/AmberPBR_Static.glsl");
+    s_Data.ShaderLibrary->Load(ShaderType::StandardStatic, "assets/shaders/AmberPBR_Static.glsl");
+    s_Data.ShaderLibrary->Load(ShaderType::StandardAnimated, "assets/shaders/AmberPBR_Animated.glsl");
+
+    s_Data.ShaderLibrary->Load(ShaderType::UnlitColor, "assets/shaders/Unlit_Color.glsl");
+    s_Data.ShaderLibrary->Load(ShaderType::UnlitTexture, "assets/shaders/Unlit_Texture.glsl");
 
     RenderCommand::Init();
     Renderer2D::Init();
@@ -98,7 +100,10 @@ void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<Ma
         glm::mat4 transformMatrix = transform * submesh.Transform;
         glm::mat3 normalTransform = glm::transpose(glm::inverse(glm::mat3(transformMatrix)));
         material->Set("u_Transform", transformMatrix);
-        material->Set("u_NormalTransform", normalTransform);
+
+        auto shaderType = material->GetShader()->GetType();
+        if (shaderType == ShaderType::StandardStatic || shaderType == ShaderType::StandardAnimated)
+            material->Set("u_NormalTransform", normalTransform);
 
         material->Bind();
         RenderCommand::DrawIndexedOffset(

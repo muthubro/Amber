@@ -27,6 +27,7 @@ public:
     ~Material();
 
     void Bind();
+    void Reset(Ref<Shader> shader = nullptr);
 
     Ref<Shader> GetShader() { return m_Shader; }
 

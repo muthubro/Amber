@@ -9,7 +9,7 @@
 namespace Amber
 {
 
-Ref<Shader> Shader::Create(const std::string& filepath)
+Ref<Shader> Shader::Create(const std::string& filepath, ShaderType type)
 {
     switch (Renderer::GetAPI())
     {
@@ -18,7 +18,7 @@ Ref<Shader> Shader::Create(const std::string& filepath)
             return nullptr;
 
         case RendererAPI::API::OpenGL:
-            return Ref<OpenGLShader>::Create(filepath);
+            return Ref<OpenGLShader>::Create(filepath, type);
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -67,10 +67,31 @@ Ref<Shader> ShaderLibrary::Load(const std::string& name, const std::string& file
     return shader;
 }
 
+Ref<Shader> ShaderLibrary::Load(ShaderType type, const std::string& filepath)
+{
+    auto shader = Shader::Create(filepath, type);
+    Add(shader);
+    return shader;
+}
+
 Ref<Shader> ShaderLibrary::Get(const std::string& name)
 {
     AB_CORE_ASSERT(Exists(name), "Shader not found!");
     return m_Shaders[name];
+}
+
+Ref<Shader> ShaderLibrary::Get(ShaderType type)
+{
+    switch (type)
+    {
+        case ShaderType::StandardStatic:    return Get("Standard Static");
+        case ShaderType::StandardAnimated:  return Get("Standard Animated");
+        case ShaderType::UnlitColor:        return Get("Unlit - Color");
+        case ShaderType::UnlitTexture:      return Get("Unlit - Texture");
+    }
+
+    AB_CORE_ASSERT(false, "Shader not found!");
+    return nullptr;
 }
 
 bool ShaderLibrary::Exists(const std::string& name) const

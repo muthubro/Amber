@@ -90,6 +90,8 @@ public:
     static void ResetStats();
     static Statistics GetStats();
 
+    static Ref<Texture2D> WhiteTexture();
+
 private:
     static float GetTextureSlot(const Ref<Texture2D>& texture);
     static void SetQuadVertexData(const glm::vec3& position, const glm::vec4& color, const glm::vec2& texCoord, float textureIndex, float tilingFactor);

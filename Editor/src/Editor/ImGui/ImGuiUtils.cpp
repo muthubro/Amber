@@ -70,14 +70,14 @@ bool Property(const std::string& label, std::string& value, bool error)
     if (error)
         ImGui::PopStyleColor();
 
-    if (label.empty())
-    {
-        ImGui::PopItemWidth();
-    }
-    else if (grid)
+    if (grid)
     {
         ImGui::PopItemWidth();
         ImGui::NextColumn();
+    }
+    else if (label.empty())
+    {
+        ImGui::PopItemWidth();
     }
 
     return modified;
@@ -120,14 +120,14 @@ bool Property(const std::string& label, const std::string& value, bool error)
     if (error)
         ImGui::PopStyleColor();
 
-    if (label.empty())
-    {
-        ImGui::PopItemWidth();
-    }
-    else if (grid)
+    if (grid)
     {
         ImGui::PopItemWidth();
         ImGui::NextColumn();
+    }
+    else if (label.empty())
+    {
+        ImGui::PopItemWidth();
     }
 
     return false;
@@ -169,14 +169,14 @@ bool Property(const std::string& label, char* value, bool error)
     if (error)
         ImGui::PopStyleColor();
 
-    if (label.empty())
-    {
-        ImGui::PopItemWidth();
-    }
-    else if (grid)
+    if (grid)
     {
         ImGui::PopItemWidth();
         ImGui::NextColumn();
+    }
+    else if (label.empty())
+    {
+        ImGui::PopItemWidth();
     }
 
     return modified;
@@ -216,14 +216,14 @@ bool Property(const std::string& label, const char* value, bool error)
     if (error)
         ImGui::PopStyleColor();
 
-    if (label.empty())
-    {
-        ImGui::PopItemWidth();
-    }
-    else if (grid)
+    if (grid)
     {
         ImGui::PopItemWidth();
         ImGui::NextColumn();
+    }
+    else if (label.empty())
+    {
+        ImGui::PopItemWidth();
     }
 
     return false;

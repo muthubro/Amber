@@ -60,7 +60,8 @@ void ScriptEngineRegistry::RegisterAll()
     mono_add_internal_call("Amber.MeshComponent::GetMesh_Native", Amber::Script::Amber_MeshComponent_GetMesh);
     mono_add_internal_call("Amber.MeshComponent::SetMesh_Native", Amber::Script::Amber_MeshComponent_SetMesh);
 
-    mono_add_internal_call("Amber.Texture2D::Constructor_Native", Amber::Script::Amber_Texture2D_Constructor);
+    mono_add_internal_call("Amber.Texture2D::Constructor_Filepath_Native", Amber::Script::Amber_Texture2D_Constructor_Filepath);
+    mono_add_internal_call("Amber.Texture2D::Constructor_Size_Native", Amber::Script::Amber_Texture2D_Constructor_Size);
     mono_add_internal_call("Amber.Texture2D::Destructor_Native", Amber::Script::Amber_Texture2D_Destructor);
     mono_add_internal_call("Amber.Texture2D::SetData_Native", Amber::Script::Amber_Texture2D_SetData);
 

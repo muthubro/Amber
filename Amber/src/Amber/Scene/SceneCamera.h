@@ -18,7 +18,7 @@ public:
     {
         float FOV = glm::radians(45.0f);
         float Near = 0.1f;
-        float Far = 1000.0f;
+        float Far = 10000.0f;
         float Width = 1280.0f;
         float Height = 720.0f;
     };
@@ -28,7 +28,7 @@ public:
     {
         float Size = 10.0f;
         float Near = 0.1f;
-        float Far = 1000.0f;
+        float Far = 10000.0f;
         float AspectRatio = 1280.0f / 720.0f;
     };
 

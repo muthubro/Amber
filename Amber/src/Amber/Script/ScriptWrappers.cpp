@@ -157,8 +157,13 @@ void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh)
 ////////// Renderer //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
+void* Amber_Texture2D_Constructor_Filepath(MonoString* filepath)
+{
+    return new Ref<Texture2D>(Texture2D::Create(mono_string_to_utf8(filepath)));
+}
+
 // Texture2D
-void* Amber_Texture2D_Constructor(uint32_t width, uint32_t height)
+void* Amber_Texture2D_Constructor_Size(uint32_t width, uint32_t height)
 {
     return new Ref<Texture2D>(Texture2D::Create(TextureFormat::RGBA, width, height));
 }

@@ -36,7 +36,8 @@ void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh);
 
 // Renderer
 // Texture2D
-void* Amber_Texture2D_Constructor(uint32_t width, uint32_t height);
+void* Amber_Texture2D_Constructor_Filepath(MonoString* filepath);
+void* Amber_Texture2D_Constructor_Size(uint32_t width, uint32_t height);
 void Amber_Texture2D_Destructor(Ref<Texture2D>* _this);
 void Amber_Texture2D_SetData(Ref<Texture2D>* _this, MonoArray* inData, int32_t count);
 

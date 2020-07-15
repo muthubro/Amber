@@ -36,9 +36,6 @@ namespace Terrain
             texture.SetData(colorMap);
 
             MeshComponent meshComponent = GetComponent<MeshComponent>();
-            if (meshComponent == null)
-                meshComponent = CreateComponent<MeshComponent>();
-            meshComponent.Mesh = MeshFactory.CreatePlane(width, height);
             meshComponent.Mesh.SetAlbedoTexture(0, true, texture);
         }
 
