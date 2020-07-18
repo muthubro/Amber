@@ -20,6 +20,7 @@ public:
     void Unlock() override;
 
     void Resize(uint32_t width, uint32_t height) override;
+    void CopyTo(Ref<Texture2D> dst) override;
 
     bool Loaded() const override { return m_Loaded; }
 

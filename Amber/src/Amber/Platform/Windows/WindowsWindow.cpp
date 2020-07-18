@@ -191,6 +191,12 @@ void WindowsWindow::OnUpdate()
     glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
+void WindowsWindow::SetTitle(const std::string& title)
+{
+    m_Data.Title = title;
+    glfwSetWindowTitle(m_Window, title.c_str());
+}
+
 void WindowsWindow::SetVSync(bool enabled)
 {
     AB_PROFILE_FUNCTION();

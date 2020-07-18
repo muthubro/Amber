@@ -10,6 +10,7 @@ Material::Material(const Ref<Shader>& shader)
     AllocateStorage();
 
     SetFlag(MaterialFlag::DepthTest);
+    SetFlag(MaterialFlag::StencilTest);
     SetFlag(MaterialFlag::Blend);
 }
 
@@ -142,8 +143,8 @@ const Buffer& Material::GetUniformBufferTarget(ShaderUniform* uniform) const
 ////////     MATERIAL INSTANCE     //////////////////////////////////
 /////////////////////////////////////////////////////////////////////
 
-MaterialInstance::MaterialInstance(const Ref<Material>& material)
-    : m_Material(material)
+MaterialInstance::MaterialInstance(const Ref<Material>& material, const std::string& name)
+    : m_Name(name), m_Material(material)
 {
     m_Material->AddMaterialInstance(this);
     AllocateStorage();

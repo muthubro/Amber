@@ -81,19 +81,16 @@ void EditorLayer::OnAttach()
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
     }
 
-    m_EditorScene = Ref<Scene>::Create("Default Scene");
-
-    ScriptEngine::SetSceneContext(m_EditorScene);
     ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll");
-
-    m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+    m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>();
 
     m_CheckerboardTexture = Texture2D::Create("assets/editor/Checkerboard.png");
     m_PlayButton = Texture2D::Create("assets/editor/PlayButton.png");
     m_PauseButton = Texture2D::Create("assets/editor/PauseButton.png");
 
-    m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>(m_EditorScene);
-    m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
+    m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
+
+    NewScene();
 }
 
 void EditorLayer::OnDetach()
@@ -116,48 +113,26 @@ void EditorLayer::OnUpdate(Timestep ts)
     RenderCommand::Clear();
 
     auto& options = SceneRenderer::GetOptions();
-    options.ShowGrid = m_ShowGrid;
+    options.ShowGrid = m_EnableOverlay && m_ShowGrid;
     options.GridResolution = m_GridResolution;
     options.GridScale = m_GridScale;
     options.GridSize = m_GridSize;
+    options.ShowBoundingBoxes = m_EnableOverlay && m_ShowBoundingBoxes;
+    options.ShowCamera = m_EnableOverlay;
 
     switch (m_SceneState)
     {
         case SceneState::Edit:
         {
             m_EditorCamera.OnUpdate(ts);
-            m_EditorScene->OnRenderEditor(ts, m_EditorCamera);
 
-            if (m_EnableOverlay && !m_SelectionContext.empty())
+            std::vector<Entity> selectionContext;
+            if (m_EnableOverlay)
             {
-                Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
-                Renderer2D::BeginScene(m_EditorCamera.GetViewProjection());
-
-                if (m_SelectionMode == SelectionMode::Entity)
-                {
-                    for (auto& selection : m_SelectionContext)
-                    {
-                        if (!selection.Mesh)
-                            continue;
-
-                        auto component = selection.Entity.GetComponentIfExists<BoxColliderComponent>();
-                        Renderer::DrawAABB(component ? *component : selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>(), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-                    }
-                }
-                else if (m_SelectionMode == SelectionMode::Submesh)
-                {
-                    for (auto& selection : m_SelectionContext)
-                    {
-                        if (!selection.Mesh)
-                            continue;
-
-                        Renderer::DrawAABB(selection.Mesh->BoundingBox, selection.Entity.GetComponent<TransformComponent>().Transform * selection.Mesh->Transform);
-                    }
-                }
-
-                Renderer2D::EndScene();
-                Renderer::EndRenderPass();
+                for (auto& selection : m_SelectionContext)
+                    selectionContext.push_back(selection.Entity);
             }
+            m_EditorScene->OnRenderEditor(ts, m_EditorCamera, selectionContext);
             break;
         }
 
@@ -226,6 +201,12 @@ void EditorLayer::OnImGuiRender()
     ImGui::End();
 }
 
+void EditorLayer::UpdateWindowTitle(const std::string& sceneName)
+{
+    std::string title = sceneName + " - Amber Editor (" + Application::GetConfiguration() + ")";
+    Application::Get().GetWindow().SetTitle(title);
+}
+
 void EditorLayer::DrawViewportSettingsPanel()
 {
     ImGui::Begin("Viewport##Settings");
@@ -238,6 +219,7 @@ void EditorLayer::DrawViewportSettingsPanel()
     Property("Grid Resolution", m_GridResolution, 0.025f, 0.975f);
     Property("Grid Scale", m_GridScale, 1.0f, 100.0f);
     Property("Grid Size", m_GridSize, 1.0f, 100.0f);
+    Property("Bounding Box", m_ShowBoundingBoxes);
 
     EndPropertyGrid();
 
@@ -372,6 +354,9 @@ void EditorLayer::DrawMaterialsPanel()
             }
 
             ImGui::Separator();
+
+            auto material = mesh->Mesh->GetMaterials()[topSelection.Mesh->MaterialIndex];
+            Property("Material", material->GetName());
 
             switch (baseMaterial->GetShader()->GetType())
             {
@@ -643,6 +628,12 @@ void EditorLayer::DrawViewport()
     SceneRenderer::SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
     m_EditorScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
     m_EditorCamera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    auto sceneCameras = m_EditorScene->GetAllEntitiesWith<CameraComponent>();
+    for (auto& cameraEntity : sceneCameras)
+    {
+        Entity entity{ cameraEntity, m_EditorScene.Raw() };
+        entity.GetComponent<CameraComponent>().Camera.SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
+    }
     if (m_RuntimeScene)
         m_RuntimeScene->SetViewportSize((uint32_t)viewportSize.x, (uint32_t)viewportSize.y);
 
@@ -659,7 +650,7 @@ void EditorLayer::DrawViewport()
     m_ViewportBounds[1] = { maxBounds.x, maxBounds.y };
     m_AllowViewportCameraEvents = ImGui::IsMouseHoveringRect(minBounds, maxBounds);
 
-    // Guizmos
+    // Gizmos
     if (m_GizmoMode != -1 && !m_SelectionContext.empty())
     {
         ImGuizmo::SetDrawlist();
@@ -668,62 +659,85 @@ void EditorLayer::DrawViewport()
         bool snap = Input::IsKeyPressed(AB_KEY_LEFT_CONTROL);
         float snapValue[3] = { m_SnapValue, m_SnapValue, m_SnapValue };
 
-        glm::vec3 centroidTranslation(0.0f);
-        for (auto& selection : m_SelectionContext)
-        {
-            float translation[3], rotation[3], scale[3];
-            if (m_SelectionMode == SelectionMode::Entity)
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform()), translation, rotation, scale);
-            else
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform() * selection.Mesh->Transform), translation, rotation, scale);
-
-            centroidTranslation.x += translation[0];
-            centroidTranslation.y += translation[1];
-            centroidTranslation.z += translation[2];
-        }
-        centroidTranslation /= (float)m_SelectionContext.size();
-        glm::mat4 centroidTransform = glm::translate(glm::mat4(1.0f), centroidTranslation);
-
-        glm::mat4 delta;
-        ImGuizmo::Manipulate(
-            glm::value_ptr(m_EditorCamera.GetViewMatrix()),
-            glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
-            (ImGuizmo::OPERATION)m_GizmoMode,
-            ImGuizmo::MODE::LOCAL,
-            glm::value_ptr(centroidTransform),
-            glm::value_ptr(delta),
-            snap ? snapValue : nullptr);
-
+        // TODO: Multi-selection scaling
         if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
-            delta = glm::mat4(1.0f) + (delta - glm::mat4(1.0f)) * 0.1f;
-
-        for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
         {
-            auto& selection = m_SelectionContext[i];
-            if (!selection.Entity.HasComponent<MeshComponent>())
-                continue;
-
+            auto& selection = *m_SelectionContext.rbegin();
             auto& entityTransform = selection.Entity.Transform();
-
             if (m_SelectionMode == SelectionMode::Entity)
             {
-                if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
-                    entityTransform = entityTransform * delta;
-                else
-                    entityTransform = delta * entityTransform;
-
-                if (m_GizmoMode == ImGuizmo::OPERATION::ROTATE && ImGuizmo::IsUsing())
-                {
-                    auto [translation, rotation, scale] = GetTransformDecomposition(delta);
-                    m_SceneHierarchyPanel->SetOrientation(selection.Entity, rotation);
-                }
+                ImGuizmo::Manipulate(
+                    glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+                    glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
+                    (ImGuizmo::OPERATION)m_GizmoMode,
+                    ImGuizmo::MODE::LOCAL,
+                    glm::value_ptr(entityTransform),
+                    nullptr,
+                    snap ? snapValue : nullptr);
             }
             else
             {
-                if (m_GizmoMode == ImGuizmo::OPERATION::SCALE)
-                    selection.Mesh->Transform = selection.Mesh->Transform * delta;
+                auto transform = entityTransform * selection.Mesh->Transform;
+                ImGuizmo::Manipulate(
+                    glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+                    glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
+                    (ImGuizmo::OPERATION)m_GizmoMode,
+                    ImGuizmo::MODE::LOCAL,
+                    glm::value_ptr(transform),
+                    nullptr,
+                    snap ? snapValue : nullptr);
+
+                selection.Mesh->Transform = glm::inverse(entityTransform) * transform;
+            }
+        }
+        else
+        {
+            glm::vec3 centroidTranslation(0.0f);
+            for (auto& selection : m_SelectionContext)
+            {
+                float translation[3], rotation[3], scale[3];
+                if (m_SelectionMode == SelectionMode::Entity)
+                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform()), translation, rotation, scale);
                 else
+                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(selection.Entity.Transform() * selection.Mesh->Transform), translation, rotation, scale);
+
+                centroidTranslation.x += translation[0];
+                centroidTranslation.y += translation[1];
+                centroidTranslation.z += translation[2];
+            }
+            centroidTranslation /= (float)m_SelectionContext.size();
+            glm::mat4 centroidTransform = glm::translate(glm::mat4(1.0f), centroidTranslation);
+
+            glm::mat4 delta;
+            ImGuizmo::Manipulate(
+                glm::value_ptr(m_EditorCamera.GetViewMatrix()),
+                glm::value_ptr(m_EditorCamera.GetProjectionMatrix()),
+                (ImGuizmo::OPERATION)m_GizmoMode,
+                ImGuizmo::MODE::LOCAL,
+                glm::value_ptr(centroidTransform),
+                glm::value_ptr(delta),
+                snap ? snapValue : nullptr);
+
+            for (uint32_t i = 0; i < m_SelectionContext.size(); i++)
+            {
+                auto& selection = m_SelectionContext[i];
+                auto& entityTransform = selection.Entity.Transform();
+
+                if (m_SelectionMode == SelectionMode::Entity)
+                {
+                    entityTransform = delta * entityTransform;
+                    if (m_GizmoMode == ImGuizmo::OPERATION::ROTATE && ImGuizmo::IsUsing())
+                    {
+                        auto [translation, rotation, scale] = GetTransformDecomposition(delta);
+                        m_SceneHierarchyPanel->SetOrientation(selection.Entity, rotation);
+                    }
+                }
+                else
+                {
+                    if (!selection.Entity.HasComponent<MeshComponent>())
+                        continue;
                     selection.Mesh->Transform = glm::inverse(entityTransform) * delta * entityTransform * selection.Mesh->Transform;
+                }
             }
         }
     }
@@ -802,16 +816,19 @@ void EditorLayer::DrawMenuBar()
 
 void EditorLayer::NewScene()
 {
-    m_EditorScene = Ref<Scene>::Create("Unnamed Scene");
+    m_EditorScene = Ref<Scene>::Create("Untitled Scene");
+    UpdateWindowTitle(m_EditorScene->GetDebugName());
 
     auto cameraEntity = m_EditorScene->CreateEntity("Camera");
     auto& camera = cameraEntity.AddComponent<CameraComponent>();
     auto [width, height] = m_EditorCamera.GetViewportSize();
     camera.Camera.SetViewportSize(width, height);
 
-    m_SceneHierarchyPanel->SetContext(m_EditorScene);
     ScriptEngine::SetSceneContext(m_EditorScene);
+    m_SceneHierarchyPanel->SetContext(m_EditorScene);
+
     m_SelectionContext.clear();
+    m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
 }
 
 void EditorLayer::OpenScene()
@@ -824,6 +841,7 @@ void EditorLayer::OpenScene()
         serializer.Deserialize(filepath);
 
         m_EditorScene = scene;
+        UpdateWindowTitle(m_EditorScene->GetDebugName());
         m_SceneHierarchyPanel->SetContext(scene);
         ScriptEngine::SetSceneContext(scene);
         m_SelectionContext.clear();
@@ -835,9 +853,36 @@ void EditorLayer::SaveScene(const std::string& path)
     std::string filepath = path.empty() ? FileSystem::SaveFileDialog("Amber Scene (*.asc):*.asc", "Save Scene") : path;
     if (!filepath.empty())
     {
+        std::string sceneName;
+
+        auto first = filepath.find_last_of("/\\");
+        if (first == std::string::npos)
+            first = 0;
+
+        auto last = filepath.rfind('.');
+        if (last == std::string::npos)
+        {
+            sceneName = filepath.substr(first + 1);
+            filepath += ".asc";
+        }
+        else
+        {
+            auto extension = filepath.substr(last + 1);
+            if (extension != "asc")
+            {
+                filepath += ".asc";
+                last = filepath.size() - 4;
+            }
+
+            sceneName = filepath.substr(first + 1, last - first);
+        }
+
+        m_EditorScene->SetDebugName(sceneName);
         SceneSerializer serializer(m_EditorScene);
         serializer.Serialize(filepath);
         m_EditorScene->SetAssetPath(filepath);
+
+        UpdateWindowTitle(sceneName);
     }
 }
 
@@ -872,8 +917,13 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
         auto [mouseX, mouseY] = GetMousePosition();
         if (mouseX >= -1.0f && mouseX <= 1.0f && mouseY >= -1.0f && mouseY <= 1.0f)
         {
-            if (!Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) && !Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+            bool changed = false;
+            if (!Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) && !Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT) &&
+                !Input::IsKeyPressed(AB_KEY_LEFT_CONTROL) && !Input::IsKeyPressed(AB_KEY_RIGHT_CONTROL))
+            {
+                changed = !m_SelectionContext.empty();
                 m_SelectionContext.clear();
+            }
 
             auto [origin, direction] = CastRay(mouseX, mouseY);
             auto entities = m_EditorScene->GetAllEntitiesWith<MeshComponent, TransformComponent>();
@@ -930,7 +980,8 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 
             if (selected.Mesh)
             {
-                if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+                if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT) ||
+                    Input::IsKeyPressed(AB_KEY_LEFT_CONTROL) || Input::IsKeyPressed(AB_KEY_RIGHT_CONTROL))
                 {
                     std::vector<SelectedSubmesh>::iterator pos;
                     if (m_SelectionMode == SelectionMode::Entity)
@@ -947,9 +998,11 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
                 {
                     m_SelectionContext.push_back(selected);
                 }
-
-                m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
+                
+                changed = true;
             }
+            if (changed)
+                m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
         }
     }
 
@@ -958,31 +1011,65 @@ bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 
 bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 {
+    if (m_RuntimeScene && m_RuntimeScene->IsPlaying())
+        ImGui::CaptureKeyboardFromApp(false);
+
     if (m_ViewportPanelFocused)
     {
+        bool handled = true;
         switch (e.GetKeyCode())
         {
             case AB_KEY_Q:
                 m_GizmoMode = -1;
                 break;
-            case AB_KEY_T:
+            case AB_KEY_W:
                 m_GizmoMode = ImGuizmo::OPERATION::TRANSLATE;
                 break;
-            case AB_KEY_R:
+            case AB_KEY_E:
                 m_GizmoMode = ImGuizmo::OPERATION::ROTATE;
                 break;
-            case AB_KEY_S:
+            case AB_KEY_R:
                 m_GizmoMode = ImGuizmo::OPERATION::SCALE;
                 break;
+
+            case AB_KEY_DELETE:
+                for (auto& selection : m_SelectionContext)
+                    m_EditorScene->DestroyEntity(selection.Entity);
+                m_SelectionContext.clear();
+                m_SceneHierarchyPanel->SetSelection(m_SelectionContext);
+                break;
+
+            default:
+                handled = false;
         }
+
+        if (handled)
+            return false;
     }
 
     if (Input::IsKeyPressed(AB_KEY_LEFT_CONTROL) || Input::IsKeyPressed(AB_KEY_RIGHT_CONTROL))
     {
+        if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
+        {
+            bool handled = true;
+            switch (e.GetKeyCode())
+            {
+                case AB_KEY_O:
+                    m_EnableOverlay = !m_EnableOverlay;
+                    break;
+
+                default:
+                    handled = false;
+            }
+            if (handled)
+                return false;
+        }
+
+        bool handled = true;
         switch (e.GetKeyCode())
         {
             case AB_KEY_B:
-                m_EnableOverlay = !m_EnableOverlay;
+                m_ShowBoundingBoxes = !m_ShowBoundingBoxes;
                 break;
             case AB_KEY_G:
                 m_ShowGrid = !m_ShowGrid;
@@ -991,26 +1078,31 @@ bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
                 m_SelectionMode = m_SelectionMode == SelectionMode::Entity ? SelectionMode::Submesh : SelectionMode::Entity;
                 break;
 
+            case AB_KEY_D:
+                for (auto& selection : m_SelectionContext)
+                    m_EditorScene->DuplicateEntity(selection.Entity);
+                break;
+
             // Menu shortcuts
             case AB_KEY_N:
                 NewScene();
                 break;
-
             case AB_KEY_O:
                 OpenScene();
                 break;
-
             case AB_KEY_S:
                 if (Input::IsKeyPressed(AB_KEY_LEFT_SHIFT) || Input::IsKeyPressed(AB_KEY_RIGHT_SHIFT))
                     SaveScene();
                 else
                     SaveScene(m_EditorScene->GetAssetPath());
                 break;
-        }
-    }
 
-    if (m_RuntimeScene && m_RuntimeScene->IsPlaying())
-        ImGui::CaptureKeyboardFromApp(false);
+            default:
+                handled = false;
+        }
+        if (handled)
+            return false;
+    }
 
     return false;
 }

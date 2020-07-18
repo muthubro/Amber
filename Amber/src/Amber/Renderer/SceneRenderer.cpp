@@ -17,10 +17,11 @@ struct SceneRendererData
 {
     Scope<ShaderLibrary> ShaderLibrary;
 
-    const Scene* ActiveScene = nullptr;
+    Scene* ActiveScene = nullptr;
     struct SceneInfo
     {
         SceneRendererCamera SceneCamera;
+        Entity CameraEntity;
 
         Ref<MaterialInstance> SkyboxMaterial;
         Environment SceneEnvironment;
@@ -30,19 +31,28 @@ struct SceneRendererData
     Ref<RenderPass> GeometryPass;
     Ref<RenderPass> CompositePass;
 
-    Ref<Material> CompositeBaseMaterial;
-
     Ref<Texture2D> BRDFLUT;
 
-    struct DrawCommand
+    struct MeshDrawCommand
     {
         Ref<Mesh> Mesh;
         Ref<MaterialInstance> Material;
         glm::mat4 Transform;
     };
-    std::vector<DrawCommand> DrawList;
+    std::vector<MeshDrawCommand> DrawList;
+    std::vector<MeshDrawCommand> SelectedDrawList;
 
+    struct CameraDrawCommand
+    {
+        SceneCamera Camera;
+        glm::mat4 Transform;
+    };
+    std::vector<CameraDrawCommand> CameraDrawList;
+
+    Ref<Material> CompositeBaseMaterial;
     Ref<MaterialInstance> GridMaterial;
+    Ref<MaterialInstance> OutlineMaterial;
+    Ref<MaterialInstance> OutlineAnimatedMaterial;
 
     SceneRendererOptions Options;
 };
@@ -56,8 +66,10 @@ void SceneRenderer::Init()
     s_Data.ShaderLibrary->Load("assets/shaders/EnvironmentIrradiance.glsl");
     s_Data.ShaderLibrary->Load("assets/shaders/EnvironmentMipFilter.glsl");
     s_Data.ShaderLibrary->Load("assets/shaders/EquirectangularToCubemap.glsl");
-    s_Data.ShaderLibrary->Load("assets/shaders/SceneComposite.glsl");
     s_Data.ShaderLibrary->Load("assets/shaders/Grid.glsl");
+    s_Data.ShaderLibrary->Load("assets/shaders/Outline.glsl");
+    s_Data.ShaderLibrary->Load("assets/shaders/Outline_Animated.glsl");
+    s_Data.ShaderLibrary->Load("assets/shaders/SceneComposite.glsl");
 
     FramebufferSpecification geoFramebufferSpec;
     geoFramebufferSpec.Width = 1280;
@@ -80,11 +92,16 @@ void SceneRenderer::Init()
     compRenderPassSpec.TargetFramebuffer = Framebuffer::Create(compFramebufferSpec);
     s_Data.CompositePass = RenderPass::Create(compRenderPassSpec);
 
-    s_Data.CompositeBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("SceneComposite"));
-
     s_Data.BRDFLUT = Texture2D::Create("assets/textures/BRDF_LUT.tga");
 
+    s_Data.CompositeBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("SceneComposite"));
     s_Data.GridMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(s_Data.ShaderLibrary->Get("Grid")));
+
+    s_Data.OutlineMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(s_Data.ShaderLibrary->Get("Outline")));
+    s_Data.OutlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
+
+    s_Data.OutlineAnimatedMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(s_Data.ShaderLibrary->Get("Outline_Animated")));
+    s_Data.OutlineAnimatedMaterial->SetFlag(MaterialFlag::DepthTest, false);
 }
 
 void SceneRenderer::SetViewportSize(uint32_t width, uint32_t height)
@@ -99,6 +116,7 @@ void SceneRenderer::BeginScene(Scene* scene, const SceneRendererCamera& camera)
 
     s_Data.ActiveScene = scene;
 
+    s_Data.SceneData.CameraEntity = s_Data.ActiveScene->GetMainCameraEntity();
     s_Data.SceneData.SceneCamera = camera;
     s_Data.SceneData.SkyboxMaterial = scene->GetSkyboxMaterial();
     s_Data.SceneData.SceneEnvironment = scene->GetEnvironment();
@@ -108,10 +126,15 @@ void SceneRenderer::BeginScene(Scene* scene, const SceneRendererCamera& camera)
 void SceneRenderer::EndScene()
 {
     AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
+ 
+    FlushDrawList();
 
     s_Data.ActiveScene = nullptr;
+}
 
-    FlushDrawList();
+void SceneRenderer::SubmitCamera(const SceneCamera& camera, const glm::mat4& transform)
+{
+    s_Data.CameraDrawList.push_back({ camera, transform });
 }
 
 void SceneRenderer::SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance> overrideMaterial)
@@ -119,9 +142,15 @@ void SceneRenderer::SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform,
     s_Data.DrawList.push_back({ mesh, overrideMaterial, transform });
 }
 
+void SceneRenderer::SubmitSelectedMesh(const Ref<Mesh> mesh, const glm::mat4& transform)
+{
+    s_Data.SelectedDrawList.push_back({ mesh, nullptr, transform });
+}
+
 void SceneRenderer::GeometryPass()
 {
     Renderer::BeginRenderPass(s_Data.GeometryPass);
+    RenderCommand::SetStencilMask(0);
 
     auto viewProj = s_Data.SceneData.SceneCamera.Camera.GetProjectionMatrix() * s_Data.SceneData.SceneCamera.ViewMatrix;
     glm::vec3 cameraPosition = glm::inverse(s_Data.SceneData.SceneCamera.ViewMatrix)[3];
@@ -161,6 +190,94 @@ void SceneRenderer::GeometryPass()
         Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Material);
     }
 
+    if (!s_Data.SelectedDrawList.empty())
+    {
+        RenderCommand::SetStencilFunction(ComparisonFunc::Always, 1, 0xff);
+        RenderCommand::SetStencilMask(0xff);
+        RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Keep, StencilOperation::Replace);
+
+        for (auto& drawCommand : s_Data.SelectedDrawList)
+        {
+            auto baseMaterial = drawCommand.Mesh->GetMaterial();
+            auto shaderType = baseMaterial->GetShader()->GetType();
+
+            baseMaterial->Set("u_ViewProjection", viewProj);
+            if (shaderType == ShaderType::StandardStatic || shaderType == ShaderType::StandardAnimated)
+            {
+                baseMaterial->Set("u_ViewPosition", cameraPosition);
+
+                baseMaterial->Set("u_IrradianceTexture", s_Data.SceneData.SceneEnvironment.IrradianceMap);
+                baseMaterial->Set("u_RadianceTexture", s_Data.SceneData.SceneEnvironment.RadianceMap);
+                baseMaterial->Set("u_BRDFLUT", s_Data.BRDFLUT);
+                baseMaterial->Set("u_EnvironmentRotation", s_Data.SceneData.SceneEnvironment.Rotation);
+
+                struct LightUniform
+                {
+                    glm::vec3 Radiance;
+                    float Multiplier;
+                };
+                LightUniform light{ s_Data.SceneData.ActiveLight.Radiance, s_Data.SceneData.ActiveLight.Multiplier };
+
+                baseMaterial->Set("u_LightDirection", s_Data.SceneData.ActiveLight.Direction);
+                baseMaterial->Set("u_Light", light);
+            }
+
+            Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Material);
+        }
+
+        if (!s_Data.Options.ShowBoundingBoxes)
+        {
+            s_Data.OutlineMaterial->Set("u_ViewProjection", viewProj);
+            s_Data.OutlineMaterial->Set("u_Color", glm::vec3(1.0f, 0.2f, 0.0f));
+            s_Data.OutlineAnimatedMaterial->Set("u_ViewProjection", viewProj);
+            s_Data.OutlineAnimatedMaterial->Set("u_Color", glm::vec3(1.0f, 0.2f, 0.0f));
+
+            RenderCommand::SetStencilFunction(ComparisonFunc::NotEqual, 1, 0xff);
+            RenderCommand::SetStencilMask(0);
+
+            RenderCommand::SetLineThickness(7.0f);
+            RenderCommand::SetRasterizationMode(RasterizationMode::Line);
+
+            for (auto& drawCommand : s_Data.SelectedDrawList)
+                Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Mesh->IsAnimated() ? s_Data.OutlineAnimatedMaterial : s_Data.OutlineMaterial);
+
+            RenderCommand::SetPointSize(7.0f);
+            RenderCommand::SetRasterizationMode(RasterizationMode::Point);
+
+            for (auto& drawCommand : s_Data.SelectedDrawList)
+                Renderer::DrawMesh(drawCommand.Mesh, drawCommand.Transform, drawCommand.Mesh->IsAnimated() ? s_Data.OutlineAnimatedMaterial : s_Data.OutlineMaterial);
+
+            RenderCommand::SetStencilFunction(ComparisonFunc::Always, 1, 0xff);
+            RenderCommand::SetStencilMask(0xff);
+            RenderCommand::SetRasterizationMode(RasterizationMode::Fill);
+        }
+    }
+
+    Renderer2D::BeginScene(viewProj);
+
+    if (s_Data.Options.ShowCamera)
+    {
+        RenderCommand::SetLineThickness(1.0f);
+
+        for (auto& drawCommand : s_Data.CameraDrawList)
+        {
+            auto data = drawCommand.Camera.GetPerspectiveData();
+            Math::Frustum cameraFrustum(drawCommand.Transform, data.FOV, data.Near, data.Far, data.Width / data.Height);
+            Renderer::DrawFrustum(cameraFrustum);
+        }
+    }
+
+    if (s_Data.Options.ShowBoundingBoxes)
+    {
+        RenderCommand::SetLineThickness(2.0f);
+
+        for (auto& drawCommand : s_Data.DrawList)
+            Renderer::DrawAABB(drawCommand.Mesh, drawCommand.Transform, glm::vec4(1.0f));
+
+        for (auto& drawCommand : s_Data.SelectedDrawList)
+            Renderer::DrawAABB(drawCommand.Mesh, drawCommand.Transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+    }
+
     if (s_Data.Options.ShowGrid)
     {
         s_Data.GridMaterial->Set("u_ViewProjection", viewProj);
@@ -173,6 +290,7 @@ void SceneRenderer::GeometryPass()
         Renderer2D::DrawQuad(s_Data.GridMaterial, gridTransform);
     }
 
+    Renderer2D::EndScene();
     Renderer::EndRenderPass();
 }
 
@@ -196,6 +314,8 @@ void SceneRenderer::FlushDrawList()
     CompositePass();
 
     s_Data.DrawList.clear();
+    s_Data.SelectedDrawList.clear();
+    s_Data.CameraDrawList.clear();
     s_Data.SceneData = {};
 }
 
@@ -269,6 +389,11 @@ Ref<Texture2D> SceneRenderer::GetFinalColorBuffer()
 SceneRendererOptions& SceneRenderer::GetOptions()
 {
     return s_Data.Options;
+}
+
+Scope<ShaderLibrary>& SceneRenderer::GetShaderLibrary()
+{
+    return s_Data.ShaderLibrary;
 }
 
 }

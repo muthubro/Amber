@@ -84,11 +84,13 @@ private:
     bool m_AllowViewportCameraEvents = false;
     bool m_ViewportPanelMouseOver = false;
     bool m_ViewportPanelFocused = false;
+
     bool m_EnableOverlay = true;
     bool m_ShowGrid = true;
     float m_GridResolution = 0.025f;
     float m_GridScale = 16.025f;
     float m_GridSize = 16.025f;
+    bool m_ShowBoundingBoxes = false;
 
     std::vector<SelectedSubmesh> m_SelectionContext;
     float m_SnapValue = 0.5f;
@@ -96,6 +98,8 @@ private:
     SelectionMode m_SelectionMode = SelectionMode::Entity;
 
     Scope<SceneHierarchyPanel> m_SceneHierarchyPanel = nullptr;
+
+    void UpdateWindowTitle(const std::string& sceneName);
 
     void DrawViewportSettingsPanel();
     void DrawEnvironmentSettingsPanel();

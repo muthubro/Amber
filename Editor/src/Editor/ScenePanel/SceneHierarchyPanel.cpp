@@ -17,11 +17,6 @@ namespace Amber
 namespace Editor
 {
 
-SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
-{
-    SetContext(context);
-}
-
 void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
 {
     m_Context = context;
@@ -196,8 +191,8 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
                 {
                     Entity entity_i(entities[i], m_Context.Raw());
                     SelectedSubmesh entitySelection{ entity_i, nullptr, 0.0f };
-                    auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
-                    if (mesh && *mesh)
+                    auto meshComponent = entity_i.GetComponentIfExists<MeshComponent>();
+                    if (meshComponent)
                         entitySelection.Mesh = &meshComponent->Mesh->GetSubmeshes()[0];
                     
                     m_SelectionContext->push_back(entitySelection);
@@ -254,6 +249,34 @@ bool SceneHierarchyPanel::DrawEntityNode(Entity& entity, int32_t index)
     return clicked;
 }
 
+template<typename T, typename UIFunction>
+static void DrawComponent(const std::string& name, Entity& entity, UIFunction func)
+{
+    auto component = entity.GetComponentIfExists<T>();
+    if (component)
+    {
+        bool remove = false;
+        if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(T).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, name.c_str()))
+        {
+            if (ImGui::BeginPopupContextItem())
+            {
+                if (ImGui::MenuItem("Remove"))
+                    remove = true;
+
+                ImGui::EndPopup();
+            }
+
+            func(*component);
+
+            ImGui::TreePop();
+        }
+        if (remove)
+            entity.RemoveComponent<T>();
+
+        ImGui::Separator();
+    }
+}
+
 void SceneHierarchyPanel::DrawComponents(Entity& entity)
 {
     auto& tagComponent = entity.GetComponent<TagComponent>();
@@ -291,270 +314,220 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
     }
     ImGui::Separator();
 
-    auto meshComponent = entity.GetComponentIfExists<MeshComponent>();
-    if (meshComponent)
-    {
-        bool remove = false;
-        if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(MeshComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Mesh"))
+    DrawComponent<MeshComponent>("Mesh", entity, [](MeshComponent& component) {
+        BeginPropertyGrid(3);
+
+        if (component.Mesh)
+            Property("File Path", (const char*)component.Mesh->GetFilePath().c_str());
+        else
+            Property("File Path", (const char*)"NULL");
+
+        if (ImGui::Button("...##MeshOpen"))
         {
-            if (ImGui::BeginPopupContextItem())
-            {
-                if (ImGui::MenuItem("Remove"))
-                    remove = true;
-
-                ImGui::EndPopup();
-            }
-
-            BeginPropertyGrid(3);
-            
-            if (meshComponent->Mesh)
-                Property("File Path", (const char*)meshComponent->Mesh->GetFilePath().c_str());
-            else
-                Property("File Path", (const char*)"NULL");
-
-            if (ImGui::Button("...##MeshOpen"))
-            {
-                std::string filepath = FileSystem::OpenFileDialog("FBX (*.fbx):*.fbx", "Select Mesh");
-                if (!filepath.empty())
-                    meshComponent->Mesh = Ref<Mesh>::Create(filepath);
-            }
-            ImGui::NextColumn();
-
-            EndPropertyGrid();
-            ImGui::TreePop();
+            std::string filepath = FileSystem::OpenFileDialog("FBX (*.fbx):*.fbx", "Select Mesh");
+            if (!filepath.empty())
+                component.Mesh = Ref<Mesh>::Create(filepath);
         }
-        if (remove)
-            entity.RemoveComponent<MeshComponent>();
+        ImGui::NextColumn();
 
-        ImGui::Separator();
-    }
+        EndPropertyGrid();
+    });
 
-    auto cameraComponent = entity.GetComponentIfExists<CameraComponent>();
-    if (cameraComponent)
-    {
-        bool remove = false;
-        if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(CameraComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Camera"))
+    DrawComponent<CameraComponent>("Camera", entity, [&context = m_Context](CameraComponent& component) {
+        auto& camera = component.Camera;
+
+        int type = (int)camera.GetProjectionType();
+        ImGui::RadioButton("Perspective##Projection", &type, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("Orthographic##Projection", &type, 1);
+
+        BeginPropertyGrid();
+        switch (type)
         {
-            if (ImGui::BeginPopupContextItem())
+            case 0:
             {
-                if (ImGui::MenuItem("Remove"))
-                    remove = true;
-
-                ImGui::EndPopup();
+                auto data = camera.GetPerspectiveData();
+                data.FOV = glm::degrees(data.FOV);
+                Property("Vertical FOV", data.FOV, 0.0f, 90.0f);
+                Property("Near Clip", data.Near, 0.1f, 100000.0f);
+                Property("Far Clip", data.Far, data.Near, 100000.0f);
+                data.FOV = glm::radians(data.FOV);
+                camera.SetPerspective(data);
+                break;
             }
 
-            auto& camera = cameraComponent->Camera;
-
-            int type = (int)camera.GetProjectionType();
-            ImGui::RadioButton("Perspective##Projection", &type, 0);
-            ImGui::SameLine();
-            ImGui::RadioButton("Orthographic##Projection", &type, 1);
-
-            BeginPropertyGrid();
-            switch (type)
+            case 1:
             {
-                case 0:
-                {
-                    auto data = camera.GetPerspectiveData();
-                    data.FOV = glm::degrees(data.FOV);
-                    Property("Vertical FOV", data.FOV, 0.0f, 90.0f);
-                    Property("Width", data.Width, 0.1f, 10000.0f);
-                    Property("Height", data.Height, 0.1f, 10000.0f);
-                    Property("Near Clip", data.Near, 0.1f, 100.0f);
-                    Property("Far Clip", data.Far, data.Near, 100000.0f);
-                    data.FOV = glm::radians(data.FOV);
-                    camera.SetPerspective(data);
-                    break;
-                }
-
-                case 1:
-                {
-                    auto data = camera.GetOrthographicData();
-                    Property("Size", data.Size, 0.1f, 10000.0f);
-                    Property("Aspect Ratio", data.AspectRatio, 0.1f, 10.0f);
-                    Property("Near Clip", data.Near, 0.1f, 100.0f);
-                    Property("Far Clip", data.Far, data.Near, 100000.0f);
-                    camera.SetOrthographic(data);
-                    break;
-                }
+                auto data = camera.GetOrthographicData();
+                Property("Size", data.Size, 0.1f, 10000.0f);
+                Property("Near Clip", data.Near, 0.1f, 100000.0f);
+                Property("Far Clip", data.Far, data.Near, 100000.0f);
+                camera.SetOrthographic(data);
+                break;
             }
-            EndPropertyGrid();
-            ImGui::TreePop();
         }
-        if (remove)
-            entity.RemoveComponent<CameraComponent>();
+        EndPropertyGrid();
 
-        ImGui::Separator();
-    }
-
-    auto scriptComponent = entity.GetComponentIfExists<ScriptComponent>();
-    if (scriptComponent)
-    {
-        bool remove = false;
-        if (ImGui::TreeNodeEx((void*)((uint32_t)entity | typeid(ScriptComponent).hash_code()), ImGuiTreeNodeFlags_DefaultOpen, "Script"))
+        if (!component.Primary)
         {
-            if (ImGui::BeginPopupContextItem())
+            if (ImGui::Button("Set as primary"))
             {
-                if (ImGui::MenuItem("Remove"))
-                    remove = true;
-
-                ImGui::EndPopup();
+                component.Primary = true;
+                auto camera = context->GetMainCameraEntity();
+                camera.GetComponent<CameraComponent>().Primary = false;
             }
+        }
+    });
 
-            BeginPropertyGrid();
-            std::string oldName = scriptComponent->ModuleName;
-            if (Property("Module Name", scriptComponent->ModuleName, !ScriptEngine::ModuleExists(scriptComponent->ModuleName)))
+    DrawComponent<ScriptComponent>("Script", entity, [entity, context = m_Context, &entityMap = m_EntityMap](ScriptComponent& component) {
+        BeginPropertyGrid();
+        std::string oldName = component.ModuleName;
+        if (Property("Module Name", component.ModuleName, !ScriptEngine::ModuleExists(component.ModuleName)))
+        {
+            if (ScriptEngine::ModuleExists(oldName))
+                ScriptEngine::ShutdownScriptEntity(entity, oldName);
+
+            if (ScriptEngine::ModuleExists(component.ModuleName))
             {
-                if (ScriptEngine::ModuleExists(oldName))
-                    ScriptEngine::ShutdownScriptEntity(entity, oldName);
+                ScriptEngine::InitScriptEntity(entity);
 
-                if (ScriptEngine::ModuleExists(scriptComponent->ModuleName))
+                auto& moduleName = component.ModuleName;
+                auto& fieldMap = ScriptEngine::GetEntityInstanceData(context->GetUUID(), entity.GetUUID()).ModuleFieldMap[moduleName];
+                auto& editorFieldMap = entityMap[entity].ScriptFields[moduleName];
+
+                for (auto& [fieldName, field] : fieldMap)
                 {
-                    ScriptEngine::InitScriptEntity(entity);
+                    auto& editorData = editorFieldMap[fieldName];
+                    auto data = field.GetEditorData(moduleName);
 
-                    auto& moduleName = scriptComponent->ModuleName;
-                    auto& fieldMap = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID()).ModuleFieldMap[moduleName];
-                    auto& editorFieldMap = m_EntityMap[entity].ScriptFields[moduleName];
-
-                    for (auto& [fieldName, field] : fieldMap)
-                    {
-                        auto& editorData = editorFieldMap[fieldName];
-                        auto data = field.GetEditorData(moduleName);
-
-                        if (!data.Name.empty())
-                            editorData.Name = data.Name;
-                        else
-                            editorData.Name = fieldName;
-                        editorData.Min = data.Min;
-                        editorData.Max = data.Max;
-                        editorData.Step = data.Step;
-                    }
+                    if (!data.Name.empty())
+                        editorData.Name = data.Name;
+                    else
+                        editorData.Name = fieldName;
+                    editorData.Min = data.Min;
+                    editorData.Max = data.Max;
+                    editorData.Step = data.Step;
                 }
             }
+        }
 
-            if (ScriptEngine::ModuleExists(scriptComponent->ModuleName))
+        if (ScriptEngine::ModuleExists(component.ModuleName))
+        {
+            auto& instanceData = ScriptEngine::GetEntityInstanceData(context->GetUUID(), entity.GetUUID());
+            auto& moduleFieldMap = instanceData.ModuleFieldMap;
+            if (moduleFieldMap.find(component.ModuleName) != moduleFieldMap.end())
             {
-                auto& instanceData = ScriptEngine::GetEntityInstanceData(m_Context->GetUUID(), entity.GetUUID());
-                auto& moduleFieldMap = instanceData.ModuleFieldMap;
-                if (moduleFieldMap.find(scriptComponent->ModuleName) != moduleFieldMap.end())
+                auto& fields = moduleFieldMap.at(component.ModuleName);
+                auto& editorFieldMap = entityMap[entity].ScriptFields[component.ModuleName];
+                for (auto& [fieldName, field] : fields)
                 {
-                    auto& fields = moduleFieldMap.at(scriptComponent->ModuleName);
-                    auto& editorFieldMap = m_EntityMap[entity].ScriptFields[scriptComponent->ModuleName];
-                    for (auto& [fieldName, field] : fields)
+                    bool isRuntime = context->IsPlaying() && field.IsRuntimeAvailable();
+                    auto& fieldData = editorFieldMap[fieldName];
+                    switch (field.Type)
                     {
-                        bool isRuntime = m_Context->IsPlaying() && field.IsRuntimeAvailable();
-                        auto& fieldData = editorFieldMap[fieldName];
-                        switch (field.Type)
+                        case FieldType::Bool:
                         {
-                            case FieldType::Bool:
+                            bool value = isRuntime ? field.GetRuntimeValue<bool>() : field.GetStoredValue<bool>();
+                            if (Property(fieldData.Name.c_str(), value))
                             {
-                                bool value = isRuntime ? field.GetRuntimeValue<bool>() : field.GetStoredValue<bool>();
-                                if (Property(fieldData.Name.c_str(), value))
-                                {
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::Int:
+                        case FieldType::Int:
+                        {
+                            int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
+                            if (Property(fieldData.Name.c_str(), value, (int32_t)fieldData.Min, (int32_t)fieldData.Max, (int32_t)fieldData.Step))
                             {
-                                int32_t value = isRuntime ? field.GetRuntimeValue<int32_t>() : field.GetStoredValue<int32_t>();
-                                if (Property(fieldData.Name.c_str(), value, (int32_t)fieldData.Min, (int32_t)fieldData.Max, (int32_t)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (int32_t)fieldData.Min, (int32_t)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (int32_t)fieldData.Min, (int32_t)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::UInt:
+                        case FieldType::UInt:
+                        {
+                            uint32_t value = isRuntime ? field.GetRuntimeValue<uint32_t>() : field.GetStoredValue<uint32_t>();
+                            if (Property(fieldData.Name.c_str(), value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max, (uint32_t)fieldData.Step))
                             {
-                                uint32_t value = isRuntime ? field.GetRuntimeValue<uint32_t>() : field.GetStoredValue<uint32_t>();
-                                if (Property(fieldData.Name.c_str(), value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max, (uint32_t)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (uint32_t)fieldData.Min, (uint32_t)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::Float:
+                        case FieldType::Float:
+                        {
+                            float value = isRuntime ? field.GetRuntimeValue<float>() : field.GetStoredValue<float>();
+                            if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                             {
-                                float value = isRuntime ? field.GetRuntimeValue<float>() : field.GetStoredValue<float>();
-                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::Vec2:
+                        case FieldType::Vec2:
+                        {
+                            glm::vec2 value = isRuntime ? field.GetRuntimeValue<glm::vec2>() : field.GetStoredValue<glm::vec2>();
+                            if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                             {
-                                glm::vec2 value = isRuntime ? field.GetRuntimeValue<glm::vec2>() : field.GetStoredValue<glm::vec2>();
-                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::Vec3:
+                        case FieldType::Vec3:
+                        {
+                            glm::vec3 value = isRuntime ? field.GetRuntimeValue<glm::vec3>() : field.GetStoredValue<glm::vec3>();
+                            if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                             {
-                                glm::vec3 value = isRuntime ? field.GetRuntimeValue<glm::vec3>() : field.GetStoredValue<glm::vec3>();
-                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
+                        }
 
-                            case FieldType::Vec4:
+                        case FieldType::Vec4:
+                        {
+                            glm::vec4 value = isRuntime ? field.GetRuntimeValue<glm::vec4>() : field.GetStoredValue<glm::vec4>();
+                            if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
                             {
-                                glm::vec4 value = isRuntime ? field.GetRuntimeValue<glm::vec4>() : field.GetStoredValue<glm::vec4>();
-                                if (Property(fieldData.Name.c_str(), value, (float)fieldData.Min, (float)fieldData.Max, (float)fieldData.Step))
-                                {
-                                    value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
-                                    if (isRuntime)
-                                        field.SetRuntimeValue(value);
-                                    else
-                                        field.SetStoredValue(value);
-                                }
-                                break;
+                                value = glm::clamp(value, (float)fieldData.Min, (float)fieldData.Max);
+                                if (isRuntime)
+                                    field.SetRuntimeValue(value);
+                                else
+                                    field.SetStoredValue(value);
                             }
+                            break;
                         }
                     }
                 }
             }
-
-            EndPropertyGrid();
-            ImGui::TreePop();
         }
-        if (remove)
-            entity.RemoveComponent<ScriptComponent>();
 
-        ImGui::Separator();
-    }
+        EndPropertyGrid();
+    });
 
     if (ImGui::Button("+ Add Component"))
         ImGui::OpenPopup("AddComponentPanel");
@@ -574,7 +547,10 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         {
             if (ImGui::Button("Camera"))
             {
-                entity.AddComponent<CameraComponent>();
+                bool primary = true;
+                if (m_Context->GetMainCameraEntity())
+                    primary = false;
+                entity.AddComponent<CameraComponent>(primary);
                 ImGui::CloseCurrentPopup();
             }
         }

@@ -138,6 +138,23 @@ void Application::PushOverlay(Layer* overlay)
     overlay->OnAttach();
 }
 
+const char* Application::GetConfiguration()
+{
+#if defined(AB_DEBUG)
+    return "Debug";
+
+#elif defined(AB_RELEASE)
+    return "Release";
+
+#elif defined(AB_DIST)
+    return "Dist";
+
+#else
+    #error Undefined configuration!
+
+#endif
+}
+
 bool Application::OnWindowClose(WindowCloseEvent& e) 
 {
     Shutdown();
@@ -156,12 +173,6 @@ bool Application::OnWindowResize(WindowResizeEvent& e)
     m_Minimized = false;
     RenderCommand::SetViewPort(0, 0, width, height);
 
-    //auto& framebuffers = FramebufferPool::GetGlobal()->GetAll();
-    //for (auto fb : framebuffers)
-    //{
-    //    fb.Get()->Resize(width, height);
-    //}
-    
     return false;
 }
 

@@ -21,9 +21,24 @@ struct RenderAPICapabilities
     int MaxTextureSlots;
 };
 
+enum class ComparisonFunc
+{
+    Never, Less, LessEqual, Greater, GreaterEqual, Equal, NotEqual, Always
+};
+
 enum class PrimitiveType
 {
     Triangles, Lines
+};
+
+enum class RasterizationMode
+{
+    Fill, Line, Point
+};
+
+enum class StencilOperation
+{
+    Keep, Zero, Replace, Incr, IncrWrap, Decr, DecrWrap, Invert
 };
 
 class RendererAPI 
@@ -42,9 +57,14 @@ public:
     virtual void Clear() = 0;
 
     virtual void SetLineThickness(float thickness) = 0;
+    virtual void SetPointSize(float size) = 0;
+    virtual void SetRasterizationMode(RasterizationMode mode) = 0;
+    virtual void SetStencilFunction(ComparisonFunc func, uint8_t ref, uint8_t mask) = 0;
+    virtual void SetStencilMask(uint8_t mask) = 0;
+    virtual void SetStencilOperation(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation depthPass) = 0;
 
-    virtual void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) = 0;
-    virtual void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true) = 0;
+    virtual void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true, bool stencilTest = false) = 0;
+    virtual void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true, bool stencilTest = false) = 0;
 
     static RenderAPICapabilities& GetCapabilities()
     {

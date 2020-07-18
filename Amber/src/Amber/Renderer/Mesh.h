@@ -33,19 +33,19 @@ class MeshFactory;
 struct StaticVertex
 {
     glm::vec3 Position;
+    glm::vec2 TexCoord;
     glm::vec3 Normal;
     glm::vec3 Tangent;
     glm::vec3 Binormal;
-    glm::vec2 TexCoord;
 };
 
 struct AnimatedVertex
 {
     glm::vec3 Position;
+    glm::vec2 TexCoord;
     glm::vec3 Normal;
     glm::vec3 Tangent;
     glm::vec3 Binormal;
-    glm::vec2 TexCoord;
 
     uint32_t BoneID[4]{ 0, 0, 0, 0 };
     float BoneWeight[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
@@ -125,6 +125,7 @@ public:
 
     const std::string& GetFilePath() const { return m_FilePath; }
     Ref<Material> GetMaterial() { return m_BaseMaterial; }
+    Ref<Material> GetMaterial() const { return m_BaseMaterial; }
     const std::vector<Ref<MaterialInstance>>& GetMaterials() const { return m_Materials; }
     const std::vector<Ref<Texture2D>>& GetTextures() const { return m_Textures; }
 

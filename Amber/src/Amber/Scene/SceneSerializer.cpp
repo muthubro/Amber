@@ -11,6 +11,7 @@
 #include "Amber/Math/Transforms.h"
 
 #include "Amber/Renderer/MeshFactory.h"
+#include "Amber/Renderer/Renderer.h"
 
 #include "Amber/Scene/Components.h"
 #include "Amber/Scene/Entity.h"
@@ -456,6 +457,12 @@ struct convert<MeshComponent>
     {
         Node node;
         node["AssetPath"] = rhs.Mesh->GetFilePath();
+
+        auto shader = rhs.Mesh->GetMaterial()->GetShader();
+
+        node["ShaderType"] = (uint32_t)shader->GetType();
+        node["ShaderName"] = shader->GetName();
+
         return node;
     }
 
@@ -474,6 +481,19 @@ struct convert<MeshComponent>
             rhs.Mesh = MeshFactory::Plane(1.0f, 1.0f);
         else
             rhs.Mesh = Ref<Mesh>::Create(filepath);
+
+        auto material = rhs.Mesh->GetMaterial();
+        auto shaderType = (ShaderType)node["ShaderType"].as<uint32_t>();
+        std::string shaderName = node["ShaderName"].as<std::string>();
+
+        if (shaderType != material->GetShader()->GetType() || shaderName != material->GetShader()->GetName())
+        {
+            if (shaderType == ShaderType::None)
+                material->Reset(Renderer::GetShaderLibrary()->Get(shaderName));
+            else
+                material->Reset(Renderer::GetShaderLibrary()->Get(shaderType));
+        }
+
         return true;
     }
 };
@@ -484,6 +504,14 @@ Emitter& operator<<(Emitter& out, const MeshComponent& meshComponent)
 
     out << Key << "AssetPath";
     out << Value << meshComponent.Mesh->GetFilePath();
+
+    auto shader = meshComponent.Mesh->GetMaterial()->GetShader();
+
+    out << Key << "ShaderType";
+    out << Value << (uint32_t)shader->GetType();
+
+    out << Key << "ShaderName";
+    out << Value << shader->GetName();
 
     out << EndMap;
     return out;

@@ -55,10 +55,10 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
     auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
     vertexBuffer->SetLayout({
         { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoord" },
         { ShaderDataType::Float3, "a_Normal" },
         { ShaderDataType::Float3, "a_Tangent" },
         { ShaderDataType::Float3, "a_Binormal" },
-        { ShaderDataType::Float2, "a_TexCoord" }
     });
     mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
 
@@ -134,10 +134,10 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
     auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
     vertexBuffer->SetLayout({
         { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoord" },
         { ShaderDataType::Float3, "a_Normal" },
         { ShaderDataType::Float3, "a_Tangent" },
         { ShaderDataType::Float3, "a_Binormal" },
-        { ShaderDataType::Float2, "a_TexCoord" }
     });
     mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
 
@@ -210,10 +210,10 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
     auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
     vertexBuffer->SetLayout({
         { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoord" },
         { ShaderDataType::Float3, "a_Normal" },
         { ShaderDataType::Float3, "a_Tangent" },
         { ShaderDataType::Float3, "a_Binormal" },
-        { ShaderDataType::Float2, "a_TexCoord" }
     });
     mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
 

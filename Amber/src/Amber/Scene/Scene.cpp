@@ -2,6 +2,8 @@
 #include "Scene.h"
 
 #include "Amber/Renderer/SceneRenderer.h"
+#include "Amber/Renderer/Renderer.h"
+#include "Amber/Renderer/Renderer2D.h"
 
 #include "Amber/Scene/Components.h"
 #include "Amber/Scene/Entity.h"
@@ -99,9 +101,33 @@ void Scene::OnUpdate(Timestep ts)
     }
 }
 
-void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera)
+void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<Entity>& selectionContext)
 {
     m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLOD);
+
+    Entity sceneCameraEntity;
+    std::vector<Entity> cameraEntities;
+    for (auto& entity : selectionContext)
+    {
+        if (entity.HasComponent<CameraComponent>())
+        {
+            auto& cameraComponent = entity.GetComponent<CameraComponent>();
+            cameraEntities.push_back(entity);
+        }
+    }
+    if (!cameraEntities.empty())
+        sceneCameraEntity = *cameraEntities.rbegin();
+
+    Ref<Texture2D> cameraPreview = nullptr;
+    if (sceneCameraEntity)
+    {
+        OnRenderRuntime(ts, &sceneCameraEntity);
+
+        auto& colorBuffer = SceneRenderer::GetFinalColorBuffer();
+        cameraPreview = Texture2D::Create(
+            colorBuffer->GetFormat(), colorBuffer->GetWidth(), colorBuffer->GetHeight());
+        colorBuffer->CopyTo(cameraPreview);
+    }
 
     SceneRenderer::BeginScene(this, { camera, camera.GetViewMatrix() });
 
@@ -112,18 +138,72 @@ void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera)
         if (meshComponent.Mesh)
         {
             meshComponent.Mesh->OnUpdate(ts);
-            SceneRenderer::SubmitMesh(meshComponent, transformComponent);
+            auto res = std::find(selectionContext.begin(), selectionContext.end(), entity);
+            if (res != selectionContext.end())
+                SceneRenderer::SubmitSelectedMesh(meshComponent, transformComponent);
+            else
+                SceneRenderer::SubmitMesh(meshComponent, transformComponent);
         }
     }
 
+    for (auto& entity : cameraEntities)
+    {
+        auto& [cameraComponent, transformComponent] = entity.GetComponent<CameraComponent, TransformComponent>();
+        SceneRenderer::SubmitCamera(cameraComponent, transformComponent);
+    }
+
     SceneRenderer::EndScene();
+
+    if (sceneCameraEntity)
+    {
+        auto renderPass = SceneRenderer::GetFinalRenderPass();
+        Renderer::BeginRenderPass(renderPass, false);
+        Renderer2D::BeginScene(glm::mat4(1.0f));
+
+        static auto previewMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(Renderer::GetShaderLibrary()->Get(ShaderType::UnlitTexture)));
+        previewMaterial->SetFlag(MaterialFlag::DepthTest, false);
+        previewMaterial->Set("u_ViewProjection", glm::mat4(1.0f));
+
+        glm::vec3 position(0.75f, -0.75f, 0.0f);
+        previewMaterial->Set("u_AlbedoTexture", cameraPreview);
+        previewMaterial->Set("u_Transform", glm::scale(glm::translate(glm::mat4(1.0f), position), glm::vec3(0.2f, 0.2f, 1.0f)));
+
+        RenderCommand::SetStencilFunction(ComparisonFunc::Always, 2, 0xff);
+        RenderCommand::SetStencilMask(0xff);
+        RenderCommand::SetStencilOperation(StencilOperation::Keep, StencilOperation::Keep, StencilOperation::Replace);
+
+        Renderer2D::DrawFullscreenQuad(previewMaterial);
+
+        static auto outlineMaterial = Ref<MaterialInstance>::Create(Ref<Material>::Create(SceneRenderer::GetShaderLibrary()->Get("Outline")));
+        outlineMaterial->SetFlag(MaterialFlag::DepthTest, false);
+        outlineMaterial->Set("u_Color", glm::vec3(0.8f));
+        outlineMaterial->Set("u_ViewProjection", glm::mat4(1.0f));
+
+        glm::vec2 size(0.21f, 0.21f);
+        outlineMaterial->Set("u_Transform", glm::scale(glm::translate(glm::mat4(1.0f), position), glm::vec3(size, 0.0f)));
+        outlineMaterial->Set("u_Center", position);
+        outlineMaterial->Set("u_Size", size);
+        outlineMaterial->Set("u_Radius", 0.145f);
+        outlineMaterial->Set("u_Border", true);
+
+        RenderCommand::SetStencilFunction(ComparisonFunc::NotEqual, 2, 0xff);
+        RenderCommand::SetStencilMask(0);
+
+        Renderer2D::DrawFullscreenQuad(outlineMaterial);
+
+        RenderCommand::SetStencilFunction(ComparisonFunc::Always, 0, 0xff);
+        RenderCommand::SetStencilMask(0xff);
+
+        Renderer2D::EndScene();
+        Renderer::EndRenderPass();
+    }
 }
 
-void Scene::OnRenderRuntime(Timestep ts)
+void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
 {
     m_SkyboxMaterial->Set("u_TextureLod", m_SkyboxLOD);
 
-    Entity cameraEntity = GetMainCameraEntity();
+    Entity cameraEntity = sceneCameraEntity ? *sceneCameraEntity : GetMainCameraEntity();
     AB_CORE_ASSERT(cameraEntity, "Scene does not contain cameras!");
 
     glm::mat4 viewMatrix = glm::inverse(cameraEntity.GetComponent<TransformComponent>().Transform);
@@ -198,6 +278,29 @@ Ref<Scene> Scene::GetScene(UUID uuid)
     return nullptr;
 }
 
+template<typename T>
+static void CopyComponentFromRegistry(entt::registry& dstRegistry, entt::registry& srcRegistry, const std::unordered_map<UUID, entt::entity>& entityMap)
+{
+    auto view = srcRegistry.view<T>();
+    for (auto entity : view)
+    {
+        entt::entity dstEntity = entityMap.at(srcRegistry.get<IDComponent>(entity).ID);
+
+        auto& srcComponent = view.get<T>(entity);
+        dstRegistry.emplace_or_replace<T>(dstEntity, srcComponent);
+    }
+}
+
+template<typename T>
+static void CopyComponentFromEntityIfExists(entt::entity dstEntity, entt::entity srcEntity, entt::registry& registry)
+{
+    if (registry.has<T>(srcEntity))
+    {
+        auto& srcComponent = registry.get<T>(srcEntity);
+        registry.emplace_or_replace<T>(dstEntity, srcComponent);
+    }
+}
+
 Entity Scene::CreateEntity(const std::string& name)
 {
     return CreateEntity(UUID(), name);
@@ -221,35 +324,25 @@ Entity Scene::CreateEntity(UUID uuid, const std::string& name)
     return entity;
 }
 
+Entity Scene::DuplicateEntity(const Entity& entity)
+{
+    Entity newEntity = CreateEntity(entity.GetComponent<TagComponent>().Tag);
+
+    CopyComponentFromEntityIfExists<TransformComponent>(newEntity, entity, m_Registry);
+    CopyComponentFromEntityIfExists<CameraComponent>(newEntity, entity, m_Registry);
+    CopyComponentFromEntityIfExists<MeshComponent>(newEntity, entity, m_Registry);
+    CopyComponentFromEntityIfExists<BoxColliderComponent>(newEntity, entity, m_Registry);
+    CopyComponentFromEntityIfExists<ScriptComponent>(newEntity, entity, m_Registry);
+
+    return newEntity;
+}
+
 void Scene::DestroyEntity(const Entity& entity)
 {
     if (entity.HasComponent<ScriptComponent>())
         ScriptEngine::OnScriptComponentDestroyed(m_SceneID, entity.GetUUID());
 
     m_Registry.destroy(entity.m_EntityHandle);
-}
-
-template<typename T>
-static void CopyComponentFromRegistry(entt::registry& dstRegistry, entt::registry& srcRegistry, const std::unordered_map<UUID, entt::entity>& entityMap)
-{
-    auto view = srcRegistry.view<T>();
-    for (auto entity : view)
-    {
-        entt::entity dstEntity = entityMap.at(srcRegistry.get<IDComponent>(entity).ID);
-
-        auto& srcComponent = view.get<T>(entity);
-        dstRegistry.emplace_or_replace<T>(dstEntity, srcComponent);
-    }
-}
-
-template<typename T>
-static void CopyComponentFromEntityIfExists(entt::entity dstEntity, entt::entity srcEntity, entt::registry& registry)
-{
-    if (registry.has<T>(srcEntity))
-    {
-        auto& srcComponent = registry.get<T>(srcEntity);
-        registry.emplace_or_replace<T>(dstEntity);
-    }
 }
 
 void Scene::CopyTo(Ref<Scene>& target)
@@ -295,7 +388,7 @@ std::vector<entt::entity> Scene::GetAllEntities()
 
 Entity Scene::GetMainCameraEntity()
 {
-    auto& view = m_Registry.view<CameraComponent>();
+    auto view = m_Registry.view<CameraComponent>();
     for (auto entity : view)
     {
         auto& camera = view.get<CameraComponent>(entity);

@@ -238,12 +238,12 @@ Mesh::Mesh(const std::string& filepath)
         auto vertexBuffer = VertexBuffer::Create(m_AnimatedVertices.data(), m_AnimatedVertices.size() * sizeof(AnimatedVertex));
         vertexBuffer->SetLayout({
             { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Float3, "a_Normal" },
             { ShaderDataType::Float3, "a_Tangent" },
             { ShaderDataType::Float3, "a_Binormal" },
-            { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Int4,   "a_BoneIndices" },
-            { ShaderDataType::Float4, "a_BoneWeights" }
+            { ShaderDataType::Float4, "a_BoneWeights" },
         });
         m_VertexArray->AddVertexBuffer(vertexBuffer);
     }
@@ -252,10 +252,10 @@ Mesh::Mesh(const std::string& filepath)
         auto vertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(StaticVertex));
         vertexBuffer->SetLayout({
             { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Float3, "a_Normal" },
             { ShaderDataType::Float3, "a_Tangent" },
             { ShaderDataType::Float3, "a_Binormal" },
-            { ShaderDataType::Float2, "a_TexCoord" }
         });
         m_VertexArray->AddVertexBuffer(vertexBuffer);
     }
@@ -466,7 +466,7 @@ void Mesh::SetMetalnessTexture(Submesh& submesh, bool use, Ref<Texture2D> metaln
 
 void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
 {
-    auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial);
+    auto materialInstance = Ref<MaterialInstance>::Create(m_BaseMaterial, material->GetName().data);
     m_Materials[index] = materialInstance;
 
     AB_MESH_LOG("  {0} (Index = {1})", material->GetName().data, index);

@@ -130,6 +130,22 @@ public:
         return *this;
     }
 
+    bool operator==(std::nullptr_t null)
+    {
+        return m_Instance == nullptr;
+    }
+
+    bool operator==(const Ref<T>& other)
+    {
+        return m_Instance == other.m_Instance;
+    }
+
+    template<typename T2>
+    bool operator==(const Ref<T2>& other)
+    {
+        return m_Instance == other.m_Instance;
+    }
+
     operator bool() { return m_Instance != nullptr; }
     operator bool() const { return m_Instance != nullptr; }
 
@@ -140,6 +156,7 @@ public:
     const T& operator*() const { return *m_Instance; }
 
     T* Raw() { return m_Instance; }
+    const T* Raw() const { return m_Instance; }
 
     void Reset(T* instance = nullptr)
     {

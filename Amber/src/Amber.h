@@ -26,6 +26,7 @@
 #include "Amber/ImGui/ImGuiLayer.h"
 
 #include "Amber/Math/AABB.h"
+#include "Amber/Math/Frustum.h"
 #include "Amber/Math/Noise.h"
 #include "Amber/Math/Random.h"
 #include "Amber/Math/Ray.h"

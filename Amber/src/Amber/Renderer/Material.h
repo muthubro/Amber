@@ -15,7 +15,8 @@ enum class MaterialFlag
 {
     None        = BIT(0),
     DepthTest   = BIT(1),
-    Blend       = BIT(2)
+    StencilTest = BIT(2),
+    Blend       = BIT(3)
 };
 
 class Material : public RefCounted
@@ -124,7 +125,7 @@ private:
 class MaterialInstance : public RefCounted
 {
 public:
-    MaterialInstance(const Ref<Material>& material);
+    MaterialInstance(const Ref<Material>& material, const std::string& name = "");
     ~MaterialInstance();
 
     void Bind();
@@ -192,7 +193,10 @@ public:
         return m_Textures[slot];
     }
 
+    const std::string& GetName() const { return m_Name; }
+
 private:
+    std::string m_Name;
     Ref<Material> m_Material;
 
     std::vector<Ref<Texture>> m_Textures;

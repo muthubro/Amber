@@ -30,8 +30,6 @@ struct EntityData
 class SceneHierarchyPanel
 {
 public:
-    SceneHierarchyPanel(Ref<Scene> context);
-
     void SetContext(const Ref<Scene>& context);
     void SetOrientation(const Entity& entity, const glm::quat& orientation);
     void SetSelection(std::vector<SelectedSubmesh>& selection);

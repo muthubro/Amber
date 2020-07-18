@@ -18,6 +18,8 @@ struct SceneRendererOptions
     float GridResolution = 0.025f;
     float GridScale = 16.025f;
     float GridSize = 16.025f;
+    bool ShowBoundingBoxes = false;
+    bool ShowCamera = false;
 };
 
 struct SceneRendererCamera
@@ -35,7 +37,9 @@ public:
     static void BeginScene(Scene* scene, const SceneRendererCamera& camera);
     static void EndScene();
 
+    static void SubmitCamera(const SceneCamera& camera, const glm::mat4& transform);
     static void SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), const Ref<MaterialInstance> = nullptr);
+    static void SubmitSelectedMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f));
 
     static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string& filepath);
 
@@ -43,6 +47,7 @@ public:
     static Ref<Texture2D> GetFinalColorBuffer();
 
     static SceneRendererOptions& GetOptions();
+    static Scope<ShaderLibrary>& GetShaderLibrary();
 
 private:
     static void GeometryPass();

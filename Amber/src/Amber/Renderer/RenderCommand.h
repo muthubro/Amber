@@ -17,15 +17,28 @@ public:
     static void Clear() { Submit([=]() { s_RendererAPI->Clear(); }); }
 
     static void SetLineThickness(float thickness) { Submit([=]() { s_RendererAPI->SetLineThickness(thickness); }); }
-
-    static void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true) 
+    static void SetPointSize(float size) { Submit([=]() { s_RendererAPI->SetPointSize(size); }); }
+    static void SetRasterizationMode(RasterizationMode mode) { Submit([=]() { s_RendererAPI->SetRasterizationMode(mode); }); }
+    static void SetStencilFunction(ComparisonFunc func, uint8_t ref, uint8_t mask) 
     { 
-        Submit([=]() { s_RendererAPI->DrawIndexed(indexCount, type, depthTest); }); 
+        Submit([=]() { s_RendererAPI->SetStencilFunction(func, ref, mask); }); 
     }
 
-    static void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true) 
+    static void SetStencilMask(uint8_t mask) { Submit([=]() { s_RendererAPI->SetStencilMask(mask); }); }
+
+    static void SetStencilOperation(StencilOperation stencilFail, StencilOperation depthFail, StencilOperation depthPass)
+    { 
+        Submit([=]() { s_RendererAPI->SetStencilOperation(stencilFail, depthFail, depthPass); });
+    }
+
+    static void DrawIndexed(uint32_t indexCount, PrimitiveType type, bool depthTest = true, bool stencilTest = false)
+    { 
+        Submit([=]() { s_RendererAPI->DrawIndexed(indexCount, type, depthTest, stencilTest); }); 
+    }
+
+    static void DrawIndexedOffset(uint32_t indexCount, PrimitiveType type, void* indexBufferPointer, uint32_t offset, bool depthTest = true, bool stencilTest = false) 
     {
-        Submit([=]() { s_RendererAPI->DrawIndexedOffset(indexCount, type, indexBufferPointer, offset, depthTest); });
+        Submit([=]() { s_RendererAPI->DrawIndexedOffset(indexCount, type, indexBufferPointer, offset, depthTest, stencilTest); });
     }
 
     template<typename FuncT>

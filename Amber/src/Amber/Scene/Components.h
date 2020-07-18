@@ -51,6 +51,12 @@ struct CameraComponent
     SceneCamera Camera;
     bool Primary = true;
 
+    CameraComponent() = default;
+    CameraComponent(const SceneCamera& camera, bool primary)
+        : Camera(camera), Primary(primary) { }
+    CameraComponent(bool primary)
+        : Primary(primary) {}
+
     operator SceneCamera& () { return Camera; }
     operator const SceneCamera& () const { return Camera; }
 };

@@ -40,16 +40,16 @@ public:
         return m_Scene->m_Registry.has<T>(m_EntityHandle);
     }
 
-    template<typename T>
-    T& GetComponent()
+    template<typename... T>
+    decltype(auto) GetComponent()
     {
-        return m_Scene->m_Registry.get<T>(m_EntityHandle);
+        return m_Scene->m_Registry.get<T...>(m_EntityHandle);
     }
 
-    template<typename T>
-    const T& GetComponent() const
+    template<typename... T>
+    decltype(auto) GetComponent() const
     {
-        return m_Scene->m_Registry.get<T>(m_EntityHandle);
+        return m_Scene->m_Registry.get<T...>(m_EntityHandle);
     }
 
     template<typename T>

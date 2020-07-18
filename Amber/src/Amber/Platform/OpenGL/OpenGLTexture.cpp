@@ -205,6 +205,16 @@ void OpenGLTexture2D::Resize(uint32_t width, uint32_t height)
     m_ImageData.Allocate(width * height * Texture::GetBPP(m_Format));
 }
 
+void OpenGLTexture2D::CopyTo(Ref<Texture2D> dst)
+{
+    Ref<OpenGLTexture2D> instance = this;
+    RenderCommand::Submit([instance, dst]() {
+        glCopyImageSubData(instance->GetRendererID(), GL_TEXTURE_2D, 0, 0, 0, 0,
+                           dst->GetRendererID(), GL_TEXTURE_2D, 0, 0, 0, 0,
+                           instance->GetWidth(), instance->GetHeight(), 1);
+    });
+}
+
 Buffer& OpenGLTexture2D::GetWritableBuffer()
 {
     AB_CORE_ASSERT(m_Locked, "Texture must be locked!");

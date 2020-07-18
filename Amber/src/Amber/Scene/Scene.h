@@ -8,7 +8,10 @@
 
 #include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/Material.h"
+#include "Amber/Renderer/Mesh.h"
 #include "Amber/Renderer/Texture.h"
+
+#include "Amber/Scene/SceneCamera.h"
 
 #include <entt/entt.hpp>
 
@@ -45,14 +48,15 @@ public:
 
     void OnEvent(Event& e);
     void OnUpdate(Timestep ts);
-    void OnRenderEditor(Timestep ts, const EditorCamera& camera);
-    void OnRenderRuntime(Timestep ts);
+    void OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<Entity>& selectionContext);
+    void OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity = nullptr);
 
     void OnRuntimeStart();
     void OnRuntimeStop();
 
     Entity CreateEntity(const std::string& name = "");
     Entity CreateEntity(UUID uuid, const std::string& name = "");
+    Entity DuplicateEntity(const Entity& entity);
     void DestroyEntity(const Entity& entity);
 
     void CopyTo(Ref<Scene>& target);

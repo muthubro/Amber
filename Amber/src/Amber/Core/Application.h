@@ -40,6 +40,8 @@ public:
 
     static Application& Get() { return *s_Instance; }
 
+    static const char* GetConfiguration();
+
 private:
     Scope<Window> m_Window;
     LayerStack m_LayerStack;

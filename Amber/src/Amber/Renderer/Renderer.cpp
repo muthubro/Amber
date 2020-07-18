@@ -25,7 +25,7 @@ void Renderer::Init()
 
     s_Data.ShaderLibrary = CreateScope<ShaderLibrary>();
 
-    s_Data.ShaderLibrary->Load(ShaderType::StandardStatic, "assets/shaders/AmberPBR_Static.glsl");
+    s_Data.ShaderLibrary->Load(ShaderType::StandardStatic, "assets/shaders/AmberPBR.glsl");
     s_Data.ShaderLibrary->Load(ShaderType::StandardAnimated, "assets/shaders/AmberPBR_Animated.glsl");
 
     s_Data.ShaderLibrary->Load(ShaderType::UnlitColor, "assets/shaders/Unlit_Color.glsl");
@@ -82,7 +82,7 @@ void Renderer::DrawFullscreenQuad(const Ref<MaterialInstance>& material)
     Renderer2D::DrawFullscreenQuad(material);
 }
 
-void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance>& overrideMaterial)
+void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, Ref<MaterialInstance> overrideMaterial)
 {
     mesh->Bind();
 
@@ -91,12 +91,14 @@ void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<Ma
         auto baseMaterial = mesh->GetMaterial();
         auto& boneTransforms = mesh->GetBoneTransforms();
         baseMaterial->Set("u_BoneTransform", *boneTransforms.data());
+        if (overrideMaterial)
+            overrideMaterial->Set("u_BoneTransform", *boneTransforms.data());
     }
 
     auto materials = mesh->GetMaterials();
     for (Submesh& submesh : mesh->GetSubmeshes())
     {
-        auto material = materials[submesh.MaterialIndex];
+        auto material = overrideMaterial ? overrideMaterial : materials[submesh.MaterialIndex];
         glm::mat4 transformMatrix = transform * submesh.Transform;
         glm::mat3 normalTransform = glm::transpose(glm::inverse(glm::mat3(transformMatrix)));
         material->Set("u_Transform", transformMatrix);
@@ -108,7 +110,8 @@ void Renderer::DrawMesh(Ref<Mesh> mesh, const glm::mat4& transform, const Ref<Ma
         material->Bind();
         RenderCommand::DrawIndexedOffset(
             submesh.IndexCount, PrimitiveType::Triangles, (void*)(sizeof(uint32_t) * submesh.BaseIndex), 
-            submesh.BaseVertex, material->GetFlag(MaterialFlag::DepthTest));
+            submesh.BaseVertex, 
+            material->GetFlag(MaterialFlag::DepthTest), material->GetFlag(MaterialFlag::StencilTest));
     }
 }
 
@@ -141,6 +144,20 @@ void Renderer::DrawAABB(Ref<Mesh> mesh, const glm::mat4& transform, const glm::v
     const auto& submeshes = mesh->GetSubmeshes();
     for (auto& submesh : submeshes)
         DrawAABB(submesh.BoundingBox, transform * submesh.Transform, color);
+}
+
+void Renderer::DrawFrustum(const Math::Frustum& frustum, const glm::vec4& color)
+{
+    auto corners = frustum.GetCornerPoints();
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i], corners[(i + 1) % 4], color);
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i + 4], corners[((i + 1) % 4) + 4], color);
+
+    for (uint32_t i = 0; i < 4; i++)
+        Renderer2D::DrawLine(corners[i], corners[i + 4], color);
 }
 
 const Scope<ShaderLibrary>& Renderer::GetShaderLibrary()

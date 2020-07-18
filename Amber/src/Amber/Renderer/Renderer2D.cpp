@@ -360,14 +360,16 @@ void Renderer2D::DrawQuad(Ref<MaterialInstance> material, const glm::mat4& trans
 void Renderer2D::DrawFullscreenQuad(Ref<MaterialInstance> material)
 {
     bool depthTest = false;
+    bool stencilTest = false;
     if (material)
     {
         material->Bind();
         depthTest = material->GetFlag(MaterialFlag::DepthTest);
+        stencilTest = material->GetFlag(MaterialFlag::StencilTest);
     }
 
     s_Data.FullscreenQuadVertexArray->Bind();
-    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
+    RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest, stencilTest);
 }
 
 void Renderer2D::ResetStats()
