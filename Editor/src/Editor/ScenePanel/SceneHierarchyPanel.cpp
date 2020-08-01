@@ -109,6 +109,8 @@ void SceneHierarchyPanel::OnImGuiRender()
             if (ImGui::MenuItem("Empty"))
                 m_Context->CreateEntity("Unnamed Entity");
 
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Cube"))
             {
                 auto entity = m_Context->CreateEntity("Cube");
@@ -529,6 +531,51 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         EndPropertyGrid();
     });
 
+    DrawComponent<RigidBody2DComponent>("Rigid Body 2D", entity, [](RigidBody2DComponent& component) {
+        std::array<const char*, 3> bodyTypes{ "Static", "Dynamic", "Kinematic" };
+
+        ImGui::Text("Body Type");
+        ImGui::SameLine();
+
+        uint32_t currentType = (uint32_t)component.BodyType;
+        if (ImGui::BeginCombo("##RigidBody2DType", bodyTypes[currentType]))
+        {
+            for (uint32_t i = 0; i < bodyTypes.size(); i++)
+            {
+                bool selected = i == currentType;
+                if (ImGui::Selectable(bodyTypes[i], &selected))
+                    component.BodyType = (RigidBody2DComponent::Type)i;
+            }
+
+            ImGui::EndCombo();
+        }
+
+        BeginPropertyGrid();
+
+        Property("Density", component.Density);
+        Property("Friction", component.Friction);
+
+        EndPropertyGrid();
+    });
+
+    DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
+        BeginPropertyGrid();
+
+        Property("Offset", component.Offset);
+        Property("Size", component.Size);
+
+        EndPropertyGrid();
+    });
+
+    DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](CircleCollider2DComponent& component) {
+        BeginPropertyGrid();
+
+        Property("Offset", component.Offset);
+        Property("Radius", component.Radius);
+
+        EndPropertyGrid();
+    });
+
     if (ImGui::Button("+ Add Component"))
         ImGui::OpenPopup("AddComponentPanel");
 
@@ -560,6 +607,33 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             if (ImGui::Button("Script"))
             {
                 entity.AddComponent<ScriptComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<RigidBody2DComponent>())
+        {
+            if (ImGui::Button("Rigid Body 2D"))
+            {
+                entity.AddComponent<RigidBody2DComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<BoxCollider2DComponent>())
+        {
+            if (ImGui::Button("Box Collider 2D"))
+            {
+                entity.AddComponent<BoxCollider2DComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<CircleCollider2DComponent>())
+        {
+            if (ImGui::Button("Circle Collider 2D"))
+            {
+                entity.AddComponent<CircleCollider2DComponent>();
                 ImGui::CloseCurrentPopup();
             }
         }

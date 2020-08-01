@@ -7,3 +7,6 @@
 [submodule "Amber/vendor/ImGui"]
     path = Amber/vendor/ImGui
     url = https://github.com/muthubro/imgui.git
+[submodule "Amber/vendor/Box2D"]
+	path = Amber/vendor/Box2D
+	url = https://github.com/muthubro/box2d.git

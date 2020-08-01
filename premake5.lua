@@ -17,6 +17,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["Assimp"] = "Amber/vendor/Assimp/include"
+IncludeDir["Box2D"] = "Amber/vendor/Box2D/include"
 IncludeDir["entt"] = "Amber/vendor/entt/include"
 IncludeDir["Glad"] = "Amber/vendor/Glad/include"
 IncludeDir["GLFW"] = "Amber/vendor/GLFW/include"
@@ -30,6 +31,7 @@ LibraryDir = {}
 LibraryDir["mono"] = "vendor/mono/lib"
 
 group "Dependencies"
+    include "Amber/vendor/Box2D"
     include "Amber/vendor/GLFW"
     include "Amber/vendor/Glad"
     include "Amber/vendor/ImGui"
@@ -62,6 +64,7 @@ project "Amber"
         "%{prj.name}/src",
         "%{prj.name}/vendor",
         "%{IncludeDir.Assimp}",
+        "%{IncludeDir.Box2D}",
         "%{IncludeDir.entt}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.GLFW}",
@@ -73,6 +76,7 @@ project "Amber"
     }
     links
     {
+        "Box2D",
         "GLFW",
         "Glad",
         "ImGui",

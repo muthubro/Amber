@@ -178,7 +178,7 @@ void Renderer2D::Shutdown()
     delete[] s_Data.LineVertexBufferBase;
 }
 
-void Renderer2D::BeginScene(const glm::mat4& viewProjection)
+void Renderer2D::BeginScene(const glm::mat4& viewProjection, bool depthTest)
 {
     AB_PROFILE_FUNCTION();
 
@@ -188,6 +188,7 @@ void Renderer2D::BeginScene(const glm::mat4& viewProjection)
 
     // Quad
     s_Data.QuadMaterial = Ref<MaterialInstance>::Create(s_Data.QuadBaseMaterial);
+    s_Data.QuadMaterial->SetFlag(MaterialFlag::DepthTest, depthTest);
     s_Data.QuadMaterial->Set("u_ViewProjection", viewProjection);
 
     s_Data.QuadIndexCount = 0;
@@ -231,7 +232,9 @@ void Renderer2D::FlushQuads()
     for (uint32_t i = 0; i < s_Data.TextureSlotIndex; i++)
         s_Data.TextureSlots[i]->Bind(i);
 
-    RenderCommand::DrawIndexed(s_Data.QuadIndexCount, PrimitiveType::Triangles);
+    RenderCommand::DrawIndexed(s_Data.QuadIndexCount, PrimitiveType::Triangles, 
+                               s_Data.QuadMaterial->GetFlag(MaterialFlag::DepthTest),
+                               s_Data.QuadMaterial->GetFlag(MaterialFlag::StencilTest));
     s_Data.Stats.DrawCalls++;
 
     s_Data.QuadIndexCount = 0;

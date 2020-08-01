@@ -283,6 +283,7 @@ static FieldType MonoTypeToFieldType(MonoType* monoType)
             if (strcmp(name, "Amber.Vector2") == 0) return FieldType::Vec2;
             if (strcmp(name, "Amber.Vector3") == 0) return FieldType::Vec3;
             if (strcmp(name, "Amber.Vector4") == 0) return FieldType::Vec4;
+            if (strcmp(name, "Amber.Color") == 0) return FieldType::Color;
         }
     }
 
@@ -603,6 +604,10 @@ void PublicField::Initialize()
         case FieldType::Vec4:
             SetStoredValue<glm::vec4>(glm::vec4(0.0f));
             break;
+
+        case FieldType::Color:
+            SetStoredValue<glm::vec4>(glm::vec4(0.0f));
+            break;
     }
 }
 
@@ -617,6 +622,7 @@ uint32_t PublicField::GetFieldSize(FieldType type)
         case FieldType::Vec2:   return 4 * 2;
         case FieldType::Vec3:   return 4 * 3;
         case FieldType::Vec4:   return 4 * 4;
+        case FieldType::Color:  return 4 * 4;
     }
 
     AB_CORE_ASSERT(false, "Unknown field type!");

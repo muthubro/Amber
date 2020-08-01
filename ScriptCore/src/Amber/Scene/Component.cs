@@ -81,4 +81,15 @@ namespace Amber
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void SetMesh_Native(ulong entityID, IntPtr mesh);
     }
+
+    public class RigidBody2DComponent : Component
+    {
+        public void ApplyLinearImpulse(Vector2 impulse, Vector2 offset, bool wake)
+        {
+            ApplyLinearImpulse_Native(Entity.ID, ref impulse, ref offset, wake);
+        }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void ApplyLinearImpulse_Native(ulong entityID, ref Vector2 impulse, ref Vector2 offset, bool wake);
+    }
 }

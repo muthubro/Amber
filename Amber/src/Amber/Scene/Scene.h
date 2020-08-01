@@ -98,6 +98,9 @@ public:
     Ref<MaterialInstance> GetSkyboxMaterial() { return m_SkyboxMaterial; }
     void SetSkybox(const Ref<TextureCube>& skybox);
 
+    float GetPhysics2DGravity() const;
+    void SetPhysics2DGravity(float gravity);
+
     static Ref<Scene> GetScene(UUID uuid);
 
 private:

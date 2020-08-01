@@ -125,8 +125,6 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
         vertex.Binormal = glm::cross(vertex.Normal, vertex.Tangent);
         vertex.TexCoord = glm::vec2(vertex.Position.x > 0.0f ? 0.33f : 0.67f, texCoordY[(i / 2) % 4]);
         mesh->m_StaticVertices.push_back(vertex);
-
-        AB_CORE_INFO("Vertex {0}: {1}, {2}, {3}", i, vertex.Position.x, vertex.Position.y, vertex.Position.z);
     }
 
     mesh->m_VertexArray = VertexArray::Create();

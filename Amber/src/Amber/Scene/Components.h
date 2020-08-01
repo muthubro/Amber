@@ -22,14 +22,6 @@ struct IDComponent
     operator const UUID& () const { return ID; }
 };
 
-struct SceneComponent
-{
-    UUID SceneID;
-
-    operator UUID& () { return SceneID; }
-    operator const UUID& () const { return SceneID; }
-};
-
 struct TagComponent
 {
     std::string Tag;
@@ -72,20 +64,55 @@ struct MeshComponent
     operator bool() const { return Mesh; }
 };
 
-struct BoxColliderComponent
-{
-    Math::AABB BoundingBox;
-
-    operator Math::AABB&() { return BoundingBox; }
-    operator const Math::AABB&() const { return BoundingBox; }
-};
-
 struct ScriptComponent
 {
     std::string ModuleName;
 
     operator std::string& () { return ModuleName; }
     operator const std::string& () const { return ModuleName; }
+};
+
+struct RigidBody2DComponent
+{
+    enum class Type
+    {
+        Static, Dynamic, Kinematic
+    };
+    Type BodyType = Type::Static;
+    float Density = 1.0f;
+    float Friction = 1.0f;
+
+    void* RuntimeBody = nullptr;
+
+    RigidBody2DComponent() = default;
+    RigidBody2DComponent(Type bodyType, float density, float friction)
+        : BodyType(bodyType), Density(density), Friction(friction) { }
+    RigidBody2DComponent(const RigidBody2DComponent& other)
+        : BodyType(other.BodyType), Density(other.Density), Friction(other.Friction) { }
+};
+
+struct BoxCollider2DComponent
+{
+    glm::vec2 Offset = { 0.0f, 0.0f };
+    glm::vec2 Size = { 1.0f, 1.0f };
+
+    void* RuntimeFixture = nullptr;
+
+    BoxCollider2DComponent() = default;
+    BoxCollider2DComponent(const glm::vec2& offset, const glm::vec2& size)
+        : Offset(offset), Size(size) { }
+};
+
+struct CircleCollider2DComponent
+{
+    glm::vec2 Offset = { 0.0f, 0.0f };
+    float Radius = 1.0f;
+
+    void* RuntimeFixture = nullptr;
+
+    CircleCollider2DComponent() = default;
+    CircleCollider2DComponent(const glm::vec2& offset, float radius)
+        : Offset(offset), Radius(radius) { }
 };
 
 }

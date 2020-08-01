@@ -31,6 +31,15 @@ namespace Amber
             SetData_Native(m_UnmanagedInstance, data, data.Length);
         }
 
+        public void SetData(Color[] colors)
+        {
+            Vector4[] data = new Vector4[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+                data[i] = (Vector4)colors[i];
+
+            SetData_Native(m_UnmanagedInstance, data, data.Length);
+        }
+
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern IntPtr Constructor_Filepath_Native(string filepath);
 

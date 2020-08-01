@@ -19,16 +19,15 @@ enum class FieldType
     None = 0, 
     Bool,
     Int, UInt, 
-    Float, Vec2, Vec3, Vec4
+    Float, Vec2, Vec3, Vec4,
+    Color
 };
 
 struct EntityScriptClass;
 struct EntityInstance
 {
     EntityScriptClass* ScriptClass = nullptr;
-
     uint32_t Handle = 0;
-    Scene* SceneInstance = nullptr;
 
     MonoObject* GetInstance();
 };

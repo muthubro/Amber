@@ -23,19 +23,19 @@ public:
 
         QuadData() = default;
 
-        QuadData(glm::vec2 position, glm::vec2 scale, float rotation, glm::vec4 color)
+        QuadData(glm::vec2 position, float rotation, glm::vec2 scale, glm::vec4 color)
         {
-            SetTransform({ position.x, position.y, 0.0f }, scale, rotation);
+            SetTransform({ position.x, position.y, 0.0f }, rotation, scale);
             SetColor(color);
         }
 
-        QuadData(glm::vec2 position, glm::vec2 scale, float rotation, Ref<Texture2D> texture)
+        QuadData(glm::vec2 position, float rotation, glm::vec2 scale, Ref<Texture2D> texture)
         {
-            SetTransform({ position.x, position.y, 0.0f }, scale, rotation);
+            SetTransform({ position.x, position.y, 0.0f }, rotation, scale);
             Texture = texture;
         }
 
-        void SetTransform(glm::vec3 position, glm::vec2 scale, float rotation)
+        void SetTransform(glm::vec3 position, float rotation, glm::vec2 scale)
         {
             Transform = glm::translate(glm::mat4(1.0f), position);
             if (rotation)
@@ -65,7 +65,7 @@ public:
     static void Init();
     static void Shutdown();
 
-    static void BeginScene(const glm::mat4& viewProjection);
+    static void BeginScene(const glm::mat4& viewProjection, bool depthTest = true);
     static void EndScene();
 
     static void FlushQuads();

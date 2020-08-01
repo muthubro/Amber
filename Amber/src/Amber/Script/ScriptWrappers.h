@@ -34,6 +34,8 @@ void Amber_TransformComponent_SetTransform(uint64_t entityID, glm::mat4* inTrans
 Ref<Mesh>* Amber_MeshComponent_GetMesh(uint64_t entityID);
 void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh);
 
+void Amber_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2* impulse, glm::vec2* offset, bool wake);
+
 // Renderer
 // Texture2D
 void* Amber_Texture2D_Constructor_Filepath(MonoString* filepath);

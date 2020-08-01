@@ -16,25 +16,28 @@ namespace Terrain
         [EditorField("Height", 1, 2048, 1)]
         public uint height = 512;
 
+        [EditorField("Seed", -1000.0f, 1000.0f, 1.0f)]
+        public int seed = 42;
+
         [EditorField("Scale", 0.01f, 10.0f, 0.01f)]
         public float scale = 0.3f;
 
+        [EditorField("Octaves", 0.0f, 10.0f, 1.0f)]
+        public uint octaves = 1;
+
+        [EditorField("Persistance", 0.0f, 1.0f, 0.01f)]
+        public float persistance = 0.5f;
+
+        [EditorField("Lacunarity", 1.0f, 10000.0f, 0.1f)]
+        public float lacunarity = 2.0f;
+
+        [EditorField("Offset", 0.0f, 10000.0f, 1.0f)]
+        public Vector2 offset = new Vector2(0.0f, 0.0f);
+
         private void GenerateMap()
         {
-            float[,] noiseMap = Noise.GenerateNoiseMap(width, height, scale);
-
-            Texture2D texture = new Texture2D(width, height);
-            Vector4[] colorMap = new Vector4[width * height];
-            for (uint y = 0; y < height; y++)
-            {
-                for (uint x = 0; x < width; x++)
-                {
-                    colorMap[y * width + x] = Vector4.Lerp(Color.Black, Color.White, noiseMap[x, y]);
-                }
-            }
-
-            texture.SetData(colorMap);
-
+            float[,] noiseMap = Noise.GenerateNoiseMap(width, height, seed, scale, octaves, persistance, lacunarity, offset);
+            Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
             MeshComponent meshComponent = GetComponent<MeshComponent>();
             meshComponent.Mesh.SetAlbedoTexture(0, true, texture);
         }

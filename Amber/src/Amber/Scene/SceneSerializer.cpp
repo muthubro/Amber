@@ -24,7 +24,7 @@ namespace Amber
 struct Script
 {
     std::string ModuleName;
-    Amber::FieldMap FieldMap;
+    Amber::ScriptModuleFieldMap FieldMap;
 };
 
 } // Amber
@@ -517,39 +517,121 @@ Emitter& operator<<(Emitter& out, const MeshComponent& meshComponent)
     return out;
 }
 
-template<>
-struct convert<BoxColliderComponent>
+static void EncodeFields(const ScriptModuleFieldMap& moduleFieldMap, const std::string& moduleName, Node& fields)
 {
-    static Node encode(const BoxColliderComponent& rhs)
+    const auto& fieldMap = moduleFieldMap.at(moduleName);
+    uint32_t index = 0;
+    for (auto& [fieldName, field] : fieldMap)
     {
-        Node node;
-        node["Min"] = rhs.BoundingBox.Min;
-        node["Max"] = rhs.BoundingBox.Max;
-        return node;
-    }
+        fields[index]["Name"] = fieldName;
+        fields[index]["Type"] = (uint32_t)field.Type;
 
-    static bool decode(const Node& node, BoxColliderComponent& rhs)
+        switch (field.Type)
+        {
+            case FieldType::None:
+            {
+                Node subFields;
+                EncodeFields(moduleFieldMap, fieldName, subFields);
+                fields[index]["Value"] = subFields;
+                break;
+            }
+
+            case FieldType::Bool:
+                fields[index]["Value"] = field.GetStoredValue<bool>();
+                break;
+
+            case FieldType::Int:
+                fields[index]["Value"] = field.GetStoredValue<int32_t>();
+                break;
+
+            case FieldType::UInt:
+                fields[index]["Value"] = field.GetStoredValue<uint32_t>();
+                break;
+
+            case FieldType::Float:
+                fields[index]["Value"] = field.GetStoredValue<float>();
+                break;
+
+            case FieldType::Vec2:
+                fields[index]["Value"] = field.GetStoredValue<glm::vec2>();
+                break;
+
+            case FieldType::Vec3:
+                fields[index]["Value"] = field.GetStoredValue<glm::vec3>();
+                break;
+
+            case FieldType::Vec4:
+                fields[index]["Value"] = field.GetStoredValue<glm::vec4>();
+                break;
+
+            case FieldType::Color:
+                fields[index]["Value"] = field.GetStoredValue<glm::vec4>();
+                break;
+        }
+        index++;
+    }
+}
+
+static bool DecodeFields(const Node& node, ScriptModuleFieldMap& moduleFieldMap, const std::string& moduleName)
+{
+    auto& fieldMap = moduleFieldMap[moduleName];
+    for (auto& field : node)
     {
-        if (!node.IsMap() || !node["Min"] || !node["Max"])
+        if (!field.IsMap() || !field["Name"] || !field["Type"] || !field["Value"])
             return false;
 
-        rhs.BoundingBox = Math::AABB(node["Min"].as<glm::vec3>(), node["Max"].as<glm::vec3>());
-        return true;
+        std::string fieldName = field["Name"].as<std::string>();
+        FieldType fieldType = (FieldType)field["Type"].as<uint32_t>();
+
+        if (fieldMap.find(fieldName) == fieldMap.end())
+        {
+            PublicField publicField(fieldName, fieldType);
+            fieldMap.emplace(fieldName, std::move(publicField));
+        }
+
+        switch (fieldType)
+        {
+            case FieldType::None:
+            {
+                auto& subFields = field["Value"];
+                return DecodeFields(subFields, moduleFieldMap, fieldName);
+            }
+
+            case FieldType::Bool:
+                fieldMap.at(fieldName).SetStoredValue<bool>(field["Value"].as<bool>());
+                break;
+
+            case FieldType::Int:
+                fieldMap.at(fieldName).SetStoredValue<int32_t>(field["Value"].as<int32_t>());
+                break;
+
+            case FieldType::UInt:
+                fieldMap.at(fieldName).SetStoredValue<uint32_t>(field["Value"].as<uint32_t>());
+                break;
+
+            case FieldType::Float:
+                fieldMap.at(fieldName).SetStoredValue<float>(field["Value"].as<float>());
+                break;
+
+            case FieldType::Vec2:
+                fieldMap.at(fieldName).SetStoredValue<glm::vec2>(field["Value"].as<glm::vec2>());
+                break;
+
+            case FieldType::Vec3:
+                fieldMap.at(fieldName).SetStoredValue<glm::vec3>(field["Value"].as<glm::vec3>());
+                break;
+
+            case FieldType::Vec4:
+                fieldMap.at(fieldName).SetStoredValue<glm::vec4>(field["Value"].as<glm::vec4>());
+                break;
+
+            case FieldType::Color:
+                fieldMap.at(fieldName).SetStoredValue<glm::vec4>(field["Value"].as<glm::vec4>());
+                break;
+        }
     }
-};
 
-Emitter& operator<<(Emitter& out, const BoxColliderComponent& boxColliderComponent)
-{
-    out << BeginMap;
-
-    out << Key << "Min";
-    out << Value << boxColliderComponent.BoundingBox.Min;
-
-    out << Key << "Max";
-    out << Value << boxColliderComponent.BoundingBox.Max;
-
-    out << EndMap;
-    return out;
+    return true;
 }
 
 template<>
@@ -561,45 +643,9 @@ struct convert<Script>
         node["ModuleName"] = rhs.ModuleName;
 
         Node fields;
-        uint32_t index = 0;
-        for (auto& [fieldName, field] : rhs.FieldMap)
-        {
-            fields[index]["Name"] = fieldName;
-            fields[index]["Type"] = (uint32_t)field.Type;
-
-            switch (field.Type)
-            {
-                case FieldType::Bool:
-                    fields[index]["Value"] = field.GetStoredValue<bool>();
-                    break;
-
-                case FieldType::Int:
-                    fields[index]["Value"] = field.GetStoredValue<int32_t>();
-                    break;
-
-                case FieldType::UInt:
-                    fields[index]["Value"] = field.GetStoredValue<uint32_t>();
-                    break;
-
-                case FieldType::Float:
-                    fields[index]["Value"] = field.GetStoredValue<float>();
-                    break;
-
-                case FieldType::Vec2:
-                    fields[index]["Value"] = field.GetStoredValue<glm::vec2>();
-                    break;
-
-                case FieldType::Vec3:
-                    fields[index]["Value"] = field.GetStoredValue<glm::vec3>();
-                    break;
-
-                case FieldType::Vec4:
-                    fields[index]["Value"] = field.GetStoredValue<glm::vec4>();
-                    break;
-            }
-        }
-
+        EncodeFields(rhs.FieldMap, rhs.ModuleName, fields);
         node["Fields"] = fields;
+
         return node;
     }
 
@@ -611,54 +657,8 @@ struct convert<Script>
         rhs.ModuleName = node["ModuleName"].as<std::string>();
 
         auto& fieldMap = rhs.FieldMap;
-        auto& fields = node["Fields"];
-        for (auto& field : fields)
-        {
-            if (!field.IsMap() || !field["Name"] || !field["Type"] || !field["Value"])
-                return false;
-
-            std::string fieldName = field["Name"].as<std::string>();
-            FieldType fieldType = (FieldType)field["Type"].as<uint32_t>();
-
-            if (fieldMap.find(fieldName) == fieldMap.end())
-            {
-                PublicField publicField(fieldName, fieldType);
-                fieldMap.emplace(fieldName, std::move(publicField));
-            }
-
-            switch (fieldType)
-            {
-                case FieldType::Bool:
-                    fieldMap.at(fieldName).SetStoredValue<bool>(field["Value"].as<bool>());
-                    break;
-
-                case FieldType::Int:
-                    fieldMap.at(fieldName).SetStoredValue<int32_t>(field["Value"].as<int32_t>());
-                    break;
-
-                case FieldType::UInt:
-                    fieldMap.at(fieldName).SetStoredValue<uint32_t>(field["Value"].as<uint32_t>());
-                    break;
-
-                case FieldType::Float:
-                    fieldMap.at(fieldName).SetStoredValue<float>(field["Value"].as<float>());
-                    break;
-
-                case FieldType::Vec2:
-                    fieldMap.at(fieldName).SetStoredValue<glm::vec2>(field["Value"].as<glm::vec2>());
-                    break;
-
-                case FieldType::Vec3:
-                    fieldMap.at(fieldName).SetStoredValue<glm::vec3>(field["Value"].as<glm::vec3>());
-                    break;
-
-                case FieldType::Vec4:
-                    fieldMap.at(fieldName).SetStoredValue<glm::vec4>(field["Value"].as<glm::vec4>());
-                    break;
-            }
-        }
-
-        return true;
+        const auto& fields = node["Fields"];
+        return DecodeFields(fields, fieldMap, rhs.ModuleName);
     }
 };
 
@@ -669,57 +669,128 @@ Emitter& operator<<(Emitter& out, const Script& script)
     out << Key << "ModuleName";
     out << Value << script.ModuleName;
 
+    Node fields;
+    EncodeFields(script.FieldMap, script.ModuleName, fields);
     out << Key << "Fields";
-    out << Value << BeginSeq;
-
-    for (auto& [fieldName, field] : script.FieldMap)
-    {
-        out << BeginMap;
-
-        out << Key << "Name";
-        out << Value << fieldName;
-
-        out << Key << "Type";
-        out << Value << (uint32_t)field.Type;
-
-        out << Key << "Value";
-        switch (field.Type)
-        {
-            case FieldType::Bool:
-                out << Value << field.GetStoredValue<bool>();
-                break;
-
-            case FieldType::Int:
-                out << Value << field.GetStoredValue<int32_t>();
-                break;
-
-            case FieldType::UInt:
-                out << Value << field.GetStoredValue<uint32_t>();
-                break;
-
-            case FieldType::Float:
-                out << Value << field.GetStoredValue<float>();
-                break;
-
-            case FieldType::Vec2:
-                out << Value << field.GetStoredValue<glm::vec2>();
-                break;
-
-            case FieldType::Vec3:
-                out << Value << field.GetStoredValue<glm::vec3>();
-                break;
-
-            case FieldType::Vec4:
-                out << Value << field.GetStoredValue<glm::vec4>();
-                break;
-        }
-
-        out << EndMap; // Field
-    }
-
-    out << EndSeq; // Fields
+    out << Value << fields;
 
     out << EndMap; // Script
+    return out;
+}
+
+template<>
+struct convert<RigidBody2DComponent>
+{
+    static Node encode(const RigidBody2DComponent& rhs)
+    {
+        Node node;
+        node["BodyType"] = (uint32_t)rhs.BodyType;
+        node["Density"] = rhs.Density;
+        node["Friction"] = rhs.Friction;
+
+        return node;
+    }
+
+    static bool decode(const Node& node, RigidBody2DComponent& rhs)
+    {
+        if (!node.IsMap() || !node["BodyType"] || !node["Density"] || !node["Friction"])
+            return false;
+
+        rhs.BodyType = (RigidBody2DComponent::Type)node["BodyType"].as<uint32_t>();
+        rhs.Density = node["Density"].as<float>();
+        rhs.Friction = node["Friction"].as<float>();
+        return true;
+    }
+};
+
+Emitter& operator<<(Emitter& out, const RigidBody2DComponent& rigidBody2DComponent)
+{
+    out << BeginMap;
+
+    out << Key << "BodyType";
+    out << Value << (uint32_t)rigidBody2DComponent.BodyType;
+
+    out << Key << "Density";
+    out << Value << rigidBody2DComponent.Density;
+
+    out << Key << "Friction";
+    out << Value << rigidBody2DComponent.Friction;
+
+    out << EndMap;
+    return out;
+}
+
+template<>
+struct convert<BoxCollider2DComponent>
+{
+    static Node encode(const BoxCollider2DComponent& rhs)
+    {
+        Node node;
+        node["Offset"] = rhs.Offset;
+        node["Size"] = rhs.Size;
+
+        return node;
+    }
+
+    static bool decode(const Node& node, BoxCollider2DComponent& rhs)
+    {
+        if (!node.IsMap() || !node["Offset"] || !node["Size"])
+            return false;
+
+        rhs.Offset = node["Offset"].as<glm::vec2>();
+        rhs.Size = node["Size"].as<glm::vec2>();
+        return true;
+    }
+};
+
+Emitter& operator<<(Emitter& out, const BoxCollider2DComponent& boxCollider2DComponent)
+{
+    out << BeginMap;
+
+    out << Key << "Offset";
+    out << Value << boxCollider2DComponent.Offset;
+
+    out << Key << "Size";
+    out << Value << boxCollider2DComponent.Size;
+
+    out << EndMap;
+    return out;
+}
+
+template<>
+struct convert<CircleCollider2DComponent>
+{
+    static Node encode(const CircleCollider2DComponent& rhs)
+    {
+        Node node;
+        node["Offset"] = rhs.Offset;
+        node["Radius"] = rhs.Radius;
+
+        return node;
+    }
+
+    static bool decode(const Node& node, CircleCollider2DComponent& rhs)
+    {
+        if (!node.IsMap() || !node["Offset"] || !node["Radius"])
+            return false;
+
+        rhs.Offset = node["Offset"].as<glm::vec2>();
+        rhs.Radius = node["Radius"].as<float>();
+        return true;
+    }
+};
+
+Emitter& operator<<(Emitter& out, const CircleCollider2DComponent& circleCollider2DComponent)
+{
+    out << BeginMap;
+
+    out << Key << "Offset";
+    out << Value << circleCollider2DComponent.Offset;
+
+    out << Key << "Radius";
+    out << Value << circleCollider2DComponent.Radius;
+
+    out << EndMap;
     return out;
 }
 
@@ -767,20 +838,32 @@ void SceneSerializer::SerializeEntity(YAML::Emitter& out, const Entity& entity)
         out << YAML::Value << entity.GetComponent<MeshComponent>();
     }
 
-    if (entity.HasComponent<BoxColliderComponent>())
-    {
-        out << YAML::Key << "BoxColliderComponent";
-        out << YAML::Value << entity.GetComponent<BoxColliderComponent>();
-    }
-
     if (entity.HasComponent<ScriptComponent>())
     {
         std::string moduleName = entity.GetComponent<ScriptComponent>();
-        const FieldMap& fieldMap = ScriptEngine::GetEntityInstanceData(sceneID, entityID).ModuleFieldMap[moduleName];
+        const auto& fieldMap = ScriptEngine::GetEntityInstanceData(sceneID, entityID).ModuleFieldMap;
         Script script{ moduleName, fieldMap };
 
         out << YAML::Key << "ScriptComponent";
         out << YAML::Value << script;
+    }
+
+    if (entity.HasComponent<RigidBody2DComponent>())
+    {
+        out << YAML::Key << "RigidBody2DComponent";
+        out << YAML::Value << entity.GetComponent<RigidBody2DComponent>();
+    }
+
+    if (entity.HasComponent<BoxCollider2DComponent>())
+    {
+        out << YAML::Key << "BoxCollider2DComponent";
+        out << YAML::Value << entity.GetComponent<BoxCollider2DComponent>();
+    }
+
+    if (entity.HasComponent<CircleCollider2DComponent>())
+    {
+        out << YAML::Key << "CircleCollider2DComponent";
+        out << YAML::Value << entity.GetComponent<CircleCollider2DComponent>();
     }
 
     out << YAML::EndMap; // Entity
@@ -815,6 +898,9 @@ void SceneSerializer::Serialize(const std::string& filepath)
     out << YAML::Value;
     SerializeEnvironment(out);
 
+    out << YAML::Key << "Gravity";
+    out << YAML::Value << m_Scene->GetPhysics2DGravity();
+
     out << YAML::Key << "Entities";
     out << YAML::Value << YAML::BeginSeq;
 
@@ -832,6 +918,24 @@ void SceneSerializer::Serialize(const std::string& filepath)
 void SceneSerializer::SerializeRuntime(const std::string& filepath)
 {
     AB_CORE_ASSERT(false, "Not implemented yet!");
+}
+
+static void SetFields(ScriptModuleFieldMap& dstModuleFieldMap, ScriptModuleFieldMap& srcModuleFieldMap, const std::string& moduleName)
+{
+    auto& dstFieldMap = dstModuleFieldMap[moduleName];
+    auto& srcFieldMap = srcModuleFieldMap[moduleName];
+    for (auto& [fieldName, field] : srcFieldMap)
+    {
+        if (field.Type == FieldType::None)
+        {
+            SetFields(dstModuleFieldMap, srcModuleFieldMap, fieldName);
+        }
+        else
+        {
+            if (dstFieldMap.find(fieldName) != dstFieldMap.end())
+                dstFieldMap[fieldName] = std::move(field);
+        }
+    }
 }
 
 bool SceneSerializer::Deserialize(const std::string& filepath)
@@ -889,13 +993,6 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
                 deserializedEntity.AddComponent<MeshComponent>(mesh.Mesh);
             }
 
-            auto boxColliderNode = entity["BoxColliderComponent"];
-            if (boxColliderNode)
-            {
-                auto boxCollider = boxColliderNode.as<BoxColliderComponent>();
-                deserializedEntity.AddComponent<BoxColliderComponent>(boxCollider.BoundingBox);
-            }
-
             auto scriptNode = entity["ScriptComponent"];
             if (scriptNode)
             {
@@ -906,13 +1003,30 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
                 {
                     auto& fieldMap = script.FieldMap;
                     auto& instanceData = ScriptEngine::GetEntityInstanceData(sceneID, entityID);
-                    auto& fields = instanceData.ModuleFieldMap[script.ModuleName];
-                    for (auto& [fieldName, field] : fieldMap)
-                    {
-                        if (fields.find(fieldName) != fields.end())
-                            fields[fieldName] = std::move(field);
-                    }
+                    auto& fields = instanceData.ModuleFieldMap;
+                    SetFields(fields, fieldMap, script.ModuleName);
                 }
+            }
+
+            auto rigidBody2DNode = entity["RigidBody2DComponent"];
+            if (rigidBody2DNode)
+            {
+                auto rigidBody = rigidBody2DNode.as<RigidBody2DComponent>();
+                deserializedEntity.AddComponent<RigidBody2DComponent>(rigidBody);
+            }
+
+            auto boxCollider2DNode = entity["BoxCollider2DComponent"];
+            if (boxCollider2DNode)
+            {
+                auto boxCollider = boxCollider2DNode.as<BoxCollider2DComponent>();
+                deserializedEntity.AddComponent<BoxCollider2DComponent>(boxCollider.Offset, boxCollider.Size);
+            }
+
+            auto circleCollider2DNode = entity["CircleCollider2DComponent"];
+            if (circleCollider2DNode)
+            {
+                auto circleCollider = circleCollider2DNode.as<CircleCollider2DComponent>();
+                deserializedEntity.AddComponent<CircleCollider2DComponent>(circleCollider.Offset, circleCollider.Radius);
             }
         }
     }

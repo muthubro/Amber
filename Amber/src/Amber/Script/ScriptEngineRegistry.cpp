@@ -36,8 +36,10 @@ static void InitComponentTypes()
     RegisterComponentType(TransformComponent);
     RegisterComponentType(CameraComponent);
     RegisterComponentType(MeshComponent);
-    RegisterComponentType(BoxColliderComponent);
     RegisterComponentType(ScriptComponent);
+    RegisterComponentType(RigidBody2DComponent);
+    RegisterComponentType(BoxCollider2DComponent);
+    RegisterComponentType(CircleCollider2DComponent);
 }
 
 void ScriptEngineRegistry::RegisterAll()
@@ -59,6 +61,8 @@ void ScriptEngineRegistry::RegisterAll()
 
     mono_add_internal_call("Amber.MeshComponent::GetMesh_Native", Amber::Script::Amber_MeshComponent_GetMesh);
     mono_add_internal_call("Amber.MeshComponent::SetMesh_Native", Amber::Script::Amber_MeshComponent_SetMesh);
+
+    mono_add_internal_call("Amber.RigidBody2DComponent::ApplyLinearImpulse_Native", Amber::Script::Amber_RigidBody2DComponent_ApplyLinearImpulse);
 
     mono_add_internal_call("Amber.Texture2D::Constructor_Filepath_Native", Amber::Script::Amber_Texture2D_Constructor_Filepath);
     mono_add_internal_call("Amber.Texture2D::Constructor_Size_Native", Amber::Script::Amber_Texture2D_Constructor_Size);

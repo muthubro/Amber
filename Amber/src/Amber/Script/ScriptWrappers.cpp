@@ -1,6 +1,8 @@
 #include "abpch.h"
 #include "ScriptWrappers.h"
 
+#include <Box2D/box2d.h>
+
 #include <glm/gtc/type_ptr.hpp>
 
 #include <mono/jit/jit.h>
@@ -151,6 +153,22 @@ void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh)
     Entity entity = entityMap.at(entityID);
     auto& mesh = entity.GetComponent<MeshComponent>();
     mesh.Mesh = inMesh ? *inMesh : nullptr;
+}
+
+void Amber_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2* impulse, glm::vec2* offset, bool wake)
+{
+    Ref<Scene> scene = ScriptEngine::GetSceneContext();
+    AB_CORE_ASSERT(scene, "No active scene!");
+
+    const auto& entityMap = scene->GetEntityMap();
+    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
+
+    Entity entity = entityMap.at(entityID);
+    auto rigidBody2D = entity.GetComponentIfExists<RigidBody2DComponent>();
+    AB_CORE_ASSERT(rigidBody2D, "Entity does not contain rigid body component!");
+
+    b2Body* body = static_cast<b2Body*>(rigidBody2D->RuntimeBody);
+    body->ApplyLinearImpulse(*(const b2Vec2*)impulse, body->GetWorldCenter() + *(const b2Vec2*)offset, wake);
 }
 
 //////////////////////////////////////////////////////////////////////////////////

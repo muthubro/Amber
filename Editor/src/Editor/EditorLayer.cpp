@@ -133,6 +133,39 @@ void EditorLayer::OnUpdate(Timestep ts)
                     selectionContext.push_back(selection.Entity);
             }
             m_EditorScene->OnRenderEditor(ts, m_EditorCamera, selectionContext);
+
+            if (m_EnableOverlay)
+            {
+                Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+                for (auto& entity : selectionContext)
+                {
+                    auto boxCollider2D = entity.GetComponentIfExists<BoxCollider2DComponent>();
+                    if (boxCollider2D)
+                    {
+                        const auto& size = boxCollider2D->Size;
+                        auto [translation, rotationQuat, scale] = Math::DecomposeTransform(entity.GetTransform());
+                        glm::vec3 rotation = glm::eulerAngles(rotationQuat);
+
+                        Renderer2D::BeginScene(m_EditorCamera.GetViewProjection(), false);
+                        Renderer2D::DrawQuad({ translation, rotation.z, size * 2.0f, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f) });
+                        Renderer2D::EndScene();
+                    }
+
+                    auto circleCollider2D = entity.GetComponentIfExists<CircleCollider2DComponent>();
+                    if (circleCollider2D)
+                    {
+                        float radius = circleCollider2D->Radius;
+                        auto [translation, rotationQuat, scale] = Math::DecomposeTransform(entity.GetTransform());
+                        glm::vec3 rotation = glm::eulerAngles(rotationQuat);
+
+                        Renderer2D::BeginScene(m_EditorCamera.GetViewProjection(), false);
+                        Renderer2D::DrawQuad({ translation, rotation.z, glm::vec2(radius * 2.0f), glm::vec4(1.0f, 0.0f, 1.0f, 1.0f) });
+                        Renderer2D::EndScene();
+                    }
+                }
+                Renderer::EndRenderPass();
+            }
+
             break;
         }
 
@@ -874,7 +907,7 @@ void EditorLayer::SaveScene(const std::string& path)
                 last = filepath.size() - 4;
             }
 
-            sceneName = filepath.substr(first + 1, last - first);
+            sceneName = filepath.substr(first + 1, last - first - 1);
         }
 
         m_EditorScene->SetDebugName(sceneName);
