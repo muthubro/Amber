@@ -51,7 +51,7 @@ bool Amber_Input_IsKeyPressed(KeyCode key)
 ////////// Entity ////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-void Amber_Entity_CreateComponent(uint64_t entityID, void* type)
+static Entity GetEntity(uint64_t entityID)
 {
     Ref<Scene> scene = ScriptEngine::GetSceneContext();
     AB_CORE_ASSERT(scene, "No active scene!");
@@ -59,116 +59,109 @@ void Amber_Entity_CreateComponent(uint64_t entityID, void* type)
     const auto& entityMap = scene->GetEntityMap();
     AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
 
-    Entity entity = entityMap.at(entityID);
+    return entityMap.at(entityID);
+}
+
+void Amber_Entity_CreateComponent(uint64_t entityID, void* type)
+{
+    Entity entity = GetEntity(entityID);
     MonoType* component = mono_reflection_type_get_type((MonoReflectionType*)type);
     s_CreateComponentFuncs[component](entity);
 }
 
 bool Amber_Entity_HasComponent(uint64_t entityID, void* type)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     MonoType* component = mono_reflection_type_get_type((MonoReflectionType*)type);
     return s_HasComponentFuncs[component](entity);
 }
 
-MonoString* Amber_TagComponent_GetTag(uint64_t entityID)
+void Amber_Entity_FindEntitiesByTag(MonoString* tag, MonoArray** outArray)
 {
     Ref<Scene> scene = ScriptEngine::GetSceneContext();
     AB_CORE_ASSERT(scene, "No active scene!");
 
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
+    auto entities = scene->FindEntitiesByTag(mono_string_to_utf8(tag));
+    *outArray = mono_array_new(g_MonoDomain, mono_get_uint64_class(), entities.size());
 
-    Entity entity = entityMap.at(entityID);
+    for (uint32_t i = 0; i < entities.size(); i++)
+    {
+        Entity e(entities[i], scene.Raw());
+        mono_array_set(*outArray, uint64_t, i, e.GetUUID());
+    }
+}
+
+MonoString* Amber_TagComponent_GetTag(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
     auto& tag = entity.GetComponent<TagComponent>();
     return mono_string_new(g_MonoDomain, tag.Tag.c_str());
 }
 
 void Amber_TagComponent_SetTag(uint64_t entityID, const char* inTag)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto& tag = entity.GetComponent<TagComponent>();
     tag.Tag = inTag;
 }
 
 void Amber_TransformComponent_GetTransform(uint64_t entityID, glm::mat4* outTransform)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto& transform = entity.GetComponent<TransformComponent>();
     memcpy(outTransform, glm::value_ptr(transform.Transform), sizeof(glm::mat4));
 }
 
 void Amber_TransformComponent_SetTransform(uint64_t entityID, glm::mat4* inTransform)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto& transform = entity.GetComponent<TransformComponent>();
     memcpy(glm::value_ptr(transform.Transform), inTransform, sizeof(glm::mat4));
 }
 
 Ref<Mesh>* Amber_MeshComponent_GetMesh(uint64_t entityID)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto& mesh = entity.GetComponent<MeshComponent>();
     return &mesh.Mesh;
 }
 
 void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto& mesh = entity.GetComponent<MeshComponent>();
     mesh.Mesh = inMesh ? *inMesh : nullptr;
 }
 
 void Amber_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2* impulse, glm::vec2* offset, bool wake)
 {
-    Ref<Scene> scene = ScriptEngine::GetSceneContext();
-    AB_CORE_ASSERT(scene, "No active scene!");
-
-    const auto& entityMap = scene->GetEntityMap();
-    AB_CORE_ASSERT(entityMap.find(entityID) != entityMap.end(), "Invalid entity ID or entity doesn't exist in scene!");
-
-    Entity entity = entityMap.at(entityID);
+    Entity entity = GetEntity(entityID);
     auto rigidBody2D = entity.GetComponentIfExists<RigidBody2DComponent>();
     AB_CORE_ASSERT(rigidBody2D, "Entity does not contain rigid body component!");
 
     b2Body* body = static_cast<b2Body*>(rigidBody2D->RuntimeBody);
     body->ApplyLinearImpulse(*(const b2Vec2*)impulse, body->GetWorldCenter() + *(const b2Vec2*)offset, wake);
+}
+
+void Amber_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2* outVelocity)
+{
+    Entity entity = GetEntity(entityID);
+    auto rigidBody2D = entity.GetComponentIfExists<RigidBody2DComponent>();
+    AB_CORE_ASSERT(rigidBody2D, "Entity does not contain rigid body component!");
+
+    b2Body* body = static_cast<b2Body*>(rigidBody2D->RuntimeBody);
+    const auto& velocity = body->GetLinearVelocity();
+    *outVelocity = { velocity.x, velocity.y };
+}
+
+void Amber_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2* velocity)
+{
+    Entity entity = GetEntity(entityID);
+    auto rigidBody2D = entity.GetComponentIfExists<RigidBody2DComponent>();
+    AB_CORE_ASSERT(rigidBody2D, "Entity does not contain rigid body component!");
+
+    b2Body* body = static_cast<b2Body*>(rigidBody2D->RuntimeBody);
+    body->SetLinearVelocity({ velocity->x, velocity->y });
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +181,7 @@ void* Amber_Texture2D_Constructor_Size(uint32_t width, uint32_t height)
 
 void Amber_Texture2D_Destructor(Ref<Texture2D>* _this)
 {
-    *_this = nullptr;
+    //*_this = nullptr;
 }
 
 void Amber_Texture2D_SetData(Ref<Texture2D>* _this, MonoArray* inData, int32_t count)
@@ -223,7 +216,7 @@ void Amber_Texture2D_SetData(Ref<Texture2D>* _this, MonoArray* inData, int32_t c
 // Material
 void Amber_Material_Destructor(Ref<Material>* _this)
 {
-    *_this = nullptr;
+    //*_this = nullptr;
 }
 
 void Amber_Material_SetFloat(Ref<Material>* _this, MonoString* uniform, float value)
@@ -240,7 +233,7 @@ void Amber_Material_SetTexture(Ref<Material>* _this, MonoString* uniform, Ref<Te
 
 void Amber_MaterialInstance_Destructor(Ref<MaterialInstance>* _this)
 {
-    *_this = nullptr;
+    //*_this = nullptr;
 }
 
 void Amber_MaterialInstance_SetFloat(Ref<MaterialInstance>* _this, MonoString* uniform, float value)
@@ -269,7 +262,7 @@ void* Amber_Mesh_Constructor(MonoString* filepath)
 
 void Amber_Mesh_Destructor(Ref<Mesh>* _this)
 {
-    *_this = nullptr;
+    //*_this = nullptr;
 }
 
 Ref<Material>* Amber_Mesh_GetMaterial(Ref<Mesh>* _this)
@@ -297,6 +290,16 @@ uint32_t Amber_Mesh_GetMaterialCount(Ref<Mesh>* _this)
 uint32_t Amber_Mesh_GetSubmeshCount(Ref<Mesh>* _this)
 {
     return (uint32_t)((*_this)->GetSubmeshes().size());
+}
+
+void Amber_Mesh_SetAlbedo(Ref<Mesh>* _this, uint32_t submeshIndex, glm::vec4* color)
+{
+    auto& mesh = *_this;
+    auto& submeshes = mesh->GetSubmeshes();
+
+    AB_CORE_ASSERT(submeshIndex < submeshes.size(), "Submesh index out of bounds!");
+
+    mesh->SetAlbedo(submeshes[submeshIndex], glm::vec3(*color));
 }
 
 void Amber_Mesh_SetAlbedoTexture(Ref<Mesh>* _this, uint32_t submeshIndex, bool use, Ref<Texture2D>* albedo)

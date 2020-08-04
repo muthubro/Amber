@@ -39,7 +39,7 @@ namespace Terrain
             float[,] noiseMap = Noise.GenerateNoiseMap(width, height, seed, scale, octaves, persistance, lacunarity, offset);
             Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
             MeshComponent meshComponent = GetComponent<MeshComponent>();
-            meshComponent.Mesh.SetAlbedoTexture(0, true, texture);
+            meshComponent.Mesh.SetAlbedoTexture(true, texture);
         }
 
         public void OnCreate()

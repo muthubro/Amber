@@ -89,6 +89,9 @@ struct Buffer
 
     Buffer& operator=(Buffer&& other) noexcept
     {
+        if (Data)
+            delete[] Data;
+
         Data = other.Data;
         Size = other.Size;
 

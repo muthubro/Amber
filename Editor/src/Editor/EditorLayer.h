@@ -97,6 +97,8 @@ private:
     int m_GizmoMode = -1;
     SelectionMode m_SelectionMode = SelectionMode::Entity;
 
+    bool m_ReloadScriptOnPlay = false;
+
     Scope<SceneHierarchyPanel> m_SceneHierarchyPanel = nullptr;
 
     void UpdateWindowTitle(const std::string& sceneName);

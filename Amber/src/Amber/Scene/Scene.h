@@ -68,6 +68,8 @@ public:
     }
 
     std::vector<entt::entity> GetAllEntities();
+    std::vector<entt::entity> FindEntitiesByTag(const std::string& tag);
+
     Entity GetMainCameraEntity();
 
     const std::string& GetAssetPath() const { return m_AssetPath; }
@@ -123,6 +125,7 @@ private:
     float m_SkyboxLOD = 1.0f;
 
     bool m_IsPlaying = false;
+    Entity* m_PhysicsEntityBuffer = nullptr;
 
     friend class Entity;
 };

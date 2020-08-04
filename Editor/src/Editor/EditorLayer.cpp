@@ -15,6 +15,12 @@ namespace Amber
 {
 namespace Editor
 {
+// Walls: 64 25 6
+// Ground: 18 180 0
+// Player: 255 0 0 (Roughness: 0.4, Metalness: 0.0)
+
+static const char* s_ExampleAssembly = "assets/scripts/Terrain.dll";
+static std::hash<std::string> s_StringHasher;
 
 static std::tuple<glm::vec3, glm::quat, glm::vec3> GetTransformDecomposition(const glm::mat4& transform)
 {
@@ -81,7 +87,7 @@ void EditorLayer::OnAttach()
         colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.7f);
     }
 
-    ScriptEngine::LoadRuntimeAssembly("assets/scripts/Terrain.dll");
+    ScriptEngine::LoadRuntimeAssembly(s_ExampleAssembly);
     m_SceneHierarchyPanel = CreateScope<SceneHierarchyPanel>();
 
     m_CheckerboardTexture = Texture2D::Create("assets/editor/Checkerboard.png");
@@ -269,7 +275,7 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
 
     auto& environment = m_EditorScene->GetEnvironment();
     
-    BeginPropertyGrid();
+    BeginPropertyGrid(2, (int)s_StringHasher("environmentMap"));
     Property("", environment.Filepath.empty() ? "NULL" : environment.Filepath.c_str());
     if (ImGui::Button("..."))
     {
@@ -284,7 +290,7 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
 
     ImGui::Separator();
 
-    BeginPropertyGrid();
+    BeginPropertyGrid(2, (int)s_StringHasher("light"));
     if (!environment.Filepath.empty())
     {
         Property("Environment Rotation", environment.Rotation, -360.0f, 360.0f);
@@ -300,6 +306,14 @@ void EditorLayer::DrawEnvironmentSettingsPanel()
         Property("Light Multiplier", light.Multiplier, 0.0f, 10.0f);
         light.Direction = glm::normalize(direction);
     }
+    EndPropertyGrid();
+
+    ImGui::Separator();
+
+    BeginPropertyGrid(2, (int)s_StringHasher("gravity"));
+    float gravity = -1.0f * m_EditorScene->GetPhysics2DGravity();
+    if (Property("Gravity", gravity, -100.0f, 100.0f, 1.0f))
+        m_EditorScene->SetPhysics2DGravity(-1.0f * gravity);
     EndPropertyGrid();
 
     ImGui::End();
@@ -340,8 +354,6 @@ void EditorLayer::DrawMaterialsPanel()
 
     if (!m_SelectionContext.empty())
     {
-        std::hash<std::string> stringHasher;
-
         auto& topSelection = *m_SelectionContext.rbegin();
         auto mesh = topSelection.Entity.GetComponentIfExists<MeshComponent>();
         if (topSelection.Mesh && mesh)
@@ -435,7 +447,7 @@ void EditorLayer::DrawMaterialsPanel()
                         ImGui::SameLine();
 
                         ImGui::BeginGroup();
-                        BeginPropertyGrid(2, (int)stringHasher("albedo"));
+                        BeginPropertyGrid(2, (int)s_StringHasher("albedo"));
                         Property("Use Albedo Texture", usingAlbedoMap);
                         Property("Albedo Color", albedo, PropertyFlags::ColorProperty);
                         EndPropertyGrid();
@@ -483,7 +495,7 @@ void EditorLayer::DrawMaterialsPanel()
                         ImGui::SameLine();
 
                         ImGui::BeginGroup();
-                        BeginPropertyGrid(2, (int)stringHasher("normal"));
+                        BeginPropertyGrid(2, (int)s_StringHasher("normal"));
                         Property("Use Normal Texture", usingNormalMap);
                         EndPropertyGrid();
                         ImGui::EndGroup();
@@ -530,7 +542,7 @@ void EditorLayer::DrawMaterialsPanel()
                         ImGui::SameLine();
 
                         ImGui::BeginGroup();
-                        BeginPropertyGrid(2, (int)stringHasher("roughness"));
+                        BeginPropertyGrid(2, (int)s_StringHasher("roughness"));
                         Property("Use Roughness Texture", usingRoughnessMap);
                         Property("Roughness", roughness, 0.0f, 1.0f, 0.01f);
                         EndPropertyGrid();
@@ -579,7 +591,7 @@ void EditorLayer::DrawMaterialsPanel()
                         ImGui::SameLine();
 
                         ImGui::BeginGroup();
-                        BeginPropertyGrid(2, (int)stringHasher("metalness"));
+                        BeginPropertyGrid(2, (int)s_StringHasher("metalness"));
                         Property("Use Metalness Texture", usingMetalnessMap);
                         Property("Metalness", metalness, 0.0f, 1.0f, 0.01f);
                         EndPropertyGrid();
@@ -684,7 +696,7 @@ void EditorLayer::DrawViewport()
     m_AllowViewportCameraEvents = ImGui::IsMouseHoveringRect(minBounds, maxBounds);
 
     // Gizmos
-    if (m_GizmoMode != -1 && !m_SelectionContext.empty())
+    if (m_GizmoMode != -1 && !m_SelectionContext.empty() && m_EnableOverlay)
     {
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
@@ -835,6 +847,8 @@ void EditorLayer::DrawMenuBar()
             if (ImGui::MenuItem("Reload C# Assembly"))
                 ScriptEngine::ReloadAssembly("assets/scripts/Terrain.dll");
 
+            ImGui::MenuItem("Reload Assembly On Play", nullptr, &m_ReloadScriptOnPlay);
+
             ImGui::Separator();
 
             if (ImGui::MenuItem("Exit", "Alt+F4"))
@@ -924,11 +938,16 @@ void EditorLayer::OnScenePlay()
     m_SelectionContext.clear();
     m_SceneState = SceneState::Play;
 
+    if (m_ReloadScriptOnPlay)
+        ScriptEngine::ReloadAssembly(s_ExampleAssembly);
+
     m_RuntimeScene = Ref<Scene>::Create();
     m_EditorScene->CopyTo(m_RuntimeScene);
 
     m_RuntimeScene->OnRuntimeStart();
     m_SceneHierarchyPanel->SetContext(m_RuntimeScene);
+
+    m_EnableOverlay = false;
 }
 
 void EditorLayer::OnSceneStop()
@@ -941,6 +960,8 @@ void EditorLayer::OnSceneStop()
     m_SelectionContext.clear();
     ScriptEngine::SetSceneContext(m_EditorScene);
     m_SceneHierarchyPanel->SetContext(m_EditorScene);
+ 
+    m_EnableOverlay = true;
 }
 
 bool EditorLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)

@@ -52,6 +52,7 @@ void ScriptEngineRegistry::RegisterAll()
 
     mono_add_internal_call("Amber.Entity::HasComponent_Native", Amber::Script::Amber_Entity_HasComponent);
     mono_add_internal_call("Amber.Entity::CreateComponent_Native", Amber::Script::Amber_Entity_CreateComponent);
+    mono_add_internal_call("Amber.Entity::FindEntitiesByTag_Native", Amber::Script::Amber_Entity_FindEntitiesByTag);
 
     mono_add_internal_call("Amber.TagComponent::GetTag_Native", Amber::Script::Amber_TagComponent_GetTag);
     mono_add_internal_call("Amber.TagComponent::SetTag_Native", Amber::Script::Amber_TagComponent_SetTag);
@@ -63,6 +64,8 @@ void ScriptEngineRegistry::RegisterAll()
     mono_add_internal_call("Amber.MeshComponent::SetMesh_Native", Amber::Script::Amber_MeshComponent_SetMesh);
 
     mono_add_internal_call("Amber.RigidBody2DComponent::ApplyLinearImpulse_Native", Amber::Script::Amber_RigidBody2DComponent_ApplyLinearImpulse);
+    mono_add_internal_call("Amber.RigidBody2DComponent::GetLinearVelocity_Native", Amber::Script::Amber_RigidBody2DComponent_GetLinearVelocity);
+    mono_add_internal_call("Amber.RigidBody2DComponent::SetLinearVelocity_Native", Amber::Script::Amber_RigidBody2DComponent_SetLinearVelocity);
 
     mono_add_internal_call("Amber.Texture2D::Constructor_Filepath_Native", Amber::Script::Amber_Texture2D_Constructor_Filepath);
     mono_add_internal_call("Amber.Texture2D::Constructor_Size_Native", Amber::Script::Amber_Texture2D_Constructor_Size);
@@ -84,6 +87,7 @@ void ScriptEngineRegistry::RegisterAll()
     mono_add_internal_call("Amber.Mesh::GetMaterialByIndex_Native", Amber::Script::Amber_Mesh_GetMaterialByIndex);
     mono_add_internal_call("Amber.Mesh::GetMaterialCount_Native", Amber::Script::Amber_Mesh_GetMaterialCount);
     mono_add_internal_call("Amber.Mesh::GetSubmeshCount_Native", Amber::Script::Amber_Mesh_GetSubmeshCount);
+    mono_add_internal_call("Amber.Mesh::SetAlbedo_Native", Amber::Script::Amber_Mesh_SetAlbedo);
     mono_add_internal_call("Amber.Mesh::SetAlbedoTexture_Native", Amber::Script::Amber_Mesh_SetAlbedoTexture);
 
     mono_add_internal_call("Amber.MeshFactory::CreatePlane_Native", Amber::Script::Amber_MeshFactory_CreatePlane);

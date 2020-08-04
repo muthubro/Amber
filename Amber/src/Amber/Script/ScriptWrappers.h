@@ -24,6 +24,7 @@ bool Amber_Input_IsKeyPressed(KeyCode key);
 // Entity
 void Amber_Entity_CreateComponent(uint64_t entityID, void* type);
 bool Amber_Entity_HasComponent(uint64_t entityID, void* type);
+void Amber_Entity_FindEntitiesByTag(MonoString* tag, MonoArray** outArray);
 
 MonoString* Amber_TagComponent_GetTag(uint64_t entityID);
 void Amber_TagComponent_SetTag(uint64_t entityID, const char* inTag);
@@ -35,6 +36,8 @@ Ref<Mesh>* Amber_MeshComponent_GetMesh(uint64_t entityID);
 void Amber_MeshComponent_SetMesh(uint64_t entityID, Ref<Mesh>* inMesh);
 
 void Amber_RigidBody2DComponent_ApplyLinearImpulse(uint64_t entityID, glm::vec2* impulse, glm::vec2* offset, bool wake);
+void Amber_RigidBody2DComponent_GetLinearVelocity(uint64_t entityID, glm::vec2* outVelocity);
+void Amber_RigidBody2DComponent_SetLinearVelocity(uint64_t entityID, glm::vec2* velocity);
 
 // Renderer
 // Texture2D
@@ -60,6 +63,7 @@ Ref<Material>* Amber_Mesh_GetMaterial(Ref<Mesh>* _this);
 Ref<MaterialInstance>* Amber_Mesh_GetMaterialByIndex(Ref<Mesh>* _this, uint32_t index);
 uint32_t Amber_Mesh_GetMaterialCount(Ref<Mesh>* _this);
 uint32_t Amber_Mesh_GetSubmeshCount(Ref<Mesh>* _this);
+void Amber_Mesh_SetAlbedo(Ref<Mesh>* _this, uint32_t submeshIndex, glm::vec4* color);
 void Amber_Mesh_SetAlbedoTexture(Ref<Mesh>* _this, uint32_t submeshIndex, bool use, Ref<Texture2D>* albedo);
 
 // Mesh Factory

@@ -3,6 +3,7 @@
 
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/RenderCommand.h"
+#include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/VertexArray.h"
 
@@ -308,7 +309,10 @@ void Renderer2D::DrawQuad(const QuadData& data)
     AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
 
     if (s_Data.QuadIndexCount >= Renderer2DData::MaxQuadIndices)
+    {
         FlushQuads();
+        Renderer::WaitAndRender();
+    }
 
     float textureIndex = Renderer2D::GetTextureSlot(data.Texture);
     glm::mat4 actualPosition = data.Transform * s_Data.QuadVertexPositions;
@@ -331,7 +335,10 @@ void Renderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::v
     AB_CORE_ASSERT(s_Data.ActiveScene, "No active scene!");
 
     if (s_Data.LineIndexCount >= s_Data.MaxLineIndices)
+    {
         FlushLines();
+        Renderer::WaitAndRender();
+    }
 
     s_Data.LineVertexBufferPtr->Position = p0;
     s_Data.LineVertexBufferPtr->Color = color;

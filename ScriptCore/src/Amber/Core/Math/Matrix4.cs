@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace Amber
 {
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Matrix4
     {
-        [FieldOffset(0)]  private Vector4 Col0;
-        [FieldOffset(16)] private Vector4 Col1;
-        [FieldOffset(32)] private Vector4 Col2;
-        [FieldOffset(48)] private Vector4 Col3;
+        private Vector4 Col0;
+        private Vector4 Col1;
+        private Vector4 Col2;
+        private Vector4 Col3;
 
         public Matrix4(float scalar)
         {
@@ -29,6 +29,39 @@ namespace Amber
             Col1 = col1;
             Col2 = col2;
             Col3 = col3;
+        }
+
+        public Vector3 Translation
+        {
+            get { return Col3.XYZ; }
+            set { Col3.XYZ = value; }
+        }
+
+        public Vector4 this[int index]
+        {
+            get
+            {
+                switch (index)
+                {
+                    case 0: return Col0;
+                    case 1: return Col1;
+                    case 2: return Col2;
+                    case 3: return Col3;
+                }
+
+                return Col0;
+            }
+
+            set
+            {
+                switch (index)
+                {
+                    case 0: Col0 = value; break;
+                    case 1: Col1 = value; break;
+                    case 2: Col2 = value; break;
+                    case 3: Col3 = value; break;
+                }
+            }
         }
 
         public static Matrix4 operator +(Matrix4 left, Matrix4 right)
@@ -87,33 +120,6 @@ namespace Amber
             result.Col3 = A0 * B3.X + A1 * B3.Y + A2 * B3.Z + A3 * B3.W;
 
             return result;
-        }
-
-        public Vector4 this[int index]
-        {
-            get
-            {
-                switch (index)
-                {
-                    case 0: return Col0;
-                    case 1: return Col1;
-                    case 2: return Col2;
-                    case 3: return Col3;
-                }
-
-                return Col0;
-            }
-
-            set
-            {
-                switch (index)
-                {
-                    case 0: Col0 = value; break;
-                    case 1: Col1 = value; break;
-                    case 2: Col2 = value; break;
-                    case 3: Col3 = value; break;
-                }
-            }
         }
 
         public static Matrix4 Translate(Vector3 translation)

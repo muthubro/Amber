@@ -26,6 +26,22 @@ namespace Amber
             A = a > 1.0f ? 1.0f : (a < 0.0f ? 0.0f : a);
         }
 
+        public Color(float r, float g, float b)
+        {
+            R = r > 1.0f ? 1.0f : (r < 0.0f ? 0.0f : r);
+            G = g > 1.0f ? 1.0f : (g < 0.0f ? 0.0f : g);
+            B = b > 1.0f ? 1.0f : (b < 0.0f ? 0.0f : b);
+            A = 1.0f;
+        }
+
+        public Color(Vector4 vector)
+        {
+            R = vector.X > 1.0f ? 1.0f : (vector.X < 0.0f ? 0.0f : vector.X);
+            G = vector.Y > 1.0f ? 1.0f : (vector.Y < 0.0f ? 0.0f : vector.Y);
+            B = vector.Z > 1.0f ? 1.0f : (vector.Z < 0.0f ? 0.0f : vector.Z);
+            A = vector.W > 1.0f ? 1.0f : (vector.W < 0.0f ? 0.0f : vector.W);
+        }
+
         public static Color operator +(Color left, Color right)
         {
             return new Color(left.R + right.R, left.G + right.G, left.B + right.B, left.A + right.A);
@@ -53,7 +69,9 @@ namespace Amber
 
         public static Color Black   { get => new Color(0.0f, 0.0f, 0.0f, 1.0f); }
         public static Color White   { get => new Color(1.0f, 1.0f, 1.0f, 1.0f); }
-        public static Color Blue    { get => new Color(0.0f, 0.0f, 1.0f, 1.0f); }
+        public static Color Red     { get => new Color(1.0f, 0.0f, 0.0f, 1.0f); }
         public static Color Green   { get => new Color(0.0f, 1.0f, 0.0f, 1.0f); }
+        public static Color Blue    { get => new Color(0.0f, 0.0f, 1.0f, 1.0f); }
+        public static Color Yellow  { get => new Color(1.0f, 1.0f, 0.0f, 1.0f); }
     }
 }

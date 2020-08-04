@@ -550,12 +550,16 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             ImGui::EndCombo();
         }
 
-        BeginPropertyGrid();
+        if (component.BodyType == RigidBody2DComponent::Type::Dynamic)
+        {
+            BeginPropertyGrid();
 
-        Property("Density", component.Density);
-        Property("Friction", component.Friction);
+            Property("Density", component.Density, 0.0f, 100.0f);
+            Property("Friction", component.Friction, 0.0f, 1.0f, 0.01f);
+            Property("Restitution", component.Restitution, 0.0f, 1.0f, 0.01f);
 
-        EndPropertyGrid();
+            EndPropertyGrid();
+        }
     });
 
     DrawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {

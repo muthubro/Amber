@@ -30,6 +30,21 @@ static Ref<Scene> s_SceneContext = nullptr;
 
 static void* GetMethodThunk(MonoImage* image, const std::string& methodDesc);
 
+struct PhysicsMethods
+{
+    typedef void (*CollisionCallbackType)(MonoObject*, uint64_t, MonoException**);
+
+    CollisionCallbackType OnCollision2DBeginMethod = nullptr;
+    CollisionCallbackType OnCollision2DEndMethod = nullptr;
+
+    void InitPhysicsMethods()
+    {
+        OnCollision2DBeginMethod = (CollisionCallbackType)GetMethodThunk(g_CoreAssemblyImage, "Amber.Entity:OnCollision2DBegin(ulong)");
+        OnCollision2DEndMethod = (CollisionCallbackType)GetMethodThunk(g_CoreAssemblyImage, "Amber.Entity:OnCollision2DEnd(ulong)");
+    }
+};
+static PhysicsMethods s_PhysicsMethods;
+
 struct EntityScriptClass
 {
     typedef void (*OnCreateType)(MonoObject*, MonoException**);
@@ -45,11 +60,11 @@ struct EntityScriptClass
     OnDestroyType OnDestroyMethod = nullptr;
     OnUpdateType OnUpdateMethod = nullptr;
 
-    void InitClassMethods(MonoImage* image)
+    void InitClassMethods()
     {
-        OnCreateMethod = (OnCreateType)GetMethodThunk(image, FullName + ":OnCreate()");
-        OnDestroyMethod = (OnDestroyType)GetMethodThunk(image, FullName + ":OnDestroy()");
-        OnUpdateMethod = (OnUpdateType)GetMethodThunk(image, FullName + ":OnUpdate(single)");
+        OnCreateMethod = (OnCreateType)GetMethodThunk(s_AppAssemblyImage, FullName + ":OnCreate()");
+        OnDestroyMethod = (OnDestroyType)GetMethodThunk(s_AppAssemblyImage, FullName + ":OnDestroy()");
+        OnUpdateMethod = (OnUpdateType)GetMethodThunk(s_AppAssemblyImage, FullName + ":OnUpdate(single)");
     }
 };
 
@@ -132,7 +147,9 @@ void ScriptEngine::LoadRuntimeAssembly(const std::string& assemblyPath)
     s_AssemblyPath = assemblyPath;
     s_AppAssembly = LoadAssembly(s_AssemblyPath);
     s_AppAssemblyImage = GetAssemblyImage(s_AppAssembly);
+
     ScriptEngineRegistry::RegisterAll();
+    s_PhysicsMethods.InitPhysicsMethods();
 
     if (cleanup)
     {
@@ -248,6 +265,38 @@ void ScriptEngine::OnUpdateEntity(UUID sceneID, UUID entityID, Timestep ts)
     }
 }
 
+void ScriptEngine::OnCollision2DBegin(const Entity& entity, const Entity& other)
+{
+    OnCollision2DBegin(entity.GetSceneUUID(), entity.GetUUID(), other);
+}
+
+void ScriptEngine::OnCollision2DBegin(UUID sceneID, UUID entityID, const Entity& other)
+{
+    EntityInstance& instance = GetEntityInstanceData(sceneID, entityID).Instance;
+
+    if (s_PhysicsMethods.OnCollision2DBeginMethod)
+    {
+        MonoException* exception;
+        s_PhysicsMethods.OnCollision2DBeginMethod(instance.GetInstance(), other.GetUUID(), &exception);
+    }
+}
+
+void ScriptEngine::OnCollision2DEnd(const Entity& entity, const Entity& other)
+{
+    OnCollision2DEnd(entity.GetSceneUUID(), entity.GetUUID(), other);
+}
+
+void ScriptEngine::OnCollision2DEnd(UUID sceneID, UUID entityID, const Entity& other)
+{
+    EntityInstance& instance = GetEntityInstanceData(sceneID, entityID).Instance;
+
+    if (s_PhysicsMethods.OnCollision2DEndMethod)
+    {
+        MonoException* exception;
+        s_PhysicsMethods.OnCollision2DEndMethod(instance.GetInstance(), other.GetUUID(), &exception);
+    }
+}
+
 static MonoClass* GetClass(MonoImage* image, const EntityScriptClass& scriptClass)
 {
     MonoClass* monoClass = mono_class_from_name(image, scriptClass.NamespaceName.c_str(), scriptClass.ClassName.c_str());
@@ -335,7 +384,7 @@ void ScriptEngine::InitScriptEntity(const Entity& entity)
     }
 
     scriptClass.Class = GetClass(s_AppAssemblyImage, scriptClass);
-    scriptClass.InitClassMethods(s_AppAssemblyImage);
+    scriptClass.InitClassMethods();
 
     EntityInstanceData& instanceData = s_EntityInstanceMap[entity.GetSceneUUID()][entityID];
 

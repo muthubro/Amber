@@ -81,6 +81,7 @@ struct RigidBody2DComponent
     Type BodyType = Type::Static;
     float Density = 1.0f;
     float Friction = 1.0f;
+    float Restitution = 0.0f;
 
     void* RuntimeBody = nullptr;
 
@@ -88,7 +89,7 @@ struct RigidBody2DComponent
     RigidBody2DComponent(Type bodyType, float density, float friction)
         : BodyType(bodyType), Density(density), Friction(friction) { }
     RigidBody2DComponent(const RigidBody2DComponent& other)
-        : BodyType(other.BodyType), Density(other.Density), Friction(other.Friction) { }
+        : BodyType(other.BodyType), Density(other.Density), Friction(other.Friction), Restitution(other.Restitution) { }
 };
 
 struct BoxCollider2DComponent

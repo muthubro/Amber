@@ -137,6 +137,12 @@ public:
     static void OnDestroyEntity(UUID sceneID, UUID entityID);
     static void OnUpdateEntity(UUID sceneID, UUID entityID, Timestep ts);
 
+    static void OnCollision2DBegin(const Entity& entity, const Entity& other);
+    static void OnCollision2DBegin(UUID sceneID, UUID entityID, const Entity& other);
+
+    static void OnCollision2DEnd(const Entity& entity, const Entity& other);
+    static void OnCollision2DEnd(UUID sceneID, UUID entityID, const Entity& other);
+
     static bool ModuleExists(const std::string& moduleName);
     static void InitScriptEntity(const Entity& entity);
     static void ShutdownScriptEntity(const Entity& entity, const std::string& moduleName);

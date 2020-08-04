@@ -46,7 +46,12 @@ namespace Amber
             return GetSubmeshCount_Native(m_UnmanagedInstance);
         }
 
-        public void SetAlbedoTexture(uint submeshIndex, bool use, Texture2D albedo)
+        public void SetAlbedo(Color color, uint submeshIndex = 0)
+        {
+            SetAlbedo_Native(m_UnmanagedInstance, submeshIndex, ref color);
+        }
+
+        public void SetAlbedoTexture(bool use, Texture2D albedo, uint submeshIndex = 0)
         {
             SetAlbedoTexture_Native(m_UnmanagedInstance, submeshIndex, use, albedo.m_UnmanagedInstance);
         }
@@ -68,6 +73,9 @@ namespace Amber
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern uint GetSubmeshCount_Native(IntPtr unmanagedInstance);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void SetAlbedo_Native(IntPtr unmanagedInstance, uint submeshIndex, ref Color color);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void SetAlbedoTexture_Native(IntPtr unmanagedInstance, uint submeshIndex, bool use, IntPtr albedo);

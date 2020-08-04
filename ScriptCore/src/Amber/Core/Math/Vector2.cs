@@ -113,5 +113,12 @@ namespace Amber
 
             return a + t * (b - a);
         }
+
+        public static Vector2 Clamp(Vector2 vector, Vector2 min, Vector2 max)
+        {
+            vector = new Vector2(Mathf.Clamp(vector.X, min.X, max.X), 
+                                 Mathf.Clamp(vector.Y, min.Y, max.Y));
+            return vector;
+        }
     }
 }

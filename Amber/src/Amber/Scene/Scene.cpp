@@ -37,6 +37,32 @@ struct Box2DWorldComponent
     Scope<b2World> World;
 };
 
+struct Physics2DContactListener : public b2ContactListener
+{
+    void BeginContact(b2Contact* contact) 
+    {
+        Entity& a = *(Entity*)contact->GetFixtureA()->GetBody()->GetUserData();
+        Entity& b = *(Entity*)contact->GetFixtureB()->GetBody()->GetUserData();
+
+        if (a.HasComponent<ScriptComponent>())
+            ScriptEngine::OnCollision2DBegin(a, b);
+        if (b.HasComponent<ScriptComponent>())
+            ScriptEngine::OnCollision2DBegin(b, a);
+    }
+
+    void EndContact(b2Contact* contact) 
+    {
+        Entity& a = *(Entity*)contact->GetFixtureA()->GetBody()->GetUserData();
+        Entity& b = *(Entity*)contact->GetFixtureB()->GetBody()->GetUserData();
+
+        if (a.HasComponent<ScriptComponent>())
+            ScriptEngine::OnCollision2DEnd(a, b);
+        if (b.HasComponent<ScriptComponent>())
+            ScriptEngine::OnCollision2DEnd(b, a);
+    }
+};
+static Physics2DContactListener s_Physics2DContactListener;
+
 static b2BodyType AmberRigidBodyTypeToBox2DType(RigidBody2DComponent::Type type)
 {
     switch (type)
@@ -50,15 +76,24 @@ static b2BodyType AmberRigidBodyTypeToBox2DType(RigidBody2DComponent::Type type)
     return b2_staticBody;
 }
 
-void OnScriptConstruct(entt::registry& registry, entt::entity entity)
+void OnScriptComponentConstruct(entt::registry& registry, entt::entity entity)
 {
     auto view = registry.view<SceneComponent>();
     UUID sceneID = registry.get<SceneComponent>(view.front()).SceneID;
-
     Scene* scene = g_ActiveScenes[sceneID];
 
     auto entityID = registry.get<IDComponent>(entity);
     ScriptEngine::InitScriptEntity(scene->GetEntityMap().at(entityID));
+}
+
+void OnScriptComponentDestroy(entt::registry& registry, entt::entity entity)
+{
+    auto view = registry.view<SceneComponent>();
+    UUID sceneID = registry.get<SceneComponent>(view.front()).SceneID;
+    Scene* scene = g_ActiveScenes[sceneID];
+
+    auto entityID = registry.get<IDComponent>(entity);
+    ScriptEngine::OnScriptComponentDestroyed(sceneID, entityID);
 }
 
 Environment Environment::Load(const std::string& filepath)
@@ -70,11 +105,14 @@ Environment Environment::Load(const std::string& filepath)
 Scene::Scene(const std::string& debugName, const std::string& assetPath)
     : m_DebugName(debugName), m_AssetPath(assetPath)
 {
-    m_Registry.on_construct<ScriptComponent>().connect<&OnScriptConstruct>();
+    m_Registry.on_construct<ScriptComponent>().connect<&OnScriptComponentConstruct>();
+    m_Registry.on_destroy<ScriptComponent>().connect<&OnScriptComponentDestroy>();
 
     m_SceneEntity = m_Registry.create();
     m_Registry.emplace<SceneComponent>(m_SceneEntity, m_SceneID);
-    m_Registry.emplace<Box2DWorldComponent>(m_SceneEntity, CreateScope<b2World>(b2Vec2(0.0f, -9.81f)));
+    
+    auto& worldComponent = m_Registry.emplace<Box2DWorldComponent>(m_SceneEntity, CreateScope<b2World>(b2Vec2(0.0f, -9.81f)));
+    worldComponent.World->SetContactListener(&s_Physics2DContactListener);
 
     g_ActiveScenes[m_SceneID] = this;
 
@@ -83,7 +121,9 @@ Scene::Scene(const std::string& debugName, const std::string& assetPath)
 
 Scene::~Scene()
 {
+    m_Registry.on_destroy<ScriptComponent>().disconnect();
     m_Registry.clear();
+
     g_ActiveScenes.erase(m_SceneID);
     ScriptEngine::OnSceneDestruct(m_SceneID);
 }
@@ -97,15 +137,6 @@ void Scene::Init()
 
 void Scene::OnUpdate(Timestep ts)
 {
-    auto entities = GetAllEntitiesWith<ScriptComponent>();
-    for (auto entity : entities)
-    {
-        UUID entityID = m_Registry.get<IDComponent>(entity);
-        Entity e = { entity, this };
-        if (ScriptEngine::ModuleExists(e.GetComponent<ScriptComponent>().ModuleName))
-            ScriptEngine::OnUpdateEntity(m_SceneID, entityID, ts);
-    }
-
     auto& box2DWorld = m_Registry.get<Box2DWorldComponent>(m_SceneEntity).World;
     int32_t velocityIterations = 8;
     int32_t positionIterations = 3;
@@ -126,6 +157,15 @@ void Scene::OnUpdate(Timestep ts)
         transform = glm::translate(glm::mat4(1.0f), { position.x, position.y, translation.z }) *
             glm::toMat4(glm::quat({ rotation.x, rotation.y, body->GetAngle() })) *
             glm::scale(glm::mat4(1.0f), scale);
+    }
+
+    auto entities = GetAllEntitiesWith<ScriptComponent>();
+    for (auto entity : entities)
+    {
+        UUID entityID = m_Registry.get<IDComponent>(entity);
+        Entity e = { entity, this };
+        if (ScriptEngine::ModuleExists(e.GetComponent<ScriptComponent>().ModuleName))
+            ScriptEngine::OnUpdateEntity(m_SceneID, entityID, ts);
     }
 }
 
@@ -268,6 +308,8 @@ void Scene::OnRuntimeStart()
 
     auto& world = m_Registry.get<Box2DWorldComponent>(m_SceneEntity).World;
     auto rigidBodies = m_Registry.view<RigidBody2DComponent>();
+    m_PhysicsEntityBuffer = new Entity[rigidBodies.size()];
+    uint32_t physicsEntityBufferIndex = 0;
     for (auto e : rigidBodies)
     {
         Entity entity(e, this);
@@ -281,7 +323,13 @@ void Scene::OnRuntimeStart()
         bodyDef.position.Set(translation.x, translation.y);
         bodyDef.angle = glm::eulerAngles(rotationQuat).z;
 
-        rigidBody2D.RuntimeBody = world->CreateBody(&bodyDef);
+        b2Body* body = world->CreateBody(&bodyDef);
+        
+        Entity* entityStorage = &m_PhysicsEntityBuffer[physicsEntityBufferIndex++];
+        *entityStorage = entity;
+        body->SetUserData((void*)entityStorage);
+
+        rigidBody2D.RuntimeBody = body;
     }
 
     auto boxColliders = m_Registry.view<BoxCollider2DComponent>();
@@ -306,6 +354,7 @@ void Scene::OnRuntimeStart()
             fixtureDef.shape = &polygonShape;
             fixtureDef.density = rigidBody->Density;
             fixtureDef.friction = rigidBody->Friction;
+            fixtureDef.restitution = rigidBody->Restitution;
             boxCollider2D.RuntimeFixture = body->CreateFixture(&fixtureDef);
         }
     }
@@ -332,6 +381,7 @@ void Scene::OnRuntimeStart()
             fixtureDef.shape = &circleShape;
             fixtureDef.density = rigidBody->Density;
             fixtureDef.friction = rigidBody->Friction;
+            fixtureDef.restitution = rigidBody->Restitution;
             circleCollider2D.RuntimeFixture = body->CreateFixture(&fixtureDef);
         }
     }
@@ -348,6 +398,8 @@ void Scene::OnRuntimeStop()
         if (ScriptEngine::ModuleExists(e.GetComponent<ScriptComponent>().ModuleName))
             ScriptEngine::OnDestroyEntity(m_SceneID, e.GetUUID());
     }
+
+    delete[] m_PhysicsEntityBuffer;
     
     m_IsPlaying = false;
 }
@@ -505,6 +557,19 @@ std::vector<entt::entity> Scene::GetAllEntities()
     });
 
     return entities;
+}
+
+std::vector<entt::entity> Scene::FindEntitiesByTag(const std::string& tag)
+{
+    std::vector<entt::entity> result;
+    auto view = m_Registry.view<TagComponent>();
+    for (auto entity : view)
+    {
+        if (view.get<TagComponent>(entity).Tag == tag)
+            result.push_back(entity);
+    }
+
+    return result;
 }
 
 Entity Scene::GetMainCameraEntity()

@@ -642,9 +642,12 @@ struct convert<Script>
         Node node;
         node["ModuleName"] = rhs.ModuleName;
 
-        Node fields;
-        EncodeFields(rhs.FieldMap, rhs.ModuleName, fields);
-        node["Fields"] = fields;
+        if (!rhs.FieldMap.empty())
+        {
+            Node fields;
+            EncodeFields(rhs.FieldMap, rhs.ModuleName, fields);
+            node["Fields"] = fields;
+        }
 
         return node;
     }
@@ -657,8 +660,12 @@ struct convert<Script>
         rhs.ModuleName = node["ModuleName"].as<std::string>();
 
         auto& fieldMap = rhs.FieldMap;
-        const auto& fields = node["Fields"];
-        return DecodeFields(fields, fieldMap, rhs.ModuleName);
+        if (node["Fields"])
+        {
+            const auto& fields = node["Fields"];
+            return DecodeFields(fields, fieldMap, rhs.ModuleName);
+        }
+        return true;
     }
 };
 
@@ -671,8 +678,11 @@ Emitter& operator<<(Emitter& out, const Script& script)
 
     Node fields;
     EncodeFields(script.FieldMap, script.ModuleName, fields);
-    out << Key << "Fields";
-    out << Value << fields;
+    if (fields.size() != 0)
+    {
+        out << Key << "Fields";
+        out << Value << fields;
+    }
 
     out << EndMap; // Script
     return out;
@@ -687,18 +697,20 @@ struct convert<RigidBody2DComponent>
         node["BodyType"] = (uint32_t)rhs.BodyType;
         node["Density"] = rhs.Density;
         node["Friction"] = rhs.Friction;
+        node["Restitution"] = rhs.Restitution;
 
         return node;
     }
 
     static bool decode(const Node& node, RigidBody2DComponent& rhs)
     {
-        if (!node.IsMap() || !node["BodyType"] || !node["Density"] || !node["Friction"])
+        if (!node.IsMap() || !node["BodyType"] || !node["Density"] || !node["Friction"] || !node["Restitution"])
             return false;
 
         rhs.BodyType = (RigidBody2DComponent::Type)node["BodyType"].as<uint32_t>();
         rhs.Density = node["Density"].as<float>();
         rhs.Friction = node["Friction"].as<float>();
+        rhs.Restitution = node["Restitution"].as<float>();
         return true;
     }
 };
@@ -715,6 +727,9 @@ Emitter& operator<<(Emitter& out, const RigidBody2DComponent& rigidBody2DCompone
 
     out << Key << "Friction";
     out << Value << rigidBody2DComponent.Friction;
+
+    out << Key << "Restitution";
+    out << Value << rigidBody2DComponent.Restitution;
 
     out << EndMap;
     return out;
