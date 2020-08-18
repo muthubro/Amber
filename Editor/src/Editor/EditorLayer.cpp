@@ -427,7 +427,7 @@ void EditorLayer::DrawMaterialsPanel()
                             {
                                 ImGui::BeginTooltip();
                                 ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                                ImGui::TextUnformatted(albedoMap->GetPath().c_str());
+                                ImGui::TextUnformatted(albedoMap->GetAssetPath().c_str());
                                 ImGui::PopTextWrapPos();
                                 ImGui::Image((void*)(size_t)albedoMap->GetRendererID(), ImVec2(384, 384));
                                 ImGui::EndTooltip();
@@ -475,7 +475,7 @@ void EditorLayer::DrawMaterialsPanel()
                             {
                                 ImGui::BeginTooltip();
                                 ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                                ImGui::TextUnformatted(normalMap->GetPath().c_str());
+                                ImGui::TextUnformatted(normalMap->GetAssetPath().c_str());
                                 ImGui::PopTextWrapPos();
                                 ImGui::Image((void*)(size_t)normalMap->GetRendererID(), ImVec2(384, 384));
                                 ImGui::EndTooltip();
@@ -522,7 +522,7 @@ void EditorLayer::DrawMaterialsPanel()
                             {
                                 ImGui::BeginTooltip();
                                 ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                                ImGui::TextUnformatted(roughnessMap->GetPath().c_str());
+                                ImGui::TextUnformatted(roughnessMap->GetAssetPath().c_str());
                                 ImGui::PopTextWrapPos();
                                 ImGui::Image((void*)(size_t)roughnessMap->GetRendererID(), ImVec2(384, 384));
                                 ImGui::EndTooltip();
@@ -571,7 +571,7 @@ void EditorLayer::DrawMaterialsPanel()
                             {
                                 ImGui::BeginTooltip();
                                 ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                                ImGui::TextUnformatted(metalnessMap->GetPath().c_str());
+                                ImGui::TextUnformatted(metalnessMap->GetAssetPath().c_str());
                                 ImGui::PopTextWrapPos();
                                 ImGui::Image((void*)(size_t)metalnessMap->GetRendererID(), ImVec2(384, 384));
                                 ImGui::EndTooltip();
@@ -629,7 +629,7 @@ void EditorLayer::DrawMaterialsPanel()
                         {
                             ImGui::BeginTooltip();
                             ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-                            ImGui::TextUnformatted(texture->GetPath().c_str());
+                            ImGui::TextUnformatted(texture->GetAssetPath().c_str());
                             ImGui::PopTextWrapPos();
                             ImGui::Image((void*)(size_t)texture->GetRendererID(), ImVec2(384, 384));
                             ImGui::EndTooltip();

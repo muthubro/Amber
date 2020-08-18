@@ -23,19 +23,25 @@ public:
 
         QuadData() = default;
 
-        QuadData(glm::vec2 position, float rotation, glm::vec2 scale, glm::vec4 color)
+        QuadData(const glm::mat4& transform, const glm::mat4& color, glm::vec2 texCoords[4], const Ref<Texture2D>& texture, float tilingFactor)
+            : Transform(transform), Color(color), Texture(texture), TilingFactor(tilingFactor)
+        {
+            memcpy(TexCoords, texCoords, sizeof(TexCoords));
+        }
+
+        QuadData(const glm::vec2& position, float rotation, const glm::vec2& scale, glm::vec4 color)
         {
             SetTransform({ position.x, position.y, 0.0f }, rotation, scale);
             SetColor(color);
         }
 
-        QuadData(glm::vec2 position, float rotation, glm::vec2 scale, Ref<Texture2D> texture)
+        QuadData(const glm::vec2& position, float rotation, const glm::vec2& scale, Ref<Texture2D> texture)
         {
             SetTransform({ position.x, position.y, 0.0f }, rotation, scale);
             Texture = texture;
         }
 
-        void SetTransform(glm::vec3 position, float rotation, glm::vec2 scale)
+        void SetTransform(const glm::vec3& position, float rotation, const glm::vec2& scale)
         {
             Transform = glm::translate(glm::mat4(1.0f), position);
             if (rotation)
@@ -43,12 +49,12 @@ public:
             Transform = glm::scale(Transform, { scale.x, scale.y, 1.0f });
         }
 
-        void SetColor(glm::vec4 color)
+        void SetColor(const glm::vec4& color)
         {
             Color = { color, color, color, color };
         }
 
-        void SetTextureBounds(Texture2DBounds texBounds)
+        void SetTextureBounds(const Texture2DBounds& texBounds)
         {
             if (!Texture)
                 return;

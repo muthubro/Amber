@@ -24,7 +24,7 @@ public:
 
     bool Loaded() const override { return m_Loaded; }
 
-    const std::string& GetPath() const override { return m_Path; }
+    const std::string& GetAssetPath() const override { return m_AssetPath; }
     RendererID GetRendererID() const override { return m_RendererID; }
     uint32_t GetWidth() const override { return m_Width; }
     uint32_t GetHeight() const override { return m_Height; }
@@ -40,7 +40,7 @@ public:
 private:
     RendererID m_RendererID = 0;
 
-    std::string m_Path;
+    std::string m_AssetPath;
     uint32_t m_Width, m_Height;
     TextureFormat m_Format;
     TextureWrap m_Wrap;
@@ -68,7 +68,7 @@ public:
     TextureFormat GetFormat() const override { return m_Format; }
     uint32_t GetMipLevelCount() const override { return Texture::CalculateMipMapCount(m_Width, m_Height); }
 
-    const std::string& GetPath() const override { return m_Path; }
+    const std::string& GetAssetPath() const override { return m_AssetPath; }
 
     bool operator==(const Texture& other) const override
     {
@@ -78,7 +78,7 @@ public:
 private:
     RendererID m_RendererID = 0;
 
-    std::string m_Path;
+    std::string m_AssetPath;
     uint32_t m_Width, m_Height;
     TextureFormat m_Format;
     byte* m_ImageData;

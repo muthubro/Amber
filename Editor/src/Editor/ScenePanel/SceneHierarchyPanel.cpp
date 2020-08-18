@@ -320,7 +320,7 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         BeginPropertyGrid(3);
 
         if (component.Mesh)
-            Property("File Path", (const char*)component.Mesh->GetFilePath().c_str());
+            Property("File Path", (const char*)component.Mesh->GetAssetPath().c_str());
         else
             Property("File Path", (const char*)"NULL");
 
@@ -331,6 +331,52 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
                 component.Mesh = Ref<Mesh>::Create(filepath);
         }
         ImGui::NextColumn();
+
+        EndPropertyGrid();
+    });
+
+    DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component) {
+        BeginPropertyGrid(3);
+
+        if (component.Texture)
+            Property("File Path", (const char*)component.Texture->GetAssetPath().c_str());
+        else
+            Property("File Path", (const char*)"NULL");
+        
+        if (ImGui::Button("...##TextureOpen"))
+        {
+            std::string filepath = FileSystem::OpenFileDialog("PNG (*.png):*.png", "Select Texture");
+            if (!filepath.empty())
+                component.Texture = Texture2D::Create(filepath);
+        }
+        ImGui::NextColumn();
+        
+        EndPropertyGrid();
+        
+        // TODO: Fix this
+        BeginPropertyGrid(2, 19287319);
+        
+        for (uint32_t i = 0; i < 4; i++)
+            Property("Texture Coord " + std::to_string(i + 1), component.TexCoords[i], 0.0f, 1.0f);
+        
+        Property("Tiling Factor", component.TilingFactor, 0.0f, 100.0f);
+
+        // TODO: Fix this too
+        static bool spriteGradient = false;
+        if (spriteGradient)
+        {
+            for (uint32_t i = 0; i < 4; i++)
+                Property("Color " + std::to_string(i), component.Color[i], PropertyFlags::ColorProperty);
+        }
+        else
+        {
+            glm::vec4 color = component.Color[0];
+            Property("Color", color, PropertyFlags::ColorProperty);
+            for (uint32_t i = 0; i < 4; i++)
+                component.Color[i] = color;
+        }
+        
+        Property("Color Gradient", spriteGradient);
 
         EndPropertyGrid();
     });
@@ -590,6 +636,15 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
             if (ImGui::Button("Mesh"))
             {
                 entity.AddComponent<MeshComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (!entity.HasComponent<SpriteRendererComponent>())
+        {
+            if (ImGui::Button("Sprite Renderer"))
+            {
+                entity.AddComponent<SpriteRendererComponent>();
                 ImGui::CloseCurrentPopup();
             }
         }

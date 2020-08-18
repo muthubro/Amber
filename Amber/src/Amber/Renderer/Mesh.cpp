@@ -82,7 +82,7 @@ static std::string GetTexturePath(const std::string& curPath, const aiString& te
 }
 
 Mesh::Mesh(const std::string& filepath)
-    : m_FilePath(filepath)
+    : m_AssetPath(filepath)
 {
     LogStream::Initialize();
 
@@ -493,7 +493,7 @@ void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
     aiString texturePath;
     if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS)
     {
-        std::string path = GetTexturePath(m_FilePath, texturePath);
+        std::string path = GetTexturePath(m_AssetPath, texturePath);
         AB_MESH_LOG("    Albedo map path = {0}", path);
 
         auto albedo = Texture2D::Create(path, true);
@@ -520,7 +520,7 @@ void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
 
     if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS)
     {
-        std::string path = GetTexturePath(m_FilePath, texturePath);
+        std::string path = GetTexturePath(m_AssetPath, texturePath);
         AB_MESH_LOG("    Normal map path = {0}", path);
 
         auto normalMap = Texture2D::Create(path);
@@ -543,7 +543,7 @@ void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
 
     if (material->GetTexture(aiTextureType_SHININESS, 0, &texturePath) == AI_SUCCESS)
     {
-        std::string path = GetTexturePath(m_FilePath, texturePath);
+        std::string path = GetTexturePath(m_AssetPath, texturePath);
         AB_MESH_LOG("    Roughness(shininess) map path = {0}", path);
 
         auto roughnessMap = Texture2D::Create(path);
@@ -631,7 +631,7 @@ void Mesh::SetMaterial(aiMaterial* material, uint32_t index, Submesh* submesh)
             uint32_t strLength = *(uint32_t*)prop->mData;
             std::string texturePath(prop->mData + 4, strLength);
 
-            std::string path = GetTexturePath(m_FilePath, texturePath);
+            std::string path = GetTexturePath(m_AssetPath, texturePath);
             AB_MESH_LOG("    Metalness(reflection factor) map path = {0}", path);
 
             auto metalnessMap = Texture2D::Create(path);

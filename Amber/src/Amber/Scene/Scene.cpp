@@ -199,10 +199,10 @@ void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<
 
     SceneRenderer::BeginScene(this, { camera, camera.GetViewMatrix() });
 
-    auto entities = m_Registry.group<MeshComponent, TransformComponent>();
-    for (auto entity : entities)
+    auto meshEntities = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+    for (auto entity : meshEntities)
     {
-        auto [meshComponent, transformComponent] = entities.get<MeshComponent, TransformComponent>(entity);
+        auto [meshComponent, transformComponent] = meshEntities.get<MeshComponent, TransformComponent>(entity);
         if (meshComponent.Mesh)
         {
             meshComponent.Mesh->OnUpdate(ts);
@@ -265,6 +265,23 @@ void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<
         Renderer2D::EndScene();
         Renderer::EndRenderPass();
     }
+
+    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+    Renderer2D::BeginScene(camera.GetViewProjection(), false);
+
+    auto spriteEntities = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+    for (auto entity : spriteEntities)
+    {
+        auto& [spriteRendererComponent, transformComponent] = spriteEntities.get<SpriteRendererComponent, TransformComponent>(entity);
+        Renderer2D::DrawQuad({ transformComponent.Transform,
+                               spriteRendererComponent.Color,
+                               spriteRendererComponent.TexCoords,
+                               spriteRendererComponent.Texture,
+                               spriteRendererComponent.TilingFactor });
+    }
+
+    Renderer2D::EndScene();
+    Renderer::EndRenderPass();
 }
 
 void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
@@ -280,10 +297,10 @@ void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
 
     SceneRenderer::BeginScene(this, { camera, viewMatrix });
 
-    auto entities = m_Registry.group<MeshComponent, TransformComponent>();
-    for (auto entity : entities)
+    auto meshEntities = m_Registry.group<MeshComponent>(entt::get<TransformComponent>);
+    for (auto entity : meshEntities)
     {
-        auto [meshComponent, transformComponent] = entities.get<MeshComponent, TransformComponent>(entity);
+        auto& [meshComponent, transformComponent] = meshEntities.get<MeshComponent, TransformComponent>(entity);
         if (meshComponent.Mesh)
         {
             meshComponent.Mesh->OnUpdate(ts);
@@ -292,6 +309,23 @@ void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
     }
 
     SceneRenderer::EndScene();
+
+    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
+    Renderer2D::BeginScene(camera.GetProjectionMatrix() * viewMatrix, false);
+
+    auto spriteEntities = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+    for (auto entity : spriteEntities)
+    {
+        auto& [spriteRendererComponent, transformComponent] = spriteEntities.get<SpriteRendererComponent, TransformComponent>(entity);
+        Renderer2D::DrawQuad({ transformComponent.Transform, 
+                               spriteRendererComponent.Color, 
+                               spriteRendererComponent.TexCoords, 
+                               spriteRendererComponent.Texture, 
+                               spriteRendererComponent.TilingFactor });
+    }
+
+    Renderer2D::EndScene();
+    Renderer::EndRenderPass();
 }
 
 void Scene::OnRuntimeStart()

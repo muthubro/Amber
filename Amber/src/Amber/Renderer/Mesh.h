@@ -123,7 +123,7 @@ public:
     const std::vector<Submesh>& GetSubmeshes() const { return m_Submeshes; }
     const std::vector<Triangle>& GetTriangleCache(uint32_t index) { return m_TriangleCache[index]; }
 
-    const std::string& GetFilePath() const { return m_FilePath; }
+    const std::string& GetAssetPath() const { return m_AssetPath; }
     Ref<Material> GetMaterial() { return m_BaseMaterial; }
     Ref<Material> GetMaterial() const { return m_BaseMaterial; }
     const std::vector<Ref<MaterialInstance>>& GetMaterials() const { return m_Materials; }
@@ -166,7 +166,7 @@ public:
     const float AnimationTimeMultiplier() const { return m_TimeMultiplier; }
 
 private:
-    std::string m_FilePath;
+    std::string m_AssetPath;
 
     Scope<Assimp::Importer> m_Importer = nullptr;
     const aiScene* m_Scene = nullptr;

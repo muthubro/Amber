@@ -8,6 +8,8 @@
 
 #include "Amber/Renderer/Camera.h"
 #include "Amber/Renderer/Mesh.h"
+#include "Amber/Renderer/Renderer2D.h"
+#include "Amber/Renderer/Texture.h"
 
 #include "Amber/Scene/SceneCamera.h"
 
@@ -62,6 +64,21 @@ struct MeshComponent
 
     operator bool() { return Mesh; }
     operator bool() const { return Mesh; }
+};
+
+struct SpriteRendererComponent
+{
+    glm::mat4 Color = { glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f), glm::vec4(1.0f) };
+    Ref<Texture2D> Texture = nullptr;
+    glm::vec2 TexCoords[4] = { glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 1.0f) };
+    float TilingFactor = 1.0f;
+
+    SpriteRendererComponent() = default;
+    SpriteRendererComponent(const Renderer2D::QuadData& data)
+        : Color(data.Color), Texture(data.Texture), TilingFactor(data.TilingFactor)
+    {
+        memcpy(TexCoords, data.TexCoords, sizeof(TexCoords));
+    }
 };
 
 struct ScriptComponent

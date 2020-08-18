@@ -15,7 +15,7 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
 {
     auto mesh = Ref<Mesh>::Create();
 
-    mesh->m_FilePath = "Plane";
+    mesh->m_AssetPath = "Plane";
     mesh->m_IsAnimated = false;
 
     StaticVertex bottomLeft;
@@ -84,7 +84,7 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
 {
     Ref<Mesh> mesh = Ref<Mesh>::Create();
 
-    mesh->m_FilePath = "Cube";
+    mesh->m_AssetPath = "Cube";
     mesh->m_IsAnimated = false;
 
     glm::vec3 points[] = {
@@ -178,7 +178,7 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
 {
     Ref<Mesh> mesh = Ref<Mesh>::Create();
 
-    mesh->m_FilePath = "Sphere";
+    mesh->m_AssetPath = "Sphere";
     mesh->m_IsAnimated = false;
 
     const uint32_t X_SEGMENTS = 64, Y_SEGMENTS = 64;

@@ -99,7 +99,7 @@ OpenGLTexture2D::OpenGLTexture2D(TextureFormat format, uint32_t width, uint32_t 
 }
 
 OpenGLTexture2D::OpenGLTexture2D(const std::string& path, bool srgb, bool flip, TextureWrap wrap, TextureFilter filter)
-    : m_Path(path), m_Wrap(wrap), m_Filter(filter)
+    : m_AssetPath(path), m_Wrap(wrap), m_Filter(filter)
 {
     AB_PROFILE_FUNCTION();
 

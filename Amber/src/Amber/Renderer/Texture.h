@@ -42,6 +42,8 @@ public:
     virtual TextureFormat GetFormat() const = 0;
     virtual uint32_t GetMipLevelCount() const = 0;
 
+    virtual const std::string& GetAssetPath() const = 0;
+
     static uint32_t GetBPP(TextureFormat format);
     static uint32_t CalculateMipMapCount(uint32_t width, uint32_t height);
 
@@ -64,7 +66,6 @@ public:
 
     virtual bool Loaded() const = 0;
 
-    virtual const std::string& GetPath() const = 0;
     virtual Buffer& GetWritableBuffer() = 0;
 
     static Ref<Texture2D> Create(TextureFormat format, uint32_t width, uint32_t height, TextureWrap wrap = TextureWrap::Clamp, TextureFilter filter = TextureFilter::Linear, uint32_t samples = 1);
@@ -76,8 +77,6 @@ public:
 class TextureCube : public Texture
 {
 public:
-    virtual const std::string& GetPath() const = 0;
-
     static Ref<TextureCube> Create(TextureFormat format, uint32_t width, uint32_t height);
     static Ref<TextureCube> Create(const std::string& path);
 };

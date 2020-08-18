@@ -456,7 +456,7 @@ struct convert<MeshComponent>
     static Node encode(const MeshComponent& rhs)
     {
         Node node;
-        node["AssetPath"] = rhs.Mesh->GetFilePath();
+        node["AssetPath"] = rhs.Mesh->GetAssetPath();
 
         auto shader = rhs.Mesh->GetMaterial()->GetShader();
 
@@ -503,7 +503,7 @@ Emitter& operator<<(Emitter& out, const MeshComponent& meshComponent)
     out << BeginMap;
 
     out << Key << "AssetPath";
-    out << Value << meshComponent.Mesh->GetFilePath();
+    out << Value << meshComponent.Mesh->GetAssetPath();
 
     auto shader = meshComponent.Mesh->GetMaterial()->GetShader();
 
@@ -512,6 +512,64 @@ Emitter& operator<<(Emitter& out, const MeshComponent& meshComponent)
 
     out << Key << "ShaderName";
     out << Value << shader->GetName();
+
+    out << EndMap;
+    return out;
+}
+
+template<>
+struct convert<SpriteRendererComponent>
+{
+    static Node encode(const SpriteRendererComponent& rhs)
+    {
+        Node node;
+        node["Color"] = rhs.Color;
+        node["Texture"] = rhs.Texture ? rhs.Texture->GetAssetPath() : "";
+        for (uint32_t i = 0; i < 4; i++)
+            node["TexCoords"][i] = rhs.TexCoords[i];
+        node["TilingFactor"] = rhs.TilingFactor;
+
+        return node;
+    }
+
+    static bool decode(const Node& node, SpriteRendererComponent& rhs)
+    {
+        if (!node.IsMap() || !node["Color"] || !node["Texture"] || !node["TexCoords"] || !node["TilingFactor"])
+            return false;
+
+        rhs.Color = node["Color"].as<glm::mat4>();
+
+        std::string texturePath = node["Texture"].as<std::string>();
+        rhs.Texture = texturePath.empty() ? nullptr : Texture2D::Create(texturePath);
+
+        for (uint32_t i = 0; i < 4; i++)
+            rhs.TexCoords[i] = node["TexCoords"][i].as<glm::vec2>();
+        rhs.TilingFactor = node["TilingFactor"].as<float>();
+
+        return true;
+    }
+};
+
+Emitter& operator<<(Emitter& out, const SpriteRendererComponent& spriteRendererComponent)
+{
+    out << BeginMap;
+
+    out << Key << "Color";
+    out << Value << spriteRendererComponent.Color;
+
+    out << Key << "Texture";
+    out << Value << (spriteRendererComponent.Texture ? spriteRendererComponent.Texture->GetAssetPath() : "");
+    
+    out << Key << "TexCoords";
+    out << Value << BeginSeq;
+    
+    for (uint32_t i = 0; i < 4; i++)
+        out << spriteRendererComponent.TexCoords[i];
+    
+    out << EndSeq;
+    
+    out << Key << "TilingFactor";
+    out << Value << spriteRendererComponent.TilingFactor;
 
     out << EndMap;
     return out;
@@ -853,6 +911,12 @@ void SceneSerializer::SerializeEntity(YAML::Emitter& out, const Entity& entity)
         out << YAML::Value << entity.GetComponent<MeshComponent>();
     }
 
+    if (entity.HasComponent<SpriteRendererComponent>())
+    {
+        out << YAML::Key << "SpriteRendererComponent";
+        out << YAML::Value << entity.GetComponent<SpriteRendererComponent>();
+    }
+
     if (entity.HasComponent<ScriptComponent>())
     {
         std::string moduleName = entity.GetComponent<ScriptComponent>();
@@ -1006,6 +1070,13 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
             {
                 auto mesh = meshNode.as<MeshComponent>();
                 deserializedEntity.AddComponent<MeshComponent>(mesh.Mesh);
+            }
+
+            auto spriteRendererNode = entity["SpriteRendererComponent"];
+            if (spriteRendererNode)
+            {
+                auto spriteRenderer = spriteRendererNode.as<SpriteRendererComponent>();
+                deserializedEntity.AddComponent<SpriteRendererComponent>(spriteRenderer);
             }
 
             auto scriptNode = entity["ScriptComponent"];
