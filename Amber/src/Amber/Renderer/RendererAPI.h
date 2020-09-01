@@ -5,8 +5,6 @@
 
 #include <glm/glm.hpp>
 
-#include "Amber/Renderer/VertexArray.h"
-
 namespace Amber 
 {
 

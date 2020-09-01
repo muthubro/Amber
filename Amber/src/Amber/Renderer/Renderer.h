@@ -8,7 +8,6 @@
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/RenderPass.h"
 #include "Amber/Renderer/Shader.h"
-#include "Amber/Renderer/VertexArray.h"
 
 namespace Amber 
 {

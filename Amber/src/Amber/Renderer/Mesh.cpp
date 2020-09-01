@@ -11,10 +11,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include "Amber/Renderer/Buffer.h"
 #include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Texture.h"
-#include "Amber/Renderer/VertexArray.h"
 
 namespace Amber
 {
@@ -232,11 +230,11 @@ Mesh::Mesh(const std::string& filepath)
 
     TraverseNodes(m_Scene->mRootNode);
 
-    m_VertexArray = VertexArray::Create();
+    VertexBufferLayout vertexBufferLayout;
     if (m_IsAnimated)
     {
-        auto vertexBuffer = VertexBuffer::Create(m_AnimatedVertices.data(), m_AnimatedVertices.size() * sizeof(AnimatedVertex));
-        vertexBuffer->SetLayout({
+        m_VertexBuffer = VertexBuffer::Create(m_AnimatedVertices.data(), m_AnimatedVertices.size() * sizeof(AnimatedVertex));
+        vertexBufferLayout = {
             { ShaderDataType::Float3, "a_Position" },
             { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Float3, "a_Normal" },
@@ -244,24 +242,25 @@ Mesh::Mesh(const std::string& filepath)
             { ShaderDataType::Float3, "a_Binormal" },
             { ShaderDataType::Int4,   "a_BoneIndices" },
             { ShaderDataType::Float4, "a_BoneWeights" },
-        });
-        m_VertexArray->AddVertexBuffer(vertexBuffer);
+        };
     }
     else
     {
-        auto vertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(StaticVertex));
-        vertexBuffer->SetLayout({
+        m_VertexBuffer = VertexBuffer::Create(m_StaticVertices.data(), m_StaticVertices.size() * sizeof(StaticVertex));
+        vertexBufferLayout = {
             { ShaderDataType::Float3, "a_Position" },
             { ShaderDataType::Float2, "a_TexCoord" },
             { ShaderDataType::Float3, "a_Normal" },
             { ShaderDataType::Float3, "a_Tangent" },
             { ShaderDataType::Float3, "a_Binormal" },
-        });
-        m_VertexArray->AddVertexBuffer(vertexBuffer);
+        };
     }
 
-    auto indexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
-    m_VertexArray->SetIndexBuffer(indexBuffer);
+    m_IndexBuffer = IndexBuffer::Create(m_Indices.data(), m_Indices.size() * sizeof(Index));
+
+    PipelineSpecification pipelineSpec;
+    pipelineSpec.Layout = vertexBufferLayout;
+    m_Pipeline = Pipeline::Create(pipelineSpec);
 
     auto meshShader = Renderer::GetShaderLibrary()->Get(m_IsAnimated ? ShaderType::StandardAnimated : ShaderType::StandardStatic);
     m_BaseMaterial = Ref<Material>::Create(meshShader);
@@ -296,7 +295,9 @@ Mesh::~Mesh()
 
 void Mesh::Bind()
 {
-    m_VertexArray->Bind();
+    m_VertexBuffer->Bind();
+    m_Pipeline->Bind();
+    m_IndexBuffer->Bind();
 }
 
 void Mesh::OnUpdate(Timestep ts)

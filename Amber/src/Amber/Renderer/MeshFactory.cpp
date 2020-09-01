@@ -50,22 +50,22 @@ Ref<Mesh> MeshFactory::Plane(float width, float height)
     topLeft.TexCoord = glm::vec2(0.0f, 1.0f);
     mesh->m_StaticVertices.push_back(topLeft);
 
-    mesh->m_VertexArray = VertexArray::Create();
+    mesh->m_Indices.emplace_back(0, 1, 2);
+    mesh->m_Indices.emplace_back(2, 3, 0);
 
-    auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
-    vertexBuffer->SetLayout({
+    mesh->m_VertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
+
+    PipelineSpecification pipelineSpec;
+    pipelineSpec.Layout = {
         { ShaderDataType::Float3, "a_Position" },
         { ShaderDataType::Float2, "a_TexCoord" },
         { ShaderDataType::Float3, "a_Normal" },
         { ShaderDataType::Float3, "a_Tangent" },
         { ShaderDataType::Float3, "a_Binormal" },
-    });
-    mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
+    };
+    mesh->m_Pipeline = Pipeline::Create(pipelineSpec);
 
-    mesh->m_Indices.emplace_back(0, 1, 2);
-    mesh->m_Indices.emplace_back(2, 3, 0);
-    auto indexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
-    mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
+    mesh->m_IndexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, 6, 0);
     submesh.BoundingBox = Math::AABB(bottomLeft.Position, topRight.Position);
@@ -127,18 +127,6 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
         mesh->m_StaticVertices.push_back(vertex);
     }
 
-    mesh->m_VertexArray = VertexArray::Create();
-
-    auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
-    vertexBuffer->SetLayout({
-        { ShaderDataType::Float3, "a_Position" },
-        { ShaderDataType::Float2, "a_TexCoord" },
-        { ShaderDataType::Float3, "a_Normal" },
-        { ShaderDataType::Float3, "a_Tangent" },
-        { ShaderDataType::Float3, "a_Binormal" },
-    });
-    mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
-
     mesh->m_Indices.emplace_back(0, 1, 2);
     mesh->m_Indices.emplace_back(2, 3, 0);
     mesh->m_Indices.emplace_back(1, 5, 6);
@@ -152,8 +140,19 @@ Ref<Mesh> MeshFactory::Cube(const glm::vec3& center, float length)
     mesh->m_Indices.emplace_back(4, 5, 1);
     mesh->m_Indices.emplace_back(1, 0, 4);
 
-    auto indexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
-    mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
+    mesh->m_VertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
+
+    PipelineSpecification pipelineSpec;
+    pipelineSpec.Layout = {
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoord" },
+        { ShaderDataType::Float3, "a_Normal" },
+        { ShaderDataType::Float3, "a_Tangent" },
+        { ShaderDataType::Float3, "a_Binormal" },
+    };
+    mesh->m_Pipeline = Pipeline::Create(pipelineSpec);
+
+    mesh->m_IndexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, 36, 0);
     submesh.BoundingBox = Math::AABB(mesh->m_StaticVertices[0].Position, mesh->m_StaticVertices[6].Position);
@@ -203,18 +202,6 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
         }
     }
 
-    mesh->m_VertexArray = VertexArray::Create();
-
-    auto vertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
-    vertexBuffer->SetLayout({
-        { ShaderDataType::Float3, "a_Position" },
-        { ShaderDataType::Float2, "a_TexCoord" },
-        { ShaderDataType::Float3, "a_Normal" },
-        { ShaderDataType::Float3, "a_Tangent" },
-        { ShaderDataType::Float3, "a_Binormal" },
-    });
-    mesh->m_VertexArray->AddVertexBuffer(vertexBuffer);
-
     for (int32_t y = Y_SEGMENTS; y > 0; y--)
     {
         for (int32_t x = 0; x <= X_SEGMENTS; x++)
@@ -222,12 +209,12 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
             uint32_t x0 = x, x1 = (x + 1) % (X_SEGMENTS + 1);
             uint32_t y0 = y, y1 = y - 1;
             mesh->m_Indices.emplace_back(
-                y0 * (X_SEGMENTS + 1) + x0, 
-                y0 * (X_SEGMENTS + 1) + x1, 
+                y0 * (X_SEGMENTS + 1) + x0,
+                y0 * (X_SEGMENTS + 1) + x1,
                 y1 * (X_SEGMENTS + 1) + x1);
             mesh->m_Indices.emplace_back(
-                y1 * (X_SEGMENTS + 1) + x1, 
-                y1 * (X_SEGMENTS + 1) + x0, 
+                y1 * (X_SEGMENTS + 1) + x1,
+                y1 * (X_SEGMENTS + 1) + x0,
                 y0 * (X_SEGMENTS + 1) + x0);
 
             mesh->m_TriangleCache[0].emplace_back(
@@ -240,8 +227,20 @@ Ref<Mesh> MeshFactory::Sphere(const glm::vec3& center, float radius)
                 mesh->m_StaticVertices[y0 * X_SEGMENTS + x0].Position);
         }
     }
-    auto indexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
-    mesh->m_VertexArray->SetIndexBuffer(indexBuffer);
+
+    mesh->m_VertexBuffer = VertexBuffer::Create(mesh->m_StaticVertices.data(), mesh->m_StaticVertices.size() * sizeof(StaticVertex));
+
+    PipelineSpecification pipelineSpec;
+    pipelineSpec.Layout = {
+        { ShaderDataType::Float3, "a_Position" },
+        { ShaderDataType::Float2, "a_TexCoord" },
+        { ShaderDataType::Float3, "a_Normal" },
+        { ShaderDataType::Float3, "a_Tangent" },
+        { ShaderDataType::Float3, "a_Binormal" },
+    };
+    mesh->m_Pipeline = Pipeline::Create(pipelineSpec);
+
+    mesh->m_IndexBuffer = IndexBuffer::Create(mesh->m_Indices.data(), mesh->m_Indices.size() * sizeof(Index));
 
     Submesh& submesh = mesh->m_Submeshes.emplace_back(0, 0, (uint32_t)mesh->m_Indices.size() * 3, 0);
     submesh.BoundingBox = Math::AABB(center - glm::vec3(radius), center + glm::vec3(radius));

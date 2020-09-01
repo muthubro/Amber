@@ -1,18 +1,18 @@
 #include "abpch.h"
-#include "RenderPass.h"
+#include "Pipeline.h"
+
+#include "Amber/Platform/OpenGL/OpenGLPipeline.h"
 
 #include "Amber/Renderer/Renderer.h"
-
-#include "Amber/Platform/OpenGL/OpenGLRenderPass.h"
 
 namespace Amber
 {
 
-Ref<RenderPass> RenderPass::Create(const RenderPassSpecification& spec)
+Ref<Pipeline> Pipeline::Create(const PipelineSpecification& spec)
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::OpenGL:  return Ref<OpenGLRenderPass>::Create(spec);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLPipeline>::Create(spec);
         case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 

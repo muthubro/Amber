@@ -9,10 +9,12 @@
 
 #include "Amber/Math/AABB.h"
 
+#include "Amber/Renderer/IndexBuffer.h"
 #include "Amber/Renderer/Material.h"
+#include "Amber/Renderer/Pipeline.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/Texture.h"
-#include "Amber/Renderer/VertexArray.h"
+#include "Amber/Renderer/VertexBuffer.h"
 
 struct aiAnimation;
 struct aiNode;
@@ -177,7 +179,9 @@ private:
     std::vector<AnimatedVertex> m_AnimatedVertices;
     std::vector<StaticVertex> m_StaticVertices;
     std::vector<Index> m_Indices;
-    Ref<VertexArray> m_VertexArray;
+    Ref<VertexBuffer> m_VertexBuffer;
+    Ref<Pipeline> m_Pipeline;
+    Ref<IndexBuffer> m_IndexBuffer;
 
     glm::mat4 m_InverseRootTransform = glm::mat4(1.0f);
 

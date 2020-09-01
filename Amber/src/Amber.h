@@ -43,13 +43,14 @@
 #include "Amber/Renderer/Renderer2D.h"
 #include "Amber/Renderer/SceneRenderer.h"
 
-#include "Amber/Renderer/Buffer.h"
+#include "Amber/Renderer/IndexBuffer.h"
 #include "Amber/Renderer/Material.h"
 #include "Amber/Renderer/Mesh.h"
 #include "Amber/Renderer/MeshFactory.h"
+#include "Amber/Renderer/Pipeline.h"
 #include "Amber/Renderer/Shader.h"
 #include "Amber/Renderer/Texture.h"
-#include "Amber/Renderer/VertexArray.h"
+#include "Amber/Renderer/VertexBuffer.h"
 
 #include "Amber/Renderer/Camera.h"
 //------------------------------------------------//

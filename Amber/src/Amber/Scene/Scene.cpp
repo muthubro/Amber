@@ -214,6 +214,17 @@ void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<
         }
     }
 
+    auto spriteEntities = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
+    for (auto entity : spriteEntities)
+    {
+        auto& [spriteRendererComponent, transformComponent] = spriteEntities.get<SpriteRendererComponent, TransformComponent>(entity);
+        SceneRenderer::SubmitSprite({ transformComponent.Transform,
+                                        spriteRendererComponent.Color,
+                                        spriteRendererComponent.TexCoords,
+                                        spriteRendererComponent.Texture,
+                                        spriteRendererComponent.TilingFactor });
+    }
+
     for (auto& entity : cameraEntities)
     {
         auto& [cameraComponent, transformComponent] = entity.GetComponent<CameraComponent, TransformComponent>();
@@ -265,23 +276,6 @@ void Scene::OnRenderEditor(Timestep ts, const EditorCamera& camera, std::vector<
         Renderer2D::EndScene();
         Renderer::EndRenderPass();
     }
-
-    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
-    Renderer2D::BeginScene(camera.GetViewProjection(), false);
-
-    auto spriteEntities = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
-    for (auto entity : spriteEntities)
-    {
-        auto& [spriteRendererComponent, transformComponent] = spriteEntities.get<SpriteRendererComponent, TransformComponent>(entity);
-        Renderer2D::DrawQuad({ transformComponent.Transform,
-                               spriteRendererComponent.Color,
-                               spriteRendererComponent.TexCoords,
-                               spriteRendererComponent.Texture,
-                               spriteRendererComponent.TilingFactor });
-    }
-
-    Renderer2D::EndScene();
-    Renderer::EndRenderPass();
 }
 
 void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
@@ -308,24 +302,18 @@ void Scene::OnRenderRuntime(Timestep ts, Entity* sceneCameraEntity)
         }
     }
 
-    SceneRenderer::EndScene();
-
-    Renderer::BeginRenderPass(SceneRenderer::GetFinalRenderPass(), false);
-    Renderer2D::BeginScene(camera.GetProjectionMatrix() * viewMatrix, false);
-
     auto spriteEntities = m_Registry.group<SpriteRendererComponent>(entt::get<TransformComponent>);
     for (auto entity : spriteEntities)
     {
         auto& [spriteRendererComponent, transformComponent] = spriteEntities.get<SpriteRendererComponent, TransformComponent>(entity);
-        Renderer2D::DrawQuad({ transformComponent.Transform, 
-                               spriteRendererComponent.Color, 
-                               spriteRendererComponent.TexCoords, 
-                               spriteRendererComponent.Texture, 
-                               spriteRendererComponent.TilingFactor });
+        SceneRenderer::SubmitSprite({ transformComponent.Transform,
+                                        spriteRendererComponent.Color,
+                                        spriteRendererComponent.TexCoords,
+                                        spriteRendererComponent.Texture,
+                                        spriteRendererComponent.TilingFactor });
     }
 
-    Renderer2D::EndScene();
-    Renderer::EndRenderPass();
+    SceneRenderer::EndScene();
 }
 
 void Scene::OnRuntimeStart()
@@ -525,6 +513,7 @@ Entity Scene::DuplicateEntity(const Entity& entity)
     CopyComponentFromEntityIfExists<TransformComponent>(newEntity, entity, m_Registry);
     CopyComponentFromEntityIfExists<CameraComponent>(newEntity, entity, m_Registry);
     CopyComponentFromEntityIfExists<MeshComponent>(newEntity, entity, m_Registry);
+    CopyComponentFromEntityIfExists<SpriteRendererComponent>(newEntity, entity, m_Registry);
     CopyComponentFromEntityIfExists<ScriptComponent>(newEntity, entity, m_Registry);
     CopyComponentFromEntityIfExists<RigidBody2DComponent>(newEntity, entity, m_Registry);
     CopyComponentFromEntityIfExists<BoxCollider2DComponent>(newEntity, entity, m_Registry);
@@ -569,6 +558,7 @@ void Scene::CopyTo(Ref<Scene>& target)
     CopyComponentFromRegistry<TransformComponent>(target->m_Registry, m_Registry, entityMap);
     CopyComponentFromRegistry<CameraComponent>(target->m_Registry, m_Registry, entityMap);
     CopyComponentFromRegistry<MeshComponent>(target->m_Registry, m_Registry, entityMap);
+    CopyComponentFromRegistry<SpriteRendererComponent>(target->m_Registry, m_Registry, entityMap);
     CopyComponentFromRegistry<ScriptComponent>(target->m_Registry, m_Registry, entityMap);
     CopyComponentFromRegistry<RigidBody2DComponent>(target->m_Registry, m_Registry, entityMap);
     CopyComponentFromRegistry<BoxCollider2DComponent>(target->m_Registry, m_Registry, entityMap);

@@ -12,12 +12,8 @@ Ref<Texture2D> Texture2D::Create(TextureFormat format, uint32_t width, uint32_t 
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLTexture2D>::Create(format, width, height, wrap, filter, samples);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLTexture2D>::Create(format, width, height, wrap, filter, samples);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -28,12 +24,8 @@ Ref<Texture2D> Texture2D::Create(const std::string& path, bool srgb, bool flip, 
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLTexture2D>::Create(path, srgb, flip, wrap, filter);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLTexture2D>::Create(path, srgb, flip, wrap, filter);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -44,12 +36,8 @@ Ref<TextureCube> TextureCube::Create(TextureFormat format, uint32_t width, uint3
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLTextureCube>::Create(format, width, height);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLTextureCube>::Create(format, width, height);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -60,12 +48,8 @@ Ref<TextureCube> TextureCube::Create(const std::string& path)
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLTextureCube>::Create(path);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLTextureCube>::Create(path);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

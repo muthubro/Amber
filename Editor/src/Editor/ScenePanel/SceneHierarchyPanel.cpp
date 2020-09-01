@@ -347,14 +347,14 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         {
             std::string filepath = FileSystem::OpenFileDialog("PNG (*.png):*.png", "Select Texture");
             if (!filepath.empty())
-                component.Texture = Texture2D::Create(filepath);
+                component.Texture = Texture2D::Create(filepath, false, true, TextureWrap::Repeat, TextureFilter::Nearest);
         }
         ImGui::NextColumn();
         
         EndPropertyGrid();
         
         // TODO: Fix this
-        BeginPropertyGrid(2, 19287319);
+        BeginPropertyGrid(2, 192873645);
         
         for (uint32_t i = 0; i < 4; i++)
             Property("Texture Coord " + std::to_string(i + 1), component.TexCoords[i], 0.0f, 1.0f);
@@ -362,21 +362,8 @@ void SceneHierarchyPanel::DrawComponents(Entity& entity)
         Property("Tiling Factor", component.TilingFactor, 0.0f, 100.0f);
 
         // TODO: Fix this too
-        static bool spriteGradient = false;
-        if (spriteGradient)
-        {
-            for (uint32_t i = 0; i < 4; i++)
-                Property("Color " + std::to_string(i), component.Color[i], PropertyFlags::ColorProperty);
-        }
-        else
-        {
-            glm::vec4 color = component.Color[0];
-            Property("Color", color, PropertyFlags::ColorProperty);
-            for (uint32_t i = 0; i < 4; i++)
-                component.Color[i] = color;
-        }
-        
-        Property("Color Gradient", spriteGradient);
+        for (uint32_t i = 0; i < 4; i++)
+            Property("Color " + std::to_string(i + 1), component.Color[i], PropertyFlags::ColorProperty);
 
         EndPropertyGrid();
     });

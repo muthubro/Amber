@@ -22,9 +22,7 @@ namespace Terrain
             Matrix4 transform = GetTransform();
             Vector3 translation = transform.Translation;
 
-            translation.XY = PlayerEntity.GetTransform().Translation.XY;
-            translation.Y += 0.6f;
-
+            translation.XY = PlayerEntity.GetTransform().Translation.XY + new Vector2(0.0f, 0.5f);
             transform.Translation = translation;
             SetTransform(transform);
         }

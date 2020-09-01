@@ -39,7 +39,7 @@ struct SceneRendererData
         Ref<MaterialInstance> Material;
         glm::mat4 Transform;
     };
-    std::vector<MeshDrawCommand> DrawList;
+    std::vector<MeshDrawCommand> MeshDrawList;
     std::vector<MeshDrawCommand> SelectedDrawList;
 
     struct CameraDrawCommand
@@ -48,6 +48,8 @@ struct SceneRendererData
         glm::mat4 Transform;
     };
     std::vector<CameraDrawCommand> CameraDrawList;
+
+    std::vector<Renderer2D::QuadData> SpriteDrawList;
 
     Ref<Material> CompositeBaseMaterial;
     Ref<MaterialInstance> GridMaterial;
@@ -139,12 +141,17 @@ void SceneRenderer::SubmitCamera(const SceneCamera& camera, const glm::mat4& tra
 
 void SceneRenderer::SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform, const Ref<MaterialInstance> overrideMaterial)
 {
-    s_Data.DrawList.push_back({ mesh, overrideMaterial, transform });
+    s_Data.MeshDrawList.push_back({ mesh, overrideMaterial, transform });
 }
 
 void SceneRenderer::SubmitSelectedMesh(const Ref<Mesh> mesh, const glm::mat4& transform)
 {
     s_Data.SelectedDrawList.push_back({ mesh, nullptr, transform });
+}
+
+void SceneRenderer::SubmitSprite(const Renderer2D::QuadData& quadData)
+{
+    s_Data.SpriteDrawList.push_back(quadData);
 }
 
 void SceneRenderer::GeometryPass()
@@ -161,7 +168,7 @@ void SceneRenderer::GeometryPass()
     Renderer::DrawFullscreenQuad(s_Data.SceneData.SkyboxMaterial);
 
     // Render entities
-    for (auto& drawCommand : s_Data.DrawList)
+    for (auto& drawCommand : s_Data.MeshDrawList)
     {
         auto baseMaterial = drawCommand.Mesh->GetMaterial();
         auto shaderType = baseMaterial->GetShader()->GetType();
@@ -255,6 +262,11 @@ void SceneRenderer::GeometryPass()
 
     Renderer2D::BeginScene(viewProj);
 
+    for (auto& quadData : s_Data.SpriteDrawList)
+        Renderer2D::DrawQuad(quadData);
+
+    Renderer2D::FlushQuads();
+
     if (s_Data.Options.ShowCamera)
     {
         RenderCommand::SetLineThickness(1.0f);
@@ -271,7 +283,7 @@ void SceneRenderer::GeometryPass()
     {
         RenderCommand::SetLineThickness(2.0f);
 
-        for (auto& drawCommand : s_Data.DrawList)
+        for (auto& drawCommand : s_Data.MeshDrawList)
             Renderer::DrawAABB(drawCommand.Mesh, drawCommand.Transform, glm::vec4(1.0f));
 
         for (auto& drawCommand : s_Data.SelectedDrawList)
@@ -313,9 +325,10 @@ void SceneRenderer::FlushDrawList()
     GeometryPass();
     CompositePass();
 
-    s_Data.DrawList.clear();
+    s_Data.MeshDrawList.clear();
     s_Data.SelectedDrawList.clear();
     s_Data.CameraDrawList.clear();
+    s_Data.SpriteDrawList.clear();
     s_Data.SceneData = {};
 }
 

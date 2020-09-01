@@ -8,6 +8,7 @@
 
 #include "Amber/Scene/Entity.h"
 #include "Amber/Scene/Scene.h"
+#include <Amber.h>
 
 namespace Amber
 {
@@ -40,6 +41,7 @@ public:
     static void SubmitCamera(const SceneCamera& camera, const glm::mat4& transform);
     static void SubmitMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f), const Ref<MaterialInstance> = nullptr);
     static void SubmitSelectedMesh(const Ref<Mesh> mesh, const glm::mat4& transform = glm::mat4(1.0f));
+    static void SubmitSprite(const Renderer2D::QuadData& quadData);
 
     static std::pair<Ref<TextureCube>, Ref<TextureCube>> CreateEnvironmentMap(const std::string& filepath);
 

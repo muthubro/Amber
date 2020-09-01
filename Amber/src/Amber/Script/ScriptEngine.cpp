@@ -582,6 +582,9 @@ bool PublicField::IsRuntimeAvailable() const
 PublicField::EditorData PublicField::GetEditorData(const std::string& moduleName)
 {
     EditorData data;
+
+    // TODO: mono_custom_attrs_from_field crashes randomly. Fix it before using.
+#if 0
     auto& scriptClass = s_EntityClassMap[moduleName];
     MonoCustomAttrInfo* attributes = mono_custom_attrs_from_field(scriptClass.Class, ClassField);
     if (attributes)
@@ -618,6 +621,12 @@ PublicField::EditorData PublicField::GetEditorData(const std::string& moduleName
             data.Step = stepValue;
         }
     }
+#else
+    data.Name = "";
+    data.Min = 0.0f;
+    data.Max = 1.0f;
+    data.Step = 0.01f;
+#endif
 
     return data;
 }

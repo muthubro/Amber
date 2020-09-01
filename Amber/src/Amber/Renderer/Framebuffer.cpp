@@ -12,12 +12,8 @@ Ref<Framebuffer> Framebuffer::Create(const FramebufferSpecification& spec)
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLFramebuffer>::Create(spec);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLFramebuffer>::Create(spec);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");

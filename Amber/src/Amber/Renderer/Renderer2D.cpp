@@ -5,7 +5,6 @@
 #include "Amber/Renderer/RenderCommand.h"
 #include "Amber/Renderer/Renderer.h"
 #include "Amber/Renderer/Shader.h"
-#include "Amber/Renderer/VertexArray.h"
 
 namespace Amber
 {
@@ -39,8 +38,9 @@ struct Renderer2DData
 
     static const uint32_t MaxTextureSlots = 32;
 
-    Ref<VertexArray> QuadVertexArray;
     Ref<VertexBuffer> QuadVertexBuffer;
+    Ref<IndexBuffer> QuadIndexBuffer;
+    Ref<Pipeline> QuadPipeline;
     Ref<Texture2D> WhiteTexture;
 
     std::array<Ref<Texture2D>, MaxTextureSlots> TextureSlots;
@@ -50,7 +50,9 @@ struct Renderer2DData
     QuadVertex* QuadVertexBufferBase = nullptr;
     QuadVertex* QuadVertexBufferPtr = nullptr;
 
-    Ref<VertexArray> FullscreenQuadVertexArray;
+    Ref<VertexBuffer> FullscreenQuadVertexBuffer;
+    Ref<IndexBuffer> FullscreenQuadIndexBuffer;
+    Ref<Pipeline> FullscreenQuadPipeline;
 
     glm::mat4 QuadVertexPositions;
 
@@ -62,8 +64,9 @@ struct Renderer2DData
     static const uint32_t MaxLineVertices = MaxLines * 2;
     static const uint32_t MaxLineIndices = MaxLines * 2;
 
-    Ref<VertexArray> LineVertexArray;
     Ref<VertexBuffer> LineVertexBuffer;
+    Ref<IndexBuffer> LineIndexBuffer;
+    Ref<Pipeline> LinePipeline;
 
     uint32_t LineIndexCount = 0;
     LineVertex* LineVertexBufferBase = nullptr;
@@ -85,17 +88,17 @@ void Renderer2D::Init()
     s_Data.ShaderLibrary->Load("assets/shaders/Line.glsl");
 
     // Quads
-    s_Data.QuadVertexArray = VertexArray::Create();
-
     s_Data.QuadVertexBuffer = VertexBuffer::Create(s_Data.MaxQuadVertices * sizeof(QuadVertex));
-    s_Data.QuadVertexBuffer->SetLayout({
+
+    PipelineSpecification quadPipelineSpec;
+    quadPipelineSpec.Layout = {
         { ShaderDataType::Float3, "a_Position" },
         { ShaderDataType::Float4, "a_Color" },
         { ShaderDataType::Float2, "a_TexCoord" },
         { ShaderDataType::Float, "a_TexIndex" },
         { ShaderDataType::Float, "a_TilingFactor" }
-    });
-    s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
+    };
+    s_Data.QuadPipeline = Pipeline::Create(quadPipelineSpec);
 
     uint32_t* quadIndices = new uint32_t[Renderer2DData::MaxQuadIndices];
     for (uint32_t i = 0, offset = 0; i < Renderer2DData::MaxQuadIndices; i += 6, offset += 4)
@@ -108,8 +111,7 @@ void Renderer2D::Init()
         quadIndices[i + 4] = offset + 3;
         quadIndices[i + 5] = offset + 0;
     }
-    Ref<IndexBuffer> quadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxQuadIndices * sizeof(uint32_t));
-    s_Data.QuadVertexArray->SetIndexBuffer(quadIndexBuffer);
+    s_Data.QuadIndexBuffer = IndexBuffer::Create(quadIndices, Renderer2DData::MaxQuadIndices * sizeof(uint32_t));
     delete[] quadIndices;
 
     s_Data.WhiteTexture = Texture2D::Create(TextureFormat::RGBA, 1, 1);
@@ -127,43 +129,40 @@ void Renderer2D::Init()
     s_Data.QuadVertexPositions[2] = { 0.5f,  0.5f, 0.0f, 1.0f };
     s_Data.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
 
-    s_Data.FullscreenQuadVertexArray = VertexArray::Create();
-
     float fsQuadData[] = {
         -1.0f, -1.0f, 0.0f, 0.0f,
          1.0f, -1.0f, 1.0f, 0.0f,
          1.0f,  1.0f, 1.0f, 1.0f,
         -1.0f,  1.0f, 0.0f, 1.0f
     };
-    Ref<VertexBuffer> fullscreenVBO = VertexBuffer::Create(fsQuadData, sizeof(fsQuadData));
-    fullscreenVBO->SetLayout({
+    s_Data.FullscreenQuadVertexBuffer = VertexBuffer::Create(fsQuadData, sizeof(fsQuadData));
+
+    PipelineSpecification fullscreenQuadPipelineSpec;
+    fullscreenQuadPipelineSpec.Layout = {
         { ShaderDataType::Float2, "a_Position" },
         { ShaderDataType::Float2, "a_TexCoords" }
-    });
-    s_Data.FullscreenQuadVertexArray->AddVertexBuffer(fullscreenVBO);
+    };
+    s_Data.FullscreenQuadPipeline = Pipeline::Create(fullscreenQuadPipelineSpec);
 
     uint32_t fsQuadIndices[] = { 0, 1, 2, 2, 3, 0 };
-    Ref<IndexBuffer> fullscreenIBO = IndexBuffer::Create(fsQuadIndices, sizeof(fsQuadIndices));
-    s_Data.FullscreenQuadVertexArray->SetIndexBuffer(fullscreenIBO);
+    s_Data.FullscreenQuadIndexBuffer = IndexBuffer::Create(fsQuadIndices, sizeof(fsQuadIndices));
 
     s_Data.QuadBaseMaterial = Ref<Material>::Create(s_Data.ShaderLibrary->Get("Renderer2D"));
 
     // Lines
-    s_Data.LineVertexArray = VertexArray::Create();
-
     s_Data.LineVertexBuffer = VertexBuffer::Create(Renderer2DData::MaxLineVertices * sizeof(LineVertex));
-    s_Data.LineVertexBuffer->SetLayout({
+
+    PipelineSpecification linePipelineSpec;
+    linePipelineSpec.Layout = {
         { ShaderDataType::Float3, "a_Position" },
         { ShaderDataType::Float4, "a_Color" }
-    });
-    s_Data.LineVertexArray->AddVertexBuffer(s_Data.LineVertexBuffer);
+    };
+    s_Data.LinePipeline = Pipeline::Create(linePipelineSpec);
 
     uint32_t* lineIndices = new uint32_t[Renderer2DData::MaxLineIndices];
     for (uint32_t i = 0; i < Renderer2DData::MaxLineIndices; i++)
         lineIndices[i] = i;
-
-    Ref<IndexBuffer> lineIndexBuffer = IndexBuffer::Create(lineIndices, Renderer2DData::MaxLineIndices * sizeof(uint32_t));
-    s_Data.LineVertexArray->SetIndexBuffer(lineIndexBuffer);
+    s_Data.LineIndexBuffer = IndexBuffer::Create(lineIndices, Renderer2DData::MaxLineIndices * sizeof(uint32_t));
     delete[] lineIndices;
 
     s_Data.LineVertexBufferBase = new LineVertex[Renderer2DData::MaxLineVertices];
@@ -225,7 +224,9 @@ void Renderer2D::FlushQuads()
         return;
 
     s_Data.QuadMaterial->Bind();
-    s_Data.QuadVertexArray->Bind();
+    s_Data.QuadVertexBuffer->Bind();
+    s_Data.QuadPipeline->Bind();
+    s_Data.QuadIndexBuffer->Bind();
 
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.QuadVertexBufferPtr - (uint8_t*)s_Data.QuadVertexBufferBase);
     s_Data.QuadVertexBuffer->SetData(s_Data.QuadVertexBufferBase, dataSize);
@@ -251,7 +252,9 @@ void Renderer2D::FlushLines()
         return;
 
     s_Data.LineMaterial->Bind();
-    s_Data.LineVertexArray->Bind();
+    s_Data.LineVertexBuffer->Bind();
+    s_Data.LinePipeline->Bind();
+    s_Data.LineIndexBuffer->Bind();
 
     uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
     s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
@@ -363,7 +366,9 @@ void Renderer2D::DrawQuad(Ref<MaterialInstance> material, const glm::mat4& trans
         material->Set("u_Transform", transform);
     }
 
-    s_Data.FullscreenQuadVertexArray->Bind();
+    s_Data.FullscreenQuadVertexBuffer->Bind();
+    s_Data.FullscreenQuadPipeline->Bind();
+    s_Data.FullscreenQuadIndexBuffer->Bind();
     RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest);
 }
 
@@ -378,7 +383,9 @@ void Renderer2D::DrawFullscreenQuad(Ref<MaterialInstance> material)
         stencilTest = material->GetFlag(MaterialFlag::StencilTest);
     }
 
-    s_Data.FullscreenQuadVertexArray->Bind();
+    s_Data.FullscreenQuadVertexBuffer->Bind();
+    s_Data.FullscreenQuadPipeline->Bind();
+    s_Data.FullscreenQuadIndexBuffer->Bind();
     RenderCommand::DrawIndexed(6, PrimitiveType::Triangles, depthTest, stencilTest);
 }
 

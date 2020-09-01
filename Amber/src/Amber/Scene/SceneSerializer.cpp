@@ -540,7 +540,7 @@ struct convert<SpriteRendererComponent>
         rhs.Color = node["Color"].as<glm::mat4>();
 
         std::string texturePath = node["Texture"].as<std::string>();
-        rhs.Texture = texturePath.empty() ? nullptr : Texture2D::Create(texturePath);
+        rhs.Texture = texturePath.empty() ? nullptr : Texture2D::Create(texturePath, false, true, TextureWrap::Repeat, TextureFilter::Nearest);
 
         for (uint32_t i = 0; i < 4; i++)
             rhs.TexCoords[i] = node["TexCoords"][i].as<glm::vec2>();

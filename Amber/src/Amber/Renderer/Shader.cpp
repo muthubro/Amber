@@ -1,10 +1,9 @@
 #include "abpch.h"
-#include "VertexArray.h"
-
-#include "Amber/Renderer/Renderer.h"
-#include "Amber/Renderer/Shader.h"
+#include "Shader.h"
 
 #include "Amber/Platform/OpenGL/OpenGLShader.h"
+
+#include "Amber/Renderer/Renderer.h"
 
 namespace Amber
 {
@@ -13,12 +12,8 @@ Ref<Shader> Shader::Create(const std::string& filepath, ShaderType type)
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLShader>::Create(filepath, type);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLShader>::Create(filepath, type);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
@@ -29,12 +24,8 @@ Ref<Shader> Shader::CreateFromString(const std::string& name, const std::string&
 {
     switch (Renderer::GetAPI())
     {
-        case RendererAPI::API::None:
-            AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!");
-            return nullptr;
-
-        case RendererAPI::API::OpenGL:
-            return Ref<OpenGLShader>::Create(name, source);
+        case RendererAPI::API::OpenGL:  return Ref<OpenGLShader>::Create(name, source);
+        case RendererAPI::API::None:    AB_CORE_ASSERT(false, "RendererAPI::None is not supported right now!"); return nullptr;
     }
 
     AB_CORE_ASSERT(false, "Unknown Renderer API");
